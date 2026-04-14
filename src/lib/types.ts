@@ -6,4 +6,5 @@ export interface Book {
 	fileData: ArrayBuffer;
 	format: 'epub';
 	addedAt: Date;
+	filename: string;
 }
