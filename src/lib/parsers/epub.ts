@@ -26,7 +26,7 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		throw new Error('Invalid EPUB format: missing container.xml');
 	}
 
-	// Parse container.xml to find content.opf path
+	// Parse container.xml using DOMParser
 	const opfPath = extractOpfPath(containerXml);
 	if (!opfPath) {
 		throw new Error('Invalid EPUB format: cannot find content.opf');
@@ -38,12 +38,26 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		throw new Error('Invalid EPUB format: missing content.opf');
 	}
 
-	// Extract metadata
-	const title = extractMetadata(opfContent, 'title');
-	const author = extractMetadata(opfContent, 'creator');
+	// Parse content.opf using DOMParser
+	const parser = new DOMParser();
+	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+
+	// Check for parsing errors
+	const parserError = opfDoc.querySelector('parsererror');
+	if (parserError) {
+		throw new Error('Invalid EPUB format: malformed content.opf');
+	}
+
+	// Extract metadata using namespace-aware methods
+	const dcNamespace = 'http://purl.org/dc/elements/1.1/';
+	const titleElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'title');
+	const authorElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'creator');
+
+	const title = titleElements[0]?.textContent?.trim() || null;
+	const author = authorElements[0]?.textContent?.trim() || null;
 
 	// Extract cover
-	const coverPath = extractCoverPath(opfContent, opfPath);
+	const coverPath = extractCoverPath(opfDoc, opfPath);
 	const cover = coverPath ? await extractCoverImage(zip, coverPath) : null;
 
 	return {
@@ -54,34 +68,49 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 }
 
 function extractOpfPath(containerXml: string): string | null {
-	const match = containerXml.match(/full-path="([^"]+)"/);
-	return match ? match[1] : null;
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(containerXml, 'application/xml');
+
+	const rootfile = doc.querySelector('rootfile[media-type="application/oebps-package+xml"]');
+	if (rootfile) {
+		return rootfile.getAttribute('full-path');
+	}
+
+	// Fallback: try to find any rootfile
+	const anyRootfile = doc.querySelector('rootfile');
+	return anyRootfile?.getAttribute('full-path') || null;
 }
 
-function extractMetadata(opfContent: string, field: string): string | null {
-	// Match dc:title or dc:creator with optional namespace prefix
-	const regex = new RegExp(`<dc:${field}[^>]*>([^<]+)</dc:${field}>`, 'i');
-	const match = opfContent.match(regex);
-	return match ? match[1].trim() : null;
-}
-
-function extractCoverPath(opfContent: string, opfPath: string): string | null {
+function extractCoverPath(opfDoc: Document, opfPath: string): string | null {
 	// First, try to find cover by meta tag reference
-	const coverMetaMatch = opfContent.match(/<meta[^>]*name="cover"[^>]*content="([^"]+)"/i);
-	if (coverMetaMatch) {
-		const coverId = coverMetaMatch[1];
-		const itemMatch = opfContent.match(
-			new RegExp(`<item[^>]*id="${coverId}"[^>]*href="([^"]+)"`, 'i')
-		);
-		if (itemMatch) {
-			return resolvePath(opfPath, itemMatch[1]);
+	const metaTags = opfDoc.querySelectorAll('meta');
+	for (const meta of metaTags) {
+		if (meta.getAttribute('name') === 'cover') {
+			const coverId = meta.getAttribute('content');
+			if (coverId) {
+				// Find item with matching id
+				const items = opfDoc.querySelectorAll('item');
+				for (const item of items) {
+					if (item.getAttribute('id') === coverId) {
+						const href = item.getAttribute('href');
+						if (href) {
+							return resolvePath(opfPath, href);
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// Try to find by properties="cover-image"
-	const coverItemMatch = opfContent.match(/<item[^>]*properties="cover-image"[^>]*href="([^"]+)"/i);
-	if (coverItemMatch) {
-		return resolvePath(opfPath, coverItemMatch[1]);
+	const items = opfDoc.querySelectorAll('item');
+	for (const item of items) {
+		if (item.getAttribute('properties')?.includes('cover-image')) {
+			const href = item.getAttribute('href');
+			if (href) {
+				return resolvePath(opfPath, href);
+			}
+		}
 	}
 
 	return null;
