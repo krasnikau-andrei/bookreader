@@ -1,7 +1,17 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import { theme } from '$lib/theme';
+	import { onMount } from 'svelte';
 
 	let { children } = $props();
+
+	onMount(() => {
+		const body = document.body;
+		Object.entries(theme.colors).forEach(([key, value]) => {
+			body.style.setProperty(`--color-${key}`, value);
+		});
+		body.style.backgroundColor = theme.colors.background;
+	});
 </script>
 
 <svelte:head>
