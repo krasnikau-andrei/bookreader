@@ -17,7 +17,12 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	// Check mimetype
 	const mimetype = await zip.file('mimetype')?.async('string');
 	if (mimetype !== 'application/epub+zip') {
-		throw new Error('Invalid EPUB format');
+		if (mimetype === undefined) {
+			throw new Error('Invalid EPUB format: missing mimetype file');
+		}
+		throw new Error(
+			`Invalid EPUB format: mimetype is "${mimetype.trim()}" instead of "application/epub+zip"`
+		);
 	}
 
 	// Read container.xml to find content.opf
@@ -45,7 +50,9 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	// Check for parsing errors
 	const parserError = opfDoc.querySelector('parsererror');
 	if (parserError) {
-		throw new Error('Invalid EPUB format: malformed content.opf');
+		throw new Error(
+			`Invalid EPUB format: malformed content.opf - ${parserError.textContent?.substring(0, 100) || 'XML parsing error'}`
+		);
 	}
 
 	// Extract metadata using namespace-aware methods
@@ -118,7 +125,33 @@ function extractCoverPath(opfDoc: Document, opfPath: string): string | null {
 
 function resolvePath(opfPath: string, href: string): string {
 	const basePath = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
-	return basePath + href;
+	return normalizePath(basePath + href);
+}
+
+function normalizePath(path: string): string {
+	// Split path into components
+	const parts = path.split('/');
+	const result: string[] = [];
+
+	for (const part of parts) {
+		if (part === '..') {
+			// Go up one directory level
+			if (result.length > 0 && result[result.length - 1] !== '..') {
+				result.pop();
+			} else {
+				// Cannot go above root, keep as is
+				result.push(part);
+			}
+		} else if (part !== '.' && part !== '') {
+			// Skip current directory (.) and empty parts
+			result.push(part);
+		} else if (part === '' && result.length === 0 && path.startsWith('/')) {
+			// Preserve leading slash for absolute paths
+			continue;
+		}
+	}
+
+	return result.join('/');
 }
 
 async function extractCoverImage(zip: JSZip, coverPath: string): Promise<string | null> {
@@ -155,4 +188,115 @@ function arrayBufferToBase64(buffer: Uint8Array): string {
 		binary += String.fromCharCode(bytes[i]);
 	}
 	return btoa(binary);
+}
+
+import type { Chapter } from '$lib/types';
+
+export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]> {
+	let zip: JSZip;
+	try {
+		zip = await JSZip.loadAsync(buffer);
+	} catch {
+		throw new Error('Invalid EPUB format: unable to parse ZIP archive');
+	}
+
+	// Read container.xml to find content.opf
+	const containerXml = await zip.file('META-INF/container.xml')?.async('string');
+	if (!containerXml) {
+		throw new Error('Invalid EPUB format: missing container.xml');
+	}
+
+	const opfPath = extractOpfPath(containerXml);
+	if (!opfPath) {
+		throw new Error('Invalid EPUB format: cannot find content.opf');
+	}
+
+	// Read content.opf
+	const opfContent = await zip.file(opfPath)?.async('string');
+	if (!opfContent) {
+		throw new Error('Invalid EPUB format: missing content.opf');
+	}
+
+	// Parse content.opf
+	const parser = new DOMParser();
+	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+
+	// Extract spine items (reading order)
+	const spine = opfDoc.querySelector('spine');
+	const itemrefs = spine?.querySelectorAll('itemref') || [];
+
+	// Build manifest map (id -> href)
+	const manifest = opfDoc.querySelector('manifest');
+	const items = manifest?.querySelectorAll('item') || [];
+	const manifestMap = new Map<string, string>();
+
+	for (const item of items) {
+		const id = item.getAttribute('id');
+		const href = item.getAttribute('href');
+		if (id && href) {
+			manifestMap.set(id, href);
+		}
+	}
+
+	// Extract chapters in spine order
+	const chapters: Chapter[] = [];
+	const basePath = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
+
+	for (const itemref of itemrefs) {
+		const idref = itemref.getAttribute('idref');
+		if (!idref) continue;
+
+		const href = manifestMap.get(idref);
+		if (!href) continue;
+
+		const filePath = basePath + href;
+		const content = await zip.file(filePath)?.async('string');
+		if (!content) continue;
+
+		// Parse chapter content
+		const chapterDoc = parser.parseFromString(content, 'application/xhtml+xml');
+		const title = chapterDoc.querySelector('h1, h2, title')?.textContent || 'Untitled';
+
+		// Process images in chapter content - convert to data URIs
+		const chapterDir = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+		const images = chapterDoc.querySelectorAll('img');
+
+		for (const img of images) {
+			const src = img.getAttribute('src');
+			if (src && !src.startsWith('data:') && !src.startsWith('http')) {
+				// Resolve relative path
+				const imagePath = resolvePath(chapterDir, src);
+				const imageDataUri = await extractImageAsDataUri(zip, imagePath);
+				if (imageDataUri) {
+					img.setAttribute('src', imageDataUri);
+				}
+			}
+		}
+
+		// Serialize the modified HTML back to string
+		const serializer = new XMLSerializer();
+		const processedContent = serializer.serializeToString(chapterDoc);
+
+		chapters.push({
+			id: idref,
+			title,
+			content: processedContent
+		});
+	}
+
+	return chapters;
+}
+
+async function extractImageAsDataUri(zip: JSZip, imagePath: string): Promise<string | null> {
+	const imageFile = zip.file(imagePath);
+	if (!imageFile) {
+		return null;
+	}
+
+	const imageData = await imageFile.async('uint8array');
+	const extension = imagePath.split('.').pop()?.toLowerCase() || 'jpg';
+	const mimeType = getMimeType(extension);
+	const base64 = arrayBufferToBase64(imageData);
+
+	return `data:${mimeType};base64,${base64}`;
 }

@@ -40,7 +40,7 @@ describe('EPUB Parser', () => {
 	test('throws error for non-EPUB file format', async () => {
 		const pdfBuffer = createFakePdfBuffer();
 
-		await expect(parseEpub(pdfBuffer)).rejects.toThrow('Invalid EPUB format');
+		await expect(parseEpub(pdfBuffer)).rejects.toThrow(/Invalid EPUB format/);
 	});
 });
 
