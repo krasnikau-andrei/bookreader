@@ -163,9 +163,7 @@ test.describe('Library Page', () => {
 		await fileChooser.setFiles(join(__dirname, '../../tests/fixtures/great-gatsby.epub'));
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1);
 
-		// Hover over book card to reveal delete button, then click it
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-		await bookCard.hover();
+		// Click delete button (visible by default on mobile, visible on hover for desktop)
 		await page.locator('[data-testid="delete-book-button"]').click();
 
 		// Book should be removed

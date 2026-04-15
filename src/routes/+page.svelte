@@ -4,10 +4,14 @@
 	import { saveBook, getAllBooks, deleteBook } from '$lib/storage';
 	import type { Book } from '$lib/types';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	let books: Book[] = $state([]);
 	let fileInput: HTMLInputElement | undefined = $state();
 	let errorMessage: string | null = $state(null);
+	let contextMenu: { bookId: string; x: number; y: number } | null = $state(null);
+	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+	let isLongPress = false;
 
 	onMount(async () => {
 		applyTheme(document.body);
@@ -25,6 +29,36 @@
 	async function handleDeleteBook(bookId: string) {
 		await deleteBook(bookId);
 		books = await getAllBooks();
+		contextMenu = null;
+	}
+
+	function handleBookClick(bookId: string) {
+		if (isLongPress) {
+			isLongPress = false;
+			return;
+		}
+		goto(`/read/${bookId}`);
+	}
+
+	function handleTouchStart(bookId: string, event: TouchEvent | MouseEvent) {
+		isLongPress = false;
+		longPressTimer = setTimeout(() => {
+			isLongPress = true;
+			const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+			const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+			contextMenu = { bookId, x: clientX, y: clientY };
+		}, 500);
+	}
+
+	function handleTouchEnd() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+	}
+
+	function closeContextMenu() {
+		contextMenu = null;
 	}
 
 	async function handleFileChange(event: Event) {
@@ -80,7 +114,7 @@
 		/>
 	</div>
 
-	<div class="books-grid">
+	<div class="books-grid" onclick={closeContextMenu}>
 		{#if books.length === 0}
 			<!-- Empty state -->
 			<div class="empty-state" data-testid="empty-state">
@@ -89,7 +123,22 @@
 			</div>
 		{:else}
 			{#each books as book (book.id)}
-				<div class="book-card" data-testid="book-card">
+				<button
+					class="book-card"
+					data-testid="book-card"
+					onclick={() => handleBookClick(book.id)}
+					ontouchstart={(e) => handleTouchStart(book.id, e)}
+					ontouchend={handleTouchEnd}
+					onmousedown={(e) => handleTouchStart(book.id, e)}
+					onmouseup={handleTouchEnd}
+					onmouseleave={handleTouchEnd}
+					oncontextmenu={(e) => {
+						e.preventDefault();
+						handleTouchStart(book.id, e);
+					}}
+					aria-label="Read {book.title}"
+					type="button"
+				>
 					{#if book.cover}
 						<img src={book.cover} alt={book.title} class="book-cover" />
 					{:else}
@@ -101,18 +150,22 @@
 						<h3 class="book-title" data-testid="book-title">{book.title}</h3>
 						<p class="book-author" data-testid="book-author">{book.author}</p>
 					</div>
-					<button
-						class="delete-button"
-						data-testid="delete-book-button"
-						onclick={() => handleDeleteBook(book.id)}
-						aria-label="Delete {book.title}"
-					>
-						Delete
-					</button>
-				</div>
+				</button>
 			{/each}
 		{/if}
 	</div>
+
+	{#if contextMenu}
+		<div class="context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
+			<button
+				class="context-menu-item"
+				data-testid="delete-book-button"
+				onclick={() => handleDeleteBook(contextMenu!.bookId)}
+			>
+				Delete
+			</button>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -196,6 +249,12 @@
 		transition:
 			transform 0.2s,
 			box-shadow 0.2s;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
+		position: relative;
+		width: 100%;
 	}
 
 	.book-card:hover {
@@ -249,26 +308,39 @@
 		text-overflow: ellipsis;
 	}
 
-	.delete-button {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		background: rgba(255, 68, 68, 0.9);
-		color: white;
+	.context-menu {
+		position: fixed;
+		background: rgba(40, 40, 60, 0.95);
+		border-radius: 0.5rem;
+		padding: 0.25rem;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+		z-index: 100;
+		min-width: 120px;
+	}
+
+	.context-menu-item {
+		display: block;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background: transparent;
 		border: none;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.25rem;
+		color: #ff4444;
+		font-size: 0.875rem;
+		text-align: left;
 		cursor: pointer;
-		font-size: 0.75rem;
-		opacity: 0;
-		transition: opacity 0.2s;
+		border-radius: 0.25rem;
 	}
 
-	.book-card:hover .delete-button {
-		opacity: 1;
+	.context-menu-item:hover {
+		background: rgba(255, 68, 68, 0.1);
 	}
 
-	.delete-button:hover {
-		background: rgba(255, 68, 68, 1);
+	/* Prevent text selection during long press */
+	.book-card {
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
 	}
 </style>
