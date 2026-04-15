@@ -8,3 +8,16 @@ export interface Book {
 	addedAt: Date;
 	filename: string;
 }
+
+export interface ReadingProgress {
+	bookId: string;
+	chapterIndex: number;
+	scrollPercent: number; // 0.0 - 1.0
+	lastReadAt: Date;
+}
+
+export interface Chapter {
+	id: string;
+	title: string;
+	content: string;
+}
