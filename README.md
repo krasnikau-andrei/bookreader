@@ -51,7 +51,21 @@ bun run preview
 
 ## Testing
 
-### Run E2E Tests
+### Unit Tests (Vitest)
+
+Run unit tests with Vitest:
+
+```sh
+bunx vitest run
+```
+
+Or with verbose output:
+
+```sh
+bunx vitest run --reporter=verbose
+```
+
+### E2E Tests (Playwright)
 
 ```sh
 bun run test:e2e
@@ -63,7 +77,15 @@ Or simply:
 bun test
 ```
 
-### Test Coverage
+### Run All Tests
+
+To run both unit and e2e tests:
+
+```sh
+bunx vitest run && bun run test:e2e
+```
+
+### E2E Test Coverage
 
 Playwright provides built-in coverage reporting. Generate an HTML coverage report:
 
