@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { theme, applyTheme } from '$lib/theme';
+	import { theme } from '$lib/theme.svelte';
 	import { parseEpub } from '$lib/parsers/epub';
 	import { saveBook, getAllBooks, deleteBook } from '$lib/storage';
 	import type { Book } from '$lib/types';
@@ -15,7 +15,6 @@
 	let isLongPress = false;
 
 	onMount(async () => {
-		applyTheme(document.body);
 		books = await getAllBooks();
 	});
 
@@ -138,25 +137,25 @@
 <style>
 	.library-container {
 		min-height: 100vh;
-		padding: 2rem;
-		background-color: var(--color-background, #1a1a2e);
+		padding: var(--padding-lg);
+		background-color: var(--color-background);
 	}
 
 	.library-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 2rem;
+		margin-bottom: var(--padding-lg);
 	}
 
 	h1 {
-		color: var(--color-text-primary, #ffffff);
+		color: var(--color-text-primary);
 		margin: 0;
 	}
 
 	.books-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-		gap: 1rem;
+		gap: var(--padding-md);
 	}
 </style>

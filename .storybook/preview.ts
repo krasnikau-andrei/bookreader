@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/svelte';
+import { theme } from '../src/lib/theme.svelte';
 
 const preview: Preview = {
 	parameters: {
@@ -31,12 +32,20 @@ const preview: Preview = {
 	decorators: [
 		(story) => {
 			const body = document.body;
-			body.style.backgroundColor = '#1a1a2e';
-			body.style.color = '#ffffff';
-			body.style.setProperty('--color-background', '#1a1a2e');
-			body.style.setProperty('--color-text-primary', '#ffffff');
-			body.style.setProperty('--color-text-secondary', '#a0a0a0');
-			body.style.setProperty('--color-accent', '#4a9eff');
+			body.style.backgroundColor = theme.colors.background;
+			body.style.color = theme.colors['text-primary'];
+			Object.entries(theme.colors).forEach(([key, value]) => {
+				body.style.setProperty(`--color-${key}`, value);
+			});
+			Object.entries(theme.padding).forEach(([key, value]) => {
+				body.style.setProperty(`--padding-${key}`, value);
+			});
+			Object.entries(theme.radius).forEach(([key, value]) => {
+				body.style.setProperty(`--radius-${key}`, value);
+			});
+			Object.entries(theme.fontSize).forEach(([key, value]) => {
+				body.style.setProperty(`--font-size-${key}`, value);
+			});
 			return story();
 		}
 	]

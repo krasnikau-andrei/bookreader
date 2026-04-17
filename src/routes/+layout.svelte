@@ -1,17 +1,8 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
-	import { theme } from '$lib/theme';
-	import { onMount } from 'svelte';
+	import { theme } from '$lib/theme.svelte';
 
 	let { children } = $props();
-
-	onMount(() => {
-		const body = document.body;
-		Object.entries(theme.colors).forEach(([key, value]) => {
-			body.style.setProperty(`--color-${key}`, value);
-		});
-		body.style.backgroundColor = theme.colors.background;
-	});
 </script>
 
 <svelte:head>
@@ -23,4 +14,44 @@
 	<meta name="apple-mobile-web-app-title" content="BookReader" />
 </svelte:head>
 
-{@render children()}
+<div
+	class="theme-root"
+	style="
+		--color-background: {theme.colors.background};
+		--color-backgroundSecondary: {theme.colors.backgroundSecondary};
+		--color-backgroundTertiary: {theme.colors.backgroundTertiary};
+		--color-readerBackground: {theme.colors.readerBackground};
+		--color-readerText: {theme.colors.readerText};
+		--color-text-primary: {theme.colors['text-primary']};
+		--color-text-secondary: {theme.colors['text-secondary']};
+		--color-accent: {theme.colors.accent};
+		--color-shadow: {theme.colors.shadow};
+		--color-cardBackground: {theme.colors.cardBackground};
+		--color-error: {theme.colors.error};
+		--color-overlay: {theme.colors.overlay};
+		--padding-xs: {theme.padding.xs};
+		--padding-sm: {theme.padding.sm};
+		--padding-md: {theme.padding.md};
+		--padding-lg: {theme.padding.lg};
+		--padding-xl: {theme.padding.xl};
+		--radius-sm: {theme.radius.sm};
+		--radius-md: {theme.radius.md};
+		--radius-lg: {theme.radius.lg};
+		--radius-xl: {theme.radius.xl};
+		--font-size-xs: {theme.fontSize.xs};
+		--font-size-sm: {theme.fontSize.sm};
+		--font-size-md: {theme.fontSize.md};
+		--font-size-lg: {theme.fontSize.lg};
+		--font-size-xl: {theme.fontSize.xl};
+	"
+>
+	{@render children()}
+</div>
+
+<style>
+	.theme-root {
+		min-height: 100vh;
+		background-color: var(--color-background);
+		color: var(--color-text-primary);
+	}
+</style>

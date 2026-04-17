@@ -178,7 +178,7 @@
 	.reader {
 		position: fixed;
 		inset: 0;
-		background: #fff;
+		background: var(--color-readerBackground);
 	}
 
 	.loading {
@@ -187,7 +187,7 @@
 		justify-content: center;
 		height: 100%;
 		font-size: 1.5rem;
-		color: #333;
+		color: var(--color-readerText);
 	}
 
 	.reader-container {
@@ -207,6 +207,8 @@
 		padding: 0;
 		box-sizing: border-box;
 		line-height: 1.6;
+		background: var(--color-readerBackground);
+		color: var(--color-readerText);
 	}
 
 	.content :global(*) {
@@ -216,6 +218,13 @@
 	.content :global(> *) {
 		padding: var(--reader-content-padding, 1rem);
 		margin: 0;
+	}
+
+	.content :global(p),
+	.content :global(span),
+	.content :global(div) {
+		color: var(--color-readerText) !important;
+		background: transparent !important;
 	}
 
 	.overlay {
