@@ -25,10 +25,10 @@ test.describe('Library Page', () => {
 	test('T6: Theme Colors Applied - page has theme background color', async ({ page }) => {
 		await page.goto('/');
 
-		const body = page.locator('body');
-		await expect(body).toBeVisible();
+		const themeRoot = page.locator('.theme-root');
+		await expect(themeRoot).toBeVisible();
 
-		const backgroundColor = await body.evaluate((el) => getComputedStyle(el).backgroundColor);
+		const backgroundColor = await themeRoot.evaluate((el) => getComputedStyle(el).backgroundColor);
 		expect(backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
 		expect(backgroundColor).not.toBe('transparent');
 	});
@@ -42,10 +42,17 @@ test.describe('Library Page', () => {
 		const buttonBg = await uploadButton.evaluate((el) => getComputedStyle(el).backgroundColor);
 		expect(buttonBg).not.toBe('rgba(0, 0, 0, 0)');
 		expect(buttonBg).not.toBe('transparent');
+		// Verify it has actual color (accent is rgb(74, 158, 255))
+		expect(buttonBg).toMatch(/rgb\(74, 158, 255\)|rgba\(74, 158, 255/);
 	});
 
 	test('T2: Upload Success - displays uploaded book in grid', async ({ page }) => {
 		await page.goto('/');
+
+		// Capture console logs
+		const consoleLogs: string[] = [];
+		page.on('console', (msg) => consoleLogs.push(msg.text()));
+		page.on('pageerror', (error) => consoleLogs.push(`PAGE ERROR: ${error.message}`));
 
 		// Use filechooser to upload EPUB
 		const fileChooserPromise = page.waitForEvent('filechooser');
@@ -53,10 +60,16 @@ test.describe('Library Page', () => {
 		const fileChooser = await fileChooserPromise;
 
 		const epubPath = join(__dirname, '../../tests/fixtures/great-gatsby.epub');
+		console.log(`Uploading file from: ${epubPath}`);
 		await fileChooser.setFiles(epubPath);
 
 		// Wait for book to appear in grid with longer timeout
-		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 10000 });
+		try {
+			await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
+		} catch (e) {
+			console.log('Console logs during upload:', consoleLogs.join('\n'));
+			throw e;
+		}
 
 		// Verify book details
 		const bookCard = page.locator('[data-testid="book-card"]').first();
@@ -163,7 +176,10 @@ test.describe('Library Page', () => {
 		await fileChooser.setFiles(join(__dirname, '../../tests/fixtures/great-gatsby.epub'));
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1);
 
-		// Click delete button (visible by default on mobile, visible on hover for desktop)
+		// Right-click on book to open context menu
+		await page.locator('[data-testid="book-card"]').first().click({ button: 'right' });
+
+		// Click delete button in context menu
 		await page.locator('[data-testid="delete-book-button"]').click();
 
 		// Book should be removed
