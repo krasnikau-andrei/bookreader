@@ -30,18 +30,5 @@
 />
 
 <Story name="InGrid" asChild>
-	<div class="books-grid">
-		<EmptyState />
-	</div>
+	<EmptyState />
 </Story>
-
-<style>
-	.books-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-		gap: 1rem;
-		padding: 1rem;
-		background: var(--color-background, #1a1a2e);
-		min-height: 400px;
-	}
-</style>

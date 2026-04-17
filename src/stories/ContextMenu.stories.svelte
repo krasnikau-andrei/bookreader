@@ -25,18 +25,5 @@
 />
 
 <Story name="AtPosition" asChild>
-	<div class="demo-container">
-		<p>Context menu at position (100, 50)</p>
-		<ContextMenu x={100} y={50} onDelete={fn()} />
-	</div>
+	<ContextMenu x={100} y={50} onDelete={fn()} />
 </Story>
-
-<style>
-	.demo-container {
-		position: relative;
-		padding: 2rem;
-		background: var(--color-background, #1a1a2e);
-		min-height: 200px;
-		color: var(--color-text-primary, #ffffff);
-	}
-</style>

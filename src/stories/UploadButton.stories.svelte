@@ -21,23 +21,5 @@
 />
 
 <Story name="InHeader" asChild>
-	<div class="library-header">
-		<h1>My Library</h1>
-		<UploadButton onClick={fn()} />
-	</div>
+	<UploadButton onClick={fn()} />
 </Story>
-
-<style>
-	.library-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		background: var(--color-background, #1a1a2e);
-	}
-
-	h1 {
-		color: var(--color-text-primary, #ffffff);
-		margin: 0;
-	}
-</style>
