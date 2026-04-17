@@ -15,14 +15,11 @@
 <button
 	class="book-card"
 	onclick={onClick}
+	oncontextmenu={onContextMenu}
 	ontouchstart={onTouchStart}
 	ontouchend={onTouchEnd}
-	onmousedown={onTouchStart}
-	onmouseup={onTouchEnd}
-	onmouseleave={onTouchEnd}
-	oncontextmenu={onContextMenu}
-	aria-label="Read {book.title}"
 	type="button"
+	data-testid="book-card"
 >
 	{#if book.cover}
 		<img src={book.cover} alt={book.title} class="book-cover" />
@@ -32,15 +29,15 @@
 		</div>
 	{/if}
 	<div class="book-info">
-		<h3 class="book-title">{book.title}</h3>
-		<p class="book-author">{book.author}</p>
+		<h3 class="book-title" data-testid="book-title">{book.title}</h3>
+		<p class="book-author" data-testid="book-author">{book.author}</p>
 	</div>
 </button>
 
 <style>
 	.book-card {
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: 0.5rem;
+		background: var(--color-cardBackground);
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		transition:
 			transform 0.2s,
@@ -62,7 +59,7 @@
 
 	.book-card:hover {
 		transform: translateY(-4px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 8px 24px var(--color-shadow);
 	}
 
 	.book-cover,
@@ -70,7 +67,11 @@
 		width: 100%;
 		aspect-ratio: 2/3;
 		object-fit: contain;
-		background: linear-gradient(135deg, #2a2a4a 0%, #1a1a3a 100%);
+		background: linear-gradient(
+			135deg,
+			var(--color-backgroundSecondary) 0%,
+			var(--color-backgroundTertiary) 100%
+		);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -81,21 +82,21 @@
 	}
 
 	.book-cover-placeholder .filename {
-		color: var(--color-text-primary, #ffffff);
-		font-size: 0.75rem;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
 		word-break: break-all;
 		text-align: center;
 		opacity: 0.8;
-		padding: 0.5rem;
+		padding: var(--padding-sm);
 	}
 
 	.book-info {
-		padding: 0.5rem;
+		padding: var(--padding-sm);
 	}
 
 	.book-title {
-		color: var(--color-text-primary, #ffffff);
-		font-size: 0.75rem;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
 		font-weight: 600;
 		margin: 0 0 0.125rem 0;
 		white-space: nowrap;
@@ -104,8 +105,8 @@
 	}
 
 	.book-author {
-		color: var(--color-text-secondary, #a0a0a0);
-		font-size: 0.625rem;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
 		margin: 0;
 		white-space: nowrap;
 		overflow: hidden;

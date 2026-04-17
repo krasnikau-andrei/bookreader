@@ -19,11 +19,11 @@
 	.empty-state {
 		grid-column: 1 / -1;
 		text-align: center;
-		padding: 4rem;
-		color: var(--color-text-secondary, #a0a0a0);
+		padding: var(--padding-xl);
+		color: var(--color-text-secondary);
 	}
 
 	.empty-state p {
-		margin: 0.5rem 0;
+		margin: var(--padding-sm) 0;
 	}
 </style>
