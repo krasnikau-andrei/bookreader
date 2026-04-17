@@ -42,16 +42,23 @@
 		--font-size-sm: {theme.fontSize.sm};
 		--font-size-md: {theme.fontSize.md};
 		--font-size-lg: {theme.fontSize.lg};
-		--font-size-xl: {theme.fontSize.xl};
-	"
+--font-size-xl: {theme.fontSize.xl};
+--font-family: {theme.fontFamily}
+"
 >
 	{@render children()}
 </div>
 
 <style>
+	:global(body) {
+		margin: 0;
+		padding: 0;
+	}
+
 	.theme-root {
 		min-height: 100vh;
 		background-color: var(--color-background);
 		color: var(--color-text-primary);
+		font-family: var(--font-family);
 	}
 </style>
