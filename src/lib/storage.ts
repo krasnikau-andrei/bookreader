@@ -37,6 +37,11 @@ export async function getBook(id: string): Promise<Book | undefined> {
 	return await db.books.get(id);
 }
 
+export async function bookExists(id: string): Promise<boolean> {
+	const count = await db.books.where('id').equals(id).count();
+	return count > 0;
+}
+
 export async function deleteBook(id: string): Promise<void> {
 	await db.books.delete(id);
 }

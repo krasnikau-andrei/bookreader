@@ -1,15 +1,24 @@
 <script lang="ts">
 	import { theme } from '$lib/theme.svelte';
 	import { parseEpub } from '$lib/parsers/epub';
-	import { saveBook, getAllBooks, deleteBook } from '$lib/storage';
+	import { saveBook, getAllBooks, deleteBook, bookExists } from '$lib/storage';
 	import type { Book } from '$lib/types';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { UploadButton, BookCard, ContextMenu, ErrorBanner, EmptyState } from '$lib/components';
+	import {
+		UploadButton,
+		BookCard,
+		ContextMenu,
+		ErrorBanner,
+		InfoBanner,
+		EmptyState
+	} from '$lib/components';
+	import { generateFileHash } from '$lib/hash';
 
 	let books: Book[] = $state([]);
 	let fileInput: HTMLInputElement | undefined = $state();
 	let errorMessage: string | null = $state(null);
+	let infoMessage: string | null = $state(null);
 	let contextMenu: { bookId: string; x: number; y: number } | null = $state(null);
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
@@ -20,6 +29,10 @@
 
 	function clearError() {
 		errorMessage = null;
+	}
+
+	function clearInfo() {
+		infoMessage = null;
 	}
 
 	function handleUploadClick() {
@@ -70,10 +83,20 @@
 
 		try {
 			const buffer = await file.arrayBuffer();
+
+			// Generate ID from file content hash
+			const id = await generateFileHash(buffer);
+
+			// Check if book already exists
+			if (await bookExists(id)) {
+				infoMessage = `"${file.name}" is already in your library`;
+				return;
+			}
+
 			const parsed = await parseEpub(buffer);
 
 			const book: Book = {
-				id: crypto.randomUUID(),
+				id,
 				title: parsed.title,
 				author: parsed.author,
 				cover: parsed.cover,
@@ -97,6 +120,9 @@
 <div class="library-container" data-testid="library-container">
 	{#if errorMessage}
 		<ErrorBanner message={errorMessage} onDismiss={clearError} />
+	{/if}
+	{#if infoMessage}
+		<InfoBanner message={infoMessage} onDismiss={clearInfo} />
 	{/if}
 	<div class="library-header">
 		<h1>My Library</h1>
