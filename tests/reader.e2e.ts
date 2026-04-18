@@ -508,4 +508,103 @@ test.describe('Reader', () => {
 			expect(viewportInfo.elementWidth).toBeGreaterThan(minElementWidth);
 		}
 	});
+
+	test('rapid taps at chapter boundary should not cause stuck page', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		const reader = page.locator('.reader');
+		const content = page.locator('[data-testid="reader-content"]');
+
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		if (box) {
+			// First, navigate to near end of a chapter to reach boundary
+			// Navigate through content to get to a multi-page chapter
+			for (let i = 0; i < 5; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(300);
+			}
+
+			// Wait for content to settle
+			await page.waitForTimeout(500);
+
+			// Get initial state before rapid taps
+			const initialState = await content.evaluate((el) => ({
+				scrollLeft: el.scrollLeft,
+				scrollWidth: el.scrollWidth,
+				clientWidth: el.clientWidth,
+				maxScroll: el.scrollWidth - el.clientWidth
+			}));
+
+			// Simulate rapid taps at chapter boundary
+			// Issue: when tapping rapidly, the requestAnimationFrame callbacks
+			// and smooth scroll animations can conflict, leaving page stuck mid-scroll
+			const rapidTapPromises = [];
+			for (let i = 0; i < 8; i++) {
+				rapidTapPromises.push(
+					reader.click({
+						position: { x: box.width * 0.8, y: box.height * 0.5 }
+					})
+				);
+				// Very short delay between taps to simulate rapid clicking
+				await page.waitForTimeout(50);
+			}
+
+			await Promise.all(rapidTapPromises);
+
+			// Wait for any pending animations and state updates to complete
+			// CSS smooth scroll + scroll-snap can take up to 500ms
+			// Chapter transitions via RAF + timeout can take up to 300ms
+			await page.waitForTimeout(2000);
+
+			// Get final state
+			const finalState = await content.evaluate((el) => ({
+				scrollLeft: el.scrollLeft,
+				scrollWidth: el.scrollWidth,
+				clientWidth: el.clientWidth,
+				maxScroll: el.scrollWidth - el.clientWidth,
+				// Check if scroll position is at a valid snap point
+				// scroll-snap-type: x mandatory should align to page boundaries
+				// CSS scroll-snap may not perfectly align due to sub-pixel rendering
+				isAtSnapPoint:
+					el.scrollLeft % el.clientWidth === 0 ||
+					Math.abs(el.scrollLeft % el.clientWidth) < el.clientWidth * 0.05 // Allow 5% of viewport width tolerance
+			}));
+
+			console.log('Initial state:', initialState);
+			console.log('Final state:', finalState);
+
+			// The page should end at a valid scroll position
+			// Either at a snap point (page boundary) or at max scroll (end of chapter)
+			const isValidPosition =
+				finalState.isAtSnapPoint ||
+				finalState.scrollLeft >= finalState.maxScroll - 10 || // At end with tolerance
+				finalState.scrollLeft <= 10; // At beginning with tolerance
+
+			// Take screenshot for debugging if test fails
+			if (!isValidPosition) {
+				await page.screenshot({ path: 'test-results/rapid-tap-stuck.png' });
+			}
+
+			// The scroll position should not be stuck mid-scroll between pages
+			// This assertion will FAIL if the race condition occurs
+			expect(isValidPosition).toBe(true);
+
+			// Verify scroll position is reasonable (not negative, not beyond max)
+			expect(finalState.scrollLeft).toBeGreaterThanOrEqual(0);
+			expect(finalState.scrollLeft).toBeLessThanOrEqual(finalState.maxScroll + 10);
+		}
+	});
 });
