@@ -209,10 +209,7 @@
 		line-height: 1.6;
 		background: var(--color-readerBackground);
 		color: var(--color-readerText);
-	}
-
-	.content :global(*) {
-		scroll-snap-align: start;
+		font-size: var(--font-size-reader-text, 1.5rem);
 	}
 
 	.content :global(> *) {

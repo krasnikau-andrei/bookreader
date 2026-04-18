@@ -13,6 +13,7 @@ export interface Theme {
 		error: string;
 		overlay: string;
 	};
+	fontFamily: string;
 	padding: {
 		xs: string;
 		sm: string;
@@ -32,6 +33,7 @@ export interface Theme {
 		md: string;
 		lg: string;
 		xl: string;
+		readerText: string;
 	};
 }
 
@@ -50,6 +52,7 @@ export const theme: Theme = {
 		error: '#ff4444',
 		overlay: 'rgba(40, 40, 60, 0.95)'
 	},
+	fontFamily: "'Bookery', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 	padding: {
 		xs: '4px',
 		sm: '8px',
@@ -68,6 +71,7 @@ export const theme: Theme = {
 		sm: '0.75rem',
 		md: '0.875rem',
 		lg: '1rem',
-		xl: '1.25rem'
+		xl: '1.25rem',
+		readerText: '1.5rem'
 	}
 };

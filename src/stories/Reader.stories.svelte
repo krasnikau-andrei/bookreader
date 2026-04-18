@@ -113,10 +113,6 @@
 		color: #333;
 	}
 
-	.content :global(*) {
-		scroll-snap-align: start;
-	}
-
 	.loading {
 		display: flex;
 		align-items: center;
