@@ -641,37 +641,156 @@ test.describe('Reader', () => {
 				scrollLeft: el.scrollLeft,
 				scrollWidth: el.scrollWidth,
 				clientWidth: el.clientWidth,
-				maxScroll: el.scrollWidth - el.clientWidth,
-				// Check if scroll position is at a valid snap point
-				// scroll-snap-type: x mandatory should align to page boundaries
-				// CSS scroll-snap may not perfectly align due to sub-pixel rendering
-				isAtSnapPoint:
-					el.scrollLeft % el.clientWidth === 0 ||
-					Math.abs(el.scrollLeft % el.clientWidth) < el.clientWidth * 0.05 // Allow 5% of viewport width tolerance
+				maxScroll: el.scrollWidth - el.clientWidth
 			}));
 
 			console.log('Initial state:', initialState);
 			console.log('Final state:', finalState);
 
-			// The page should end at a valid scroll position
-			// Either at a snap point (page boundary) or at max scroll (end of chapter)
-			const isValidPosition =
-				finalState.isAtSnapPoint ||
+			// After rapid taps with animation cancellation, the final position should be
+			// at a valid page boundary (multiple of clientWidth) within tolerance
+			const expectedPage = Math.round(finalState.scrollLeft / finalState.clientWidth);
+			const expectedScroll = expectedPage * finalState.clientWidth;
+			const positionError = Math.abs(finalState.scrollLeft - expectedScroll);
+
+			// Should be within 2% of viewport width (reasonable tolerance for snap points)
+			const isAtValidPosition =
+				positionError < finalState.clientWidth * 0.02 ||
 				finalState.scrollLeft >= finalState.maxScroll - 10 || // At end with tolerance
 				finalState.scrollLeft <= 10; // At beginning with tolerance
 
 			// Take screenshot for debugging if test fails
-			if (!isValidPosition) {
+			if (!isAtValidPosition) {
 				await page.screenshot({ path: 'test-results/rapid-tap-stuck.png' });
 			}
 
 			// The scroll position should not be stuck mid-scroll between pages
-			// This assertion will FAIL if the race condition occurs
-			expect(isValidPosition).toBe(true);
+			expect(isAtValidPosition).toBe(true);
 
 			// Verify scroll position is reasonable (not negative, not beyond max)
 			expect(finalState.scrollLeft).toBeGreaterThanOrEqual(0);
 			expect(finalState.scrollLeft).toBeLessThanOrEqual(finalState.maxScroll + 10);
+		}
+	});
+
+	test('rapid taps should center text properly on final page', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		const reader = page.locator('.reader');
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		if (box) {
+			// Navigate to a chapter with text content (skip cover pages)
+			for (let i = 0; i < 3; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(300);
+			}
+
+			// Get initial state
+			const initialScroll = await content.evaluate((el) => el.scrollLeft);
+			const clientWidth = await content.evaluate((el) => el.clientWidth);
+
+			// Simulate rapid taps - 5 clicks in quick succession
+			const rapidTapPromises = [];
+			for (let i = 0; i < 5; i++) {
+				rapidTapPromises.push(
+					reader.click({
+						position: { x: box.width * 0.8, y: box.height * 0.5 }
+					})
+				);
+				await page.waitForTimeout(30); // Very short delay
+			}
+			await Promise.all(rapidTapPromises);
+
+			// Wait for animation to complete
+			await page.waitForTimeout(1000);
+
+			// Get final scroll position
+			const finalScroll = await content.evaluate((el) => el.scrollLeft);
+			const finalClientWidth = await content.evaluate((el) => el.clientWidth);
+
+			// The final position should be at a valid page boundary (multiple of clientWidth)
+			// Allow small tolerance for sub-pixel rendering
+			const expectedPages = Math.round((finalScroll - initialScroll) / clientWidth);
+			const expectedFinalScroll = initialScroll + expectedPages * finalClientWidth;
+			const scrollDiff = Math.abs(finalScroll - expectedFinalScroll);
+
+			// Should be within 2% of viewport width (reasonable tolerance for snap points)
+			expect(scrollDiff).toBeLessThan(finalClientWidth * 0.02);
+
+			// Now verify text is visible and properly positioned
+			// Get the first visible text element
+			const viewportInfo = await content.evaluate((el) => {
+				const contentEl = el as HTMLElement;
+				const rect = contentEl.getBoundingClientRect();
+				const viewportWidth = rect.width;
+				const scrollLeft = contentEl.scrollLeft;
+
+				// Find first visible text element
+				const textElements = contentEl.querySelectorAll('p, span, h1, h2, h3, h4, h5, h6');
+				for (const textEl of Array.from(textElements)) {
+					const elRect = textEl.getBoundingClientRect();
+					const elementLeft = elRect.left - rect.left + scrollLeft;
+					const elementRight = elementLeft + elRect.width;
+					const viewportLeft = scrollLeft;
+					const viewportRight = scrollLeft + viewportWidth;
+
+					// Check if element is visible in viewport
+					if (elementRight > viewportLeft && elementLeft < viewportRight) {
+						const text = textEl.textContent?.trim() || '';
+						if (text.length > 10) {
+							return {
+								elementLeft,
+								elementRight,
+								viewportLeft,
+								viewportRight,
+								textPreview: text.substring(0, 50)
+							};
+						}
+					}
+				}
+				return null;
+			});
+
+			// Should have found visible text
+			expect(viewportInfo).toBeTruthy();
+
+			if (viewportInfo) {
+				// Text should be within viewport (not cut off at edges)
+				// The visible text element should be well within the viewport bounds
+				const elementLeftInViewport = viewportInfo.elementLeft - viewportInfo.viewportLeft;
+				const elementRightInViewport = viewportInfo.elementRight - viewportInfo.viewportLeft;
+				const viewportWidth = viewportInfo.viewportRight - viewportInfo.viewportLeft;
+
+				// Element should start after left edge (with padding)
+				expect(elementLeftInViewport).toBeGreaterThanOrEqual(0);
+
+				// Element should end before right edge (with padding)
+				expect(elementRightInViewport).toBeLessThanOrEqual(viewportWidth);
+
+				// Element should have reasonable width (not too narrow, indicates proper layout)
+				const elementWidth = elementRightInViewport - elementLeftInViewport;
+				expect(elementWidth).toBeGreaterThan(viewportWidth * 0.3); // At least 30% of viewport
+
+				console.log('Text properly centered after rapid taps:', {
+					textPreview: viewportInfo.textPreview,
+					elementPosition: { left: elementLeftInViewport, right: elementRightInViewport },
+					viewportWidth
+				});
+			}
 		}
 	});
 

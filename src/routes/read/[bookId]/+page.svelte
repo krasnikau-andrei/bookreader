@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import TapZones from '$lib/reader/TapZones.svelte';
 	import { calculateScrollPercent } from '$lib/reader/pagination';
+	import { animateScroll, jumpTo } from '$lib/reader/animation';
 	import { getBook, saveProgress, getProgress } from '$lib/storage';
 	import type { Book, Chapter } from '$lib/types';
 
@@ -70,6 +71,11 @@
 
 	onMount(async () => {
 		try {
+			if (!bookId) {
+				goto('/');
+				return;
+			}
+
 			book = await getBook(bookId);
 			if (!book) {
 				goto('/');
@@ -193,7 +199,8 @@
 				// Scroll to end of new chapter after it renders
 				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
-						scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+						// Jump without animation for chapter changes
+						jumpTo(scrollContainer, scrollContainer.scrollWidth);
 					}
 					// Allow navigation again after transition
 					setTimeout(() => {
@@ -206,10 +213,9 @@
 		}
 
 		// Scroll left with smooth animation
-		// Use scroll-snap's built-in behavior instead of smooth scrollTo
-		// This avoids fighting with CSS scroll-snap
+		// animateScroll cancels any running animation and starts fresh
 		const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
-		scrollContainer.scrollTo({ left: Math.max(0, newScroll), behavior: 'auto' });
+		animateScroll(scrollContainer, Math.max(0, newScroll), 250);
 	}
 
 	function handleRightTap() {
@@ -228,7 +234,8 @@
 				// Scroll to beginning of new chapter after it renders
 				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
-						scrollContainer.scrollLeft = 0;
+						// Jump without animation for chapter changes
+						jumpTo(scrollContainer, 0);
 					}
 					// Allow navigation again after transition
 					setTimeout(() => {
@@ -241,10 +248,9 @@
 		}
 
 		// Scroll right with smooth animation
-		// Use scroll-snap's built-in behavior instead of smooth scrollTo
-		// This avoids fighting with CSS scroll-snap
+		// animateScroll cancels any running animation and starts fresh
 		const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
-		scrollContainer.scrollTo({ left: Math.min(maxScroll, newScroll), behavior: 'auto' });
+		animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
 	}
 
 	function handleCenterTap() {
@@ -366,6 +372,8 @@
 		background: var(--color-readerBackground);
 		color: var(--color-readerText);
 		font-size: var(--font-size-reader-text, 1.5rem);
+		/* Use JS-based animation, not CSS smooth scroll */
+		scroll-behavior: auto;
 	}
 
 	.content :global(> *) {
