@@ -136,7 +136,13 @@
 		/>
 	</div>
 
-	<div class="books-grid" onclick={closeContextMenu}>
+	<div
+		class="books-grid"
+		role="button"
+		tabindex="0"
+		onclick={closeContextMenu}
+		onkeydown={(e) => e.key === 'Enter' && closeContextMenu()}
+	>
 		{#if books.length === 0}
 			<EmptyState />
 		{:else}
