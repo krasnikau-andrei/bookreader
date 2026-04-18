@@ -16,6 +16,10 @@
 	let loading = $state(true);
 	let bookId = $derived($page.params.bookId);
 
+	// Track if chapter is changing (DOM update in progress)
+	let isChangingChapter = $state(false);
+	let chapterRaf: number | null = null;
+
 	onMount(async () => {
 		try {
 			book = await getBook(bookId);
@@ -46,31 +50,56 @@
 		}
 	});
 
+	function snapToNearestColumn() {
+		// Snap to nearest column boundary immediately
+		if (scrollContainer) {
+			const clientWidth = scrollContainer.clientWidth;
+			const currentPage = Math.round(scrollContainer.scrollLeft / clientWidth);
+			scrollContainer.scrollTo({
+				left: currentPage * clientWidth,
+				behavior: 'auto'
+			});
+		}
+	}
+
 	function handleLeftTap() {
-		if (!scrollContainer) return;
+		if (!scrollContainer || isChangingChapter) return;
+
+		// Snap to nearest column immediately
+		// This cancels any ongoing smooth scroll and ensures correct position reading
+		snapToNearestColumn();
 
 		// Check if we're at the beginning of the chapter
 		if (scrollContainer.scrollLeft <= 0) {
 			// Go to previous chapter if available
 			if (currentChapter > 0) {
+				isChangingChapter = true;
 				currentChapter--;
 				// Scroll to end of new chapter after it renders
-				requestAnimationFrame(() => {
+				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
 						scrollContainer.scrollLeft = scrollContainer.scrollWidth;
 					}
+					// Allow navigation again after transition
+					setTimeout(() => {
+						isChangingChapter = false;
+						chapterRaf = null;
+					}, 100);
 				});
 			}
 			return;
 		}
 
-		// Scroll left within current chapter
+		// Scroll left with smooth animation
 		const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
 		scrollContainer.scrollTo({ left: Math.max(0, newScroll), behavior: 'smooth' });
 	}
 
 	function handleRightTap() {
-		if (!scrollContainer) return;
+		if (!scrollContainer || isChangingChapter) return;
+
+		// Snap to nearest column immediately
+		snapToNearestColumn();
 
 		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
 
@@ -78,18 +107,24 @@
 		if (scrollContainer.scrollLeft >= maxScroll - 1) {
 			// Go to next chapter if available
 			if (currentChapter < chapters.length - 1) {
+				isChangingChapter = true;
 				currentChapter++;
 				// Scroll to beginning of new chapter after it renders
-				requestAnimationFrame(() => {
+				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
 						scrollContainer.scrollLeft = 0;
 					}
+					// Allow navigation again after transition
+					setTimeout(() => {
+						isChangingChapter = false;
+						chapterRaf = null;
+					}, 100);
 				});
 			}
 			return;
 		}
 
-		// Scroll right within current chapter
+		// Scroll right with smooth animation
 		const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
 		scrollContainer.scrollTo({ left: Math.min(maxScroll, newScroll), behavior: 'smooth' });
 	}
