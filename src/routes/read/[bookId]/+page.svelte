@@ -20,6 +20,54 @@
 	let isChangingChapter = $state(false);
 	let chapterRaf: number | null = null;
 
+	// Flag to prevent URL updates during initial load
+	let isInitializing = $state(true);
+
+	// Track previous URL params to detect changes
+	let lastUrlChapter = $state(-1);
+	let lastUrlProgress = $state(-1);
+
+	// Reactive URL params from page store (use progress 0-10000 for font-independent positioning)
+	let urlParams = $derived({
+		chapter: parseInt($page.url.searchParams.get('chapter') || '-1', 10),
+		progress: parseInt($page.url.searchParams.get('progress') || '-1', 10)
+	});
+
+	// Store saved progress for fallback
+	let savedProgress: { chapterIndex: number; scrollPercent: number } | null = null;
+
+	function updateUrl(chapterIndex: number, progressValue: number, force = false) {
+		if (isInitializing && !force) return;
+		const url = new URL($page.url);
+		url.searchParams.set('chapter', chapterIndex.toString());
+		// Store progress as integer 0-10000 (represents 0.00% to 100.00%)
+		const progressInt = Math.round(progressValue * 10000);
+		url.searchParams.set('progress', progressInt.toString());
+		goto(url.toString(), { replaceState: true, keepFocus: true });
+	}
+
+	function applyUrlPosition(targetChapter: number, targetProgress: number) {
+		if (!scrollContainer || chapters.length === 0) return;
+
+		const clientWidth = scrollContainer.clientWidth;
+		const maxScroll = scrollContainer.scrollWidth - clientWidth;
+
+		// Set chapter if different
+		if (targetChapter >= 0 && targetChapter !== currentChapter && targetChapter < chapters.length) {
+			currentChapter = targetChapter;
+		}
+
+		// Set scroll position
+		if (targetProgress >= 0) {
+			const progressPercent = targetProgress / 10000;
+			scrollContainer.scrollLeft = maxScroll * progressPercent;
+		}
+
+		// Update last known URL params
+		lastUrlChapter = targetChapter;
+		lastUrlProgress = targetProgress;
+	}
+
 	onMount(async () => {
 		try {
 			book = await getBook(bookId);
@@ -32,42 +80,107 @@
 			const { parseEpubChapters } = await import('$lib/parsers/epub');
 			chapters = await parseEpubChapters(book.fileData);
 
-			// Load saved progress
+			// Get saved progress
 			const progress = await getProgress(bookId);
 			if (progress) {
-				currentChapter = Math.min(progress.chapterIndex, chapters.length - 1);
+				savedProgress = {
+					chapterIndex: progress.chapterIndex,
+					scrollPercent: progress.scrollPercent
+				};
 			}
 
-			// Restore scroll position after content renders
-			if (scrollContainer && progress) {
-				requestAnimationFrame(() => {
-					const maxScroll = scrollContainer!.scrollWidth - scrollContainer!.clientWidth;
-					scrollContainer!.scrollLeft = maxScroll * progress.scrollPercent;
-				});
+			// Check if URL has explicit params
+			const urlSearchParams = $page.url.searchParams;
+			const hasChapterParam = urlSearchParams.has('chapter');
+			const hasProgressParam = urlSearchParams.has('progress');
+
+			if (hasChapterParam || hasProgressParam) {
+				// Use URL params if present - URL params override saved progress
+				const targetChapter = urlParams.chapter >= 0 ? urlParams.chapter : 0;
+				currentChapter = Math.min(targetChapter, chapters.length - 1);
+				lastUrlChapter = urlParams.chapter;
+				lastUrlProgress = urlParams.progress;
+			} else if (savedProgress) {
+				// Fallback to saved progress
+				currentChapter = Math.min(savedProgress.chapterIndex, chapters.length - 1);
+				// Track that we're loading from saved progress, not URL
+				lastUrlChapter = 0; // Will be set to current chapter in $effect
+				lastUrlProgress = Math.round(savedProgress.scrollPercent * 10000);
+			} else {
+				// No saved progress, starting fresh
+				lastUrlChapter = 0;
+				lastUrlProgress = 0;
 			}
 		} finally {
 			loading = false;
 		}
 	});
 
-	function snapToNearestColumn() {
-		// Snap to nearest column boundary immediately
-		if (scrollContainer) {
-			const clientWidth = scrollContainer.clientWidth;
-			const currentPage = Math.round(scrollContainer.scrollLeft / clientWidth);
-			scrollContainer.scrollTo({
-				left: currentPage * clientWidth,
-				behavior: 'auto'
-			});
+	// React to URL param changes
+	$effect(() => {
+		if (isInitializing || chapters.length === 0 || !scrollContainer) return;
+
+		const newChapter = urlParams.chapter;
+		const newProgress = urlParams.progress;
+
+		// Check if URL params changed from last known values
+		if (newChapter !== lastUrlChapter || newProgress !== lastUrlProgress) {
+			applyUrlPosition(newChapter, newProgress);
 		}
-	}
+	});
+
+	// Restore scroll position after chapter content renders
+	$effect(() => {
+		// Track dependencies
+		const chapter = currentChapter;
+		const container = scrollContainer;
+		const isInit = isInitializing;
+
+		if (!container || chapters.length === 0 || !isInit) return;
+
+		// Get current URL state
+		const urlSearchParams = $page.url.searchParams;
+		const hasProgressParam = urlSearchParams.has('progress');
+		const urlProgress = urlParams.progress;
+
+		const clientWidth = container.clientWidth;
+		const maxScroll = container.scrollWidth - container.clientWidth;
+
+		let progressValue = 0;
+		let hasSetScrollPosition = false;
+
+		// Restore scroll position
+		if (hasProgressParam && urlProgress >= 0) {
+			// URL params take precedence
+			const progressPercent = urlProgress / 10000;
+			container.scrollLeft = maxScroll * progressPercent;
+			progressValue = progressPercent;
+			hasSetScrollPosition = true;
+		} else if (savedProgress && chapter === savedProgress.chapterIndex) {
+			// Restore from saved progress if on the same chapter
+			container.scrollLeft = maxScroll * savedProgress.scrollPercent;
+			progressValue = savedProgress.scrollPercent;
+			hasSetScrollPosition = true;
+		}
+
+		// If we haven't set a scroll position, we're at chapter start (progress 0)
+		// This is the default when opening a book without URL params or saved progress
+
+		// Set initial URL if not already set from params
+		const hasChapterParam = urlSearchParams.has('chapter');
+		if (!hasChapterParam && !hasProgressParam) {
+			// Always set URL on initial load
+			updateUrl(chapter, progressValue, true);
+		}
+
+		// Mark initialization complete
+		setTimeout(() => {
+			isInitializing = false;
+		}, 100);
+	});
 
 	function handleLeftTap() {
 		if (!scrollContainer || isChangingChapter) return;
-
-		// Snap to nearest column immediately
-		// This cancels any ongoing smooth scroll and ensures correct position reading
-		snapToNearestColumn();
 
 		// Check if we're at the beginning of the chapter
 		if (scrollContainer.scrollLeft <= 0) {
@@ -75,6 +188,8 @@
 			if (currentChapter > 0) {
 				isChangingChapter = true;
 				currentChapter--;
+				// Update URL immediately for chapter change
+				updateUrl(currentChapter, 1, true); // 1 = 100% = end of chapter
 				// Scroll to end of new chapter after it renders
 				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
@@ -91,15 +206,14 @@
 		}
 
 		// Scroll left with smooth animation
+		// Use scroll-snap's built-in behavior instead of smooth scrollTo
+		// This avoids fighting with CSS scroll-snap
 		const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
-		scrollContainer.scrollTo({ left: Math.max(0, newScroll), behavior: 'smooth' });
+		scrollContainer.scrollTo({ left: Math.max(0, newScroll), behavior: 'auto' });
 	}
 
 	function handleRightTap() {
 		if (!scrollContainer || isChangingChapter) return;
-
-		// Snap to nearest column immediately
-		snapToNearestColumn();
 
 		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
 
@@ -109,6 +223,8 @@
 			if (currentChapter < chapters.length - 1) {
 				isChangingChapter = true;
 				currentChapter++;
+				// Update URL immediately for chapter change
+				updateUrl(currentChapter, 0, true); // 0 = start of chapter
 				// Scroll to beginning of new chapter after it renders
 				chapterRaf = requestAnimationFrame(() => {
 					if (scrollContainer) {
@@ -125,8 +241,10 @@
 		}
 
 		// Scroll right with smooth animation
+		// Use scroll-snap's built-in behavior instead of smooth scrollTo
+		// This avoids fighting with CSS scroll-snap
 		const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
-		scrollContainer.scrollTo({ left: Math.min(maxScroll, newScroll), behavior: 'smooth' });
+		scrollContainer.scrollTo({ left: Math.min(maxScroll, newScroll), behavior: 'auto' });
 	}
 
 	function handleCenterTap() {
@@ -134,13 +252,16 @@
 	}
 
 	function handleScroll() {
-		if (!scrollContainer || !bookId) return;
+		if (!scrollContainer || !bookId || isInitializing) return;
 
 		const percent = calculateScrollPercent(
 			scrollContainer.scrollLeft,
 			scrollContainer.scrollWidth,
 			scrollContainer.clientWidth
 		);
+
+		// Update URL with current position (using progress for font-independent sharing)
+		updateUrl(currentChapter, percent);
 
 		// Debounced save
 		debouncedSaveProgress(bookId, currentChapter, percent);

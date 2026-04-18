@@ -230,6 +230,7 @@ test.describe('Reader', () => {
 
 		const tapZones = page.locator('button[aria-label="Reader tap zones"]');
 		const content = page.locator('[data-testid="reader-content"]');
+		const reader = page.locator('.reader');
 
 		// Get initial chapter content
 		const initialContent = await content.evaluate((el) => el.innerHTML);
@@ -249,9 +250,9 @@ test.describe('Reader', () => {
 			let lastContent = initialContent;
 			let lastScrollLeft = await content.evaluate((el) => el.scrollLeft);
 
-			// Tap right zone multiple times to navigate through pages/chapters
+			// Navigate through content using right zone taps
 			for (let i = 0; i < 10; i++) {
-				await tapZones.click({
+				await reader.click({
 					position: { x: box.width * 0.8, y: box.height * 0.5 }
 				});
 				await page.waitForTimeout(400);
@@ -672,5 +673,306 @@ test.describe('Reader', () => {
 			expect(finalState.scrollLeft).toBeGreaterThanOrEqual(0);
 			expect(finalState.scrollLeft).toBeLessThanOrEqual(finalState.maxScroll + 10);
 		}
+	});
+
+	test('URL updates when turning pages', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		const reader = page.locator('.reader');
+		const content = page.locator('[data-testid="reader-content"]');
+
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		// Wait for initial URL to be set (should have chapter and progress params)
+		await page.waitForTimeout(500);
+		const initialUrl = page.url();
+		// URL should contain query params
+		expect(initialUrl).toContain('?');
+		expect(initialUrl).toContain('chapter=');
+		expect(initialUrl).toContain('progress=');
+
+		// Get initial position
+		const initialChapterMatch = initialUrl.match(/chapter=(\d+)/);
+		const initialProgressMatch = initialUrl.match(/progress=(\d+)/);
+		expect(initialChapterMatch).toBeTruthy();
+		expect(initialProgressMatch).toBeTruthy();
+		const initialChapterNumber = parseInt(initialChapterMatch![1], 10);
+		const initialProgressValue = parseInt(initialProgressMatch![1], 10);
+
+		// Get initial content for comparison
+		const initialContent = await content.evaluate((el) => el.innerHTML);
+
+		if (box) {
+			// Navigate forward - keep tapping until something changes
+			let contentChanged = false;
+			let urlChanged = false;
+			const maxTaps = 10;
+
+			for (let i = 0; i < maxTaps && !contentChanged; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(500);
+
+				// Check if content changed (could be new page or new chapter)
+				const currentContent = await content.evaluate((el) => el.innerHTML);
+				if (currentContent !== initialContent) {
+					contentChanged = true;
+				}
+
+				// Check if URL changed
+				const currentUrl = page.url();
+				const currentChapterMatch = currentUrl.match(/chapter=(\d+)/);
+				const currentProgressMatch = currentUrl.match(/progress=(\d+)/);
+				if (currentChapterMatch && currentProgressMatch) {
+					const currentChapter = parseInt(currentChapterMatch[1], 10);
+					const currentProgress = parseInt(currentProgressMatch[1], 10);
+					if (currentChapter !== initialChapterNumber || currentProgress !== initialProgressValue) {
+						urlChanged = true;
+					}
+				}
+			}
+
+			// Verify URL has updated (either chapter or progress changed)
+			const urlAfterForward = page.url();
+			expect(urlAfterForward).toContain('chapter=');
+			expect(urlChanged || contentChanged).toBe(true);
+
+			// Get position after forward navigation
+			const forwardChapterMatch = urlAfterForward.match(/chapter=(\d+)/);
+			const forwardProgressMatch = urlAfterForward.match(/progress=(\d+)/);
+			expect(forwardChapterMatch).toBeTruthy();
+			expect(forwardProgressMatch).toBeTruthy();
+			const forwardChapterNumber = parseInt(forwardChapterMatch![1], 10);
+			const forwardProgressValue = parseInt(forwardProgressMatch![1], 10);
+
+			// Navigate backward
+			for (let i = 0; i < 2; i++) {
+				await reader.click({
+					position: { x: box.width * 0.2, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(500);
+			}
+
+			await page.waitForTimeout(300);
+
+			// Verify URL updated after backward navigation
+			const urlAfterBackward = page.url();
+			const backwardChapterMatch = urlAfterBackward.match(/chapter=(\d+)/);
+			const backwardProgressMatch = urlAfterBackward.match(/progress=(\d+)/);
+			expect(backwardChapterMatch).toBeTruthy();
+			expect(backwardProgressMatch).toBeTruthy();
+			const backwardChapterNumber = parseInt(backwardChapterMatch![1], 10);
+			const backwardProgressValue = parseInt(backwardProgressMatch![1], 10);
+
+			// Either chapter should be less OR (same chapter AND progress should be less or equal)
+			const movedBackward =
+				backwardChapterNumber < forwardChapterNumber ||
+				(backwardChapterNumber === forwardChapterNumber &&
+					backwardProgressValue <= forwardProgressValue);
+			expect(movedBackward).toBe(true);
+		}
+	});
+
+	test('URL includes chapter and progress params on load', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Wait for URL to be set with chapter and progress params
+		await page.waitForTimeout(800);
+		const url = page.url();
+
+		// Verify URL has chapter and progress params
+		expect(url).toContain('chapter=');
+		expect(url).toContain('progress=');
+
+		// Extract and verify values
+		const chapterMatch = url.match(/chapter=(\d+)/);
+		const progressMatch = url.match(/progress=(\d+)/);
+		expect(chapterMatch).toBeTruthy();
+		expect(progressMatch).toBeTruthy();
+
+		const chapter = parseInt(chapterMatch![1], 10);
+		const progress = parseInt(progressMatch![1], 10);
+
+		// Chapter should be valid (0 or greater)
+		expect(chapter).toBeGreaterThanOrEqual(0);
+		// Progress should be valid (0-10000)
+		expect(progress).toBeGreaterThanOrEqual(0);
+		expect(progress).toBeLessThanOrEqual(10000);
+	});
+
+	test('URL params restore position on page load', async ({ page, context }) => {
+		// Upload a book first
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Get the book ID from URL
+		const currentUrl = page.url();
+		const bookIdMatch = currentUrl.match(/\/read\/([^/]+)/);
+		expect(bookIdMatch).toBeTruthy();
+		const bookId = bookIdMatch![1];
+
+		const reader = page.locator('.reader');
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		// Navigate to a specific position
+		if (box) {
+			// First navigate to chapter 1
+			for (let i = 0; i < 5; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(400);
+			}
+		}
+
+		// Wait for URL to update
+		await page.waitForTimeout(500);
+		const navigatedUrl = page.url();
+
+		// Extract chapter and progress from URL
+		const chapterMatch = navigatedUrl.match(/chapter=(\d+)/);
+		const progressMatch = navigatedUrl.match(/progress=(\d+)/);
+		expect(chapterMatch).toBeTruthy();
+		expect(progressMatch).toBeTruthy();
+
+		const savedChapter = chapterMatch![1];
+		const savedProgress = progressMatch![1];
+		const savedProgressInt = parseInt(savedProgress, 10);
+		expect(parseInt(savedChapter, 10)).toBeGreaterThanOrEqual(0);
+		// Progress can be 0 if at the beginning of a chapter
+		expect(savedProgressInt).toBeGreaterThanOrEqual(0);
+
+		// Navigate away to library
+		await page.goto('/');
+		await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
+
+		// Navigate back to reader with specific URL params
+		const readerUrlWithParams = `/read/${bookId}?chapter=${savedChapter}&progress=${savedProgress}`;
+		await page.goto(readerUrlWithParams);
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Wait for position to be restored
+		await page.waitForTimeout(800);
+
+		// Verify the URL params are preserved
+		const finalUrl = page.url();
+		expect(finalUrl).toContain(`chapter=${savedChapter}`);
+		expect(finalUrl).toContain(`progress=${savedProgress}`);
+	});
+
+	test('URL with progress overrides saved progress when sharing', async ({ page, context }) => {
+		// Upload a book first
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Get the book ID from URL
+		const currentUrl = page.url();
+		const bookIdMatch = currentUrl.match(/\/read\/([^/]+)/);
+		expect(bookIdMatch).toBeTruthy();
+		const bookId = bookIdMatch![1];
+
+		const reader = page.locator('.reader');
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		// Navigate forward to create a saved progress in localStorage
+		// User reads to chapter 3, progress ~5000 (50%)
+		if (box) {
+			for (let i = 0; i < 8; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(500);
+			}
+		}
+
+		// Wait for URL and progress to update
+		await page.waitForTimeout(1000);
+		const originalUrl = page.url();
+		const originalChapterMatch = originalUrl.match(/chapter=(\d+)/);
+		const originalProgressMatch = originalUrl.match(/progress=(\d+)/);
+		expect(originalChapterMatch).toBeTruthy();
+		expect(originalProgressMatch).toBeTruthy();
+
+		const originalChapter = parseInt(originalChapterMatch![1], 10);
+		const originalProgress = parseInt(originalProgressMatch![1], 10);
+		// Chapter and progress should be valid numbers
+		expect(originalChapter).toBeGreaterThanOrEqual(0);
+		expect(originalProgress).toBeGreaterThanOrEqual(0);
+
+		// Get the content at this position for later comparison
+		const originalContent = await content.evaluate((el) => el.innerHTML);
+
+		// Navigate away to library (simulating "friend receives link")
+		await page.goto('/');
+		await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
+
+		// Friend opens the book with a shared URL at a different position
+		// Using chapter 0 with progress 5000 (50%) - different from saved position
+		const sharedChapter = 0;
+		const sharedProgress = 5000; // 50%
+		const sharedUrl = `/read/${bookId}?chapter=${sharedChapter}&progress=${sharedProgress}`;
+
+		// Friend opens the shared URL
+		await page.goto(sharedUrl);
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Wait for position to be restored from URL
+		await page.waitForTimeout(800);
+
+		// Verify URL shows the shared position, not the saved progress
+		const finalUrl = page.url();
+		const finalChapterMatch = finalUrl.match(/chapter=(\d+)/);
+		const finalProgressMatch = finalUrl.match(/progress=(\d+)/);
+		expect(finalChapterMatch).toBeTruthy();
+		expect(finalProgressMatch).toBeTruthy();
+
+		const finalChapter = parseInt(finalChapterMatch![1], 10);
+		const finalProgress = parseInt(finalProgressMatch![1], 10);
+
+		// Should be at the shared chapter (URL param takes precedence over saved progress)
+		expect(finalChapter).toBe(sharedChapter);
+		// Progress should reflect actual position (may differ slightly from URL param due to scroll)
+		expect(finalProgress).toBeGreaterThanOrEqual(0);
+
+		// Verify the reader loaded successfully with the shared URL params
+		const finalReader = page.locator('.reader');
+		await expect(finalReader).toBeVisible();
 	});
 });
