@@ -224,6 +224,12 @@
 		background: transparent !important;
 	}
 
+	.content :global(img) {
+		filter: var(--image-filter, none);
+		max-width: 100%;
+		height: auto;
+	}
+
 	.overlay {
 		position: absolute;
 		top: 0;

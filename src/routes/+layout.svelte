@@ -43,8 +43,9 @@
 		--font-size-md: {theme.fontSize.md};
 		--font-size-lg: {theme.fontSize.lg};
 --font-size-xl: {theme.fontSize.xl};
---font-size-reader-text: {theme.fontSize.readerText};
---font-family: {theme.fontFamily}
+    --font-size-reader-text: {theme.fontSize.readerText};
+    --font-family: {theme.fontFamily};
+    --image-filter: {theme.imageFilter}
 "
 >
 	{@render children()}

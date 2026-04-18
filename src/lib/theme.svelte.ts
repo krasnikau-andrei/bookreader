@@ -13,6 +13,7 @@ export interface Theme {
 		error: string;
 		overlay: string;
 	};
+	imageFilter: string;
 	fontFamily: string;
 	padding: {
 		xs: string;
@@ -52,6 +53,7 @@ export const theme: Theme = {
 		error: '#ff4444',
 		overlay: 'rgba(40, 40, 60, 0.95)'
 	},
+	imageFilter: 'invert(100%) hue-rotate(180deg) brightness(0.8)',
 	fontFamily: "'Bookery', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 	padding: {
 		xs: '4px',
