@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { transformLinks } from './link-transformer';
 
 export interface ParsedBook {
 	title: string;
@@ -279,16 +280,23 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 			}
 		}
 
-		// Serialize the modified HTML back to string
-		const serializer = new XMLSerializer();
-		const processedContent = serializer.serializeToString(chapterDoc);
+// Serialize the modified HTML back to string
+    const serializer = new XMLSerializer();
+    let processedContent = serializer.serializeToString(chapterDoc);
 
-		chapters.push({
-			id: idref,
-			title,
-			content: processedContent,
-			filePath
-		});
+    // Transform internal links for navigation
+    processedContent = transformLinks(
+      processedContent,
+      filePath,
+      filePathToChapterIndex
+    );
+
+    chapters.push({
+      id: idref,
+      title,
+      content: processedContent,
+      filePath
+    });
 
 		filePathToChapterIndex.set(filePath, chapterIndex);
 		chapterIndex++;
