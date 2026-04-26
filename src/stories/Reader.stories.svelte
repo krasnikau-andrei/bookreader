@@ -1,7 +1,6 @@
 <script module lang="ts">
-	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import ReaderPage from '../routes/read/[bookId]/+page.svelte';
-	import TapZones from '$lib/reader/TapZones.svelte';
+import { defineMeta } from '@storybook/addon-svelte-csf';
+import ReaderPage from '../routes/read/[bookId]/+page.svelte';
 
 	const { Story } = defineMeta({
 		title: 'Pages/Reader',
@@ -36,15 +35,10 @@
 				<p>
 					Winston made for the stairs. It was no use trying the lift. Even at the best of times it
 					was seldom working, and at present the electric current was cut off during daylight hours.
-				</p>
-			</div>
-			<TapZones
-				onLeftTap={() => console.log('Previous')}
-				onCenterTap={() => console.log('Menu')}
-				onRightTap={() => console.log('Next')}
-			/>
-		</div>
-	</div>
+      </p>
+    </div>
+  </div>
+</div>
 </Story>
 
 <Story name="WithMenuOverlay" asChild>
@@ -69,15 +63,10 @@
 					>
 						<path d="M19 12H5M12 19l-7-7 7-7" />
 					</svg>
-				</button>
-			</div>
-			<TapZones
-				onLeftTap={() => console.log('Previous')}
-				onCenterTap={() => console.log('Menu')}
-				onRightTap={() => console.log('Next')}
-			/>
-		</div>
-	</div>
+        </button>
+      </div>
+    </div>
+  </div>
 </Story>
 
 <Story name="LoadingState" asChild>
