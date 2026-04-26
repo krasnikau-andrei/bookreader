@@ -12,4 +12,14 @@
 * Test should provide some debug info in case of failure.
 * During development run only tests that related to task. Then run all the test one time before finishing the work.
 
+### Unit Tests (Vitest)
+- Run: `bun run test:unit` or `bunx vitest run`
+- Note: Use `bunx vitest run` instead of `bun test` because Bun's test runner doesn't provide DOMParser/XMLSerializer globals even with jsdom environment
+- Vitest properly sets up jsdom environment with DOM globals available
+
+### E2E Tests (Playwright)
+- Run: `bun run test:e2e` or `bunx playwright test`
+- Tests use real browser with actual DOM rendering
+- Test files: `**/*.e2e.{ts,js}`
+
 ---
