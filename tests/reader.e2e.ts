@@ -1088,8 +1088,78 @@ test.describe('Reader', () => {
 		// Progress should reflect actual position (may differ slightly from URL param due to scroll)
 		expect(finalProgress).toBeGreaterThanOrEqual(0);
 
-		// Verify the reader loaded successfully with the shared URL params
-		const finalReader = page.locator('.reader');
-		await expect(finalReader).toBeVisible();
-	});
+  // Verify the reader loaded successfully with the shared URL params
+    const finalReader = page.locator('.reader');
+    await expect(finalReader).toBeVisible();
+  });
+
+  test('text can be selected in reader', async ({ page }) => {
+    // Upload and open a book
+    const fileInput = page.locator('input[type="file"]');
+    const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+    await fileInput.setInputFiles(testBookPath);
+    await page.waitForSelector('[data-testid="book-card"]');
+    const bookCard = page.locator('[data-testid="book-card"]').first();
+    await bookCard.click();
+    await page.waitForSelector('.reader');
+    await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+    const reader = page.locator('.reader');
+    const content = page.locator('[data-testid="reader-content"]');
+
+    const box = await reader.boundingBox();
+    expect(box).toBeTruthy();
+
+    if (box) {
+      // Navigate to a chapter with text content (skip cover pages)
+      for (let i = 0; i < 5; i++) {
+        await reader.click({
+          position: { x: box.width * 0.8, y: box.height * 0.5 }
+        });
+        await page.waitForTimeout(300);
+      }
+
+      // Wait for content to settle
+      await page.waitForTimeout(500);
+
+      // Find a text element to select
+      const textElement = await content.locator('p, span').filter({ hasText: /\w{10,}/ }).first();
+      await expect(textElement).toBeVisible();
+
+      // Get text element bounds
+      const textBox = await textElement.boundingBox();
+      expect(textBox).toBeTruthy();
+
+      if (textBox) {
+        // Simulate text selection by clicking and dragging
+        const startX = textBox.x + 10;
+        const startY = textBox.y + textBox.height / 2;
+        const endX = textBox.x + textBox.width - 10;
+        const endY = startY;
+
+        // Start selection
+        await page.mouse.move(startX, startY);
+        await page.mouse.down();
+        await page.mouse.move(endX, endY, { steps: 10 });
+        await page.mouse.up();
+
+        // Wait for selection to register
+        await page.waitForTimeout(300);
+
+        // Verify text is selected using window.getSelection()
+        const selection = await page.evaluate(() => {
+          const sel = window.getSelection();
+          return {
+            text: sel?.toString() || '',
+            rangeCount: sel?.rangeCount || 0
+          };
+        });
+
+        // Should have selected some text
+        expect(selection.rangeCount).toBeGreaterThan(0);
+        expect(selection.text.length).toBeGreaterThan(0);
+        console.log('Selected text:', selection.text.substring(0, 50));
+      }
+    }
+  });
 });
