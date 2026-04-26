@@ -249,7 +249,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]>
 		const href = manifestMap.get(idref);
 		if (!href) continue;
 
-		const filePath = basePath + href;
+  const filePath = resolvePath(opfPath, href);
 		const content = await zip.file(filePath)?.async('string');
 		if (!content) continue;
 
