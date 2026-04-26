@@ -190,9 +190,14 @@ function arrayBufferToBase64(buffer: Uint8Array): string {
 	return btoa(binary);
 }
 
-import type { Chapter } from '$lib/types';
+import type { Chapter, ChapterNavigationMap } from '$lib/types';
 
-export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]> {
+export interface ParsedChapters {
+	chapters: Chapter[];
+	navigationMap: ChapterNavigationMap;
+}
+
+export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChapters> {
 	let zip: JSZip;
 	try {
 		zip = await JSZip.loadAsync(buffer);
@@ -240,7 +245,8 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]>
 
 	// Extract chapters in spine order
 	const chapters: Chapter[] = [];
-	const basePath = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
+	const filePathToChapterIndex = new Map<string, number>();
+	let chapterIndex = 0;
 
 	for (const itemref of itemrefs) {
 		const idref = itemref.getAttribute('idref');
@@ -249,7 +255,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]>
 		const href = manifestMap.get(idref);
 		if (!href) continue;
 
-  const filePath = resolvePath(opfPath, href);
+		const filePath = resolvePath(opfPath, href);
 		const content = await zip.file(filePath)?.async('string');
 		if (!content) continue;
 
@@ -277,15 +283,23 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]>
 		const serializer = new XMLSerializer();
 		const processedContent = serializer.serializeToString(chapterDoc);
 
-chapters.push({
-      id: idref,
-      title,
-      content: processedContent,
-      filePath
-    });
+		chapters.push({
+			id: idref,
+			title,
+			content: processedContent,
+			filePath
+		});
+
+		filePathToChapterIndex.set(filePath, chapterIndex);
+		chapterIndex++;
 	}
 
-	return chapters;
+	return {
+		chapters,
+		navigationMap: {
+			filePathToChapterIndex
+		}
+	};
 }
 
 async function extractImageAsDataUri(zip: JSZip, imagePath: string): Promise<string | null> {

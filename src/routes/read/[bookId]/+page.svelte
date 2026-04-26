@@ -81,9 +81,10 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 				return;
 			}
 
-			// Parse EPUB to get chapters
-			const { parseEpubChapters } = await import('$lib/parsers/epub');
-			chapters = await parseEpubChapters(book.fileData);
+		// Parse EPUB to get chapters
+		const { parseEpubChapters } = await import('$lib/parsers/epub');
+		const result = await parseEpubChapters(book.fileData);
+		chapters = result.chapters;
 
 			// Get saved progress
 			const progress = await getProgress(bookId);
