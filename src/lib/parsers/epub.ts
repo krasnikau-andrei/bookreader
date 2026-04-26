@@ -256,7 +256,13 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const href = manifestMap.get(idref);
 		if (!href) continue;
 
-		const filePath = resolvePath(opfPath, href);
+const filePath = resolvePath(opfPath, href);
+
+		// IMPORTANT: Build the navigation map BEFORE processing content
+		// This ensures all file paths are available when transforming links
+		filePathToChapterIndex.set(filePath, chapterIndex);
+		chapterIndex++;
+
 		const content = await zip.file(filePath)?.async('string');
 		if (!content) continue;
 
@@ -280,26 +286,24 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 			}
 		}
 
-// Serialize the modified HTML back to string
-    const serializer = new XMLSerializer();
-    let processedContent = serializer.serializeToString(chapterDoc);
+		// Serialize the modified HTML back to string
+		const serializer = new XMLSerializer();
+		let processedContent = serializer.serializeToString(chapterDoc);
 
-    // Transform internal links for navigation
-    processedContent = transformLinks(
-      processedContent,
-      filePath,
-      filePathToChapterIndex
-    );
+		// Transform internal links for navigation
+		// Now filePathToChapterIndex contains ALL chapters
+		processedContent = transformLinks(
+			processedContent,
+			filePath,
+			filePathToChapterIndex
+		);
 
-    chapters.push({
-      id: idref,
-      title,
-      content: processedContent,
-      filePath
-    });
-
-		filePathToChapterIndex.set(filePath, chapterIndex);
-		chapterIndex++;
+		chapters.push({
+			id: idref,
+			title,
+			content: processedContent,
+			filePath
+		});
 	}
 
 	return {
