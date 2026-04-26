@@ -16,6 +16,11 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 	let loading = $state(true);
 	let bookId = $derived($page.params.bookId);
 
+	// Link click handling
+	let showLinkError = $state(false);
+	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
+	let pendingFragment: string | null = $state(null);
+
 	// Track if chapter is changing (DOM update in progress)
 	let isChangingChapter = $state(false);
 	let chapterRaf: number | null = null;
@@ -141,8 +146,18 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 		const chapter = currentChapter;
 		const container = scrollContainer;
 		const isInit = isInitializing;
+		const fragment = pendingFragment;
 
 		if (!container || chapters.length === 0 || !isInit) return;
+
+		// Handle pending fragment
+		if (fragment) {
+			// Wait for DOM to settle
+			requestAnimationFrame(() => {
+				scrollToFragment(fragment);
+				pendingFragment = null;
+			});
+		}
 
 		// Get current URL state
 		const urlSearchParams = $page.url.searchParams;
@@ -258,19 +273,89 @@ function handleCenterTap() {
 }
 
 function handleContentClick(event: MouseEvent) {
-	const target = event.currentTarget as HTMLElement;
-	const rect = target.getBoundingClientRect();
-	const x = event.clientX - rect.left;
-	const relativeX = x / rect.width;
+		const target = event.target as HTMLElement;
+		const link = target.closest('a');
 
-	if (relativeX < 0.33) {
-		handleLeftTap();
-	} else if (relativeX < 0.67) {
-		handleCenterTap();
-	} else {
-		handleRightTap();
+		if (link) {
+			// Handle internal links
+			if (link.classList.contains('internal-link')) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				const chapterAttr = link.getAttribute('data-chapter');
+				const fragmentAttr = link.getAttribute('data-fragment');
+
+				if (chapterAttr) {
+					const targetChapter = parseInt(chapterAttr, 10);
+
+					if (targetChapter !== currentChapter) {
+						// Navigate to different chapter
+						currentChapter = targetChapter;
+
+						// If fragment exists, scroll after chapter loads
+						if (fragmentAttr) {
+							pendingFragment = fragmentAttr;
+						}
+
+						// Update URL
+						updateUrl(targetChapter, 0, true);
+					} else if (fragmentAttr) {
+						// Same chapter, just scroll to fragment
+						scrollToFragment(fragmentAttr);
+					}
+				}
+				return;
+			}
+
+			// Handle missing links
+			if (link.classList.contains('missing-link')) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				const originalHref = link.getAttribute('data-original-href') || 'unknown';
+				linkErrorInfo = {
+					originalHref,
+					message: `This link points to "${originalHref}" which is not available in this book.`
+				};
+				showLinkError = true;
+				return;
+			}
+
+			// External links - let browser handle with target="_blank"
+			if (link.classList.contains('external-link')) {
+				// Browser will handle due to target="_blank"
+				return;
+			}
+		}
+
+		// Original tap zone logic
+		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		const x = event.clientX - rect.left;
+		const relativeX = x / rect.width;
+
+		if (relativeX < 0.33) {
+			handleLeftTap();
+		} else if (relativeX < 0.67) {
+			handleCenterTap();
+		} else {
+			handleRightTap();
+		}
 	}
-}
+
+	function scrollToFragment(fragmentId: string) {
+		if (!scrollContainer) return;
+
+		const element = scrollContainer.querySelector(`#${CSS.escape(fragmentId)}`);
+		if (element) {
+			// Scroll to element
+			element.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+
+			// Update URL with fragment for sharing
+			const url = new URL($page.url);
+			url.searchParams.set('fragment', fragmentId);
+			goto(url.toString(), { replaceState: true, keepFocus: true });
+		}
+	}
 
 function handleScroll() {
 		if (!scrollContainer || !bookId || isInitializing) return;
@@ -323,25 +408,36 @@ function handleScroll() {
 				</div>
 			{/if}
 
-			{#if showOverlay}
-				<div class="overlay" transition:fade={{ duration: 200 }}>
-					<button class="back-button" onclick={goBack} aria-label="Go back">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M19 12H5M12 19l-7-7 7-7" />
-						</svg>
-					</button>
+{#if showOverlay}
+			<div class="overlay" transition:fade={{ duration: 200 }}>
+				<button class="back-button" onclick={goBack} aria-label="Go back">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M19 12H5M12 19l-7-7 7-7" />
+					</svg>
+				</button>
+			</div>
+		{/if}
+
+		{#if showLinkError && linkErrorInfo}
+			<div class="link-error-popup" data-testid="link-error-popup" transition:fade={{ duration: 200 }}>
+				<div class="popup-content">
+					<h3>Link Not Available</h3>
+					<p>{linkErrorInfo.message}</p>
+					<p class="debug-info">Original link: {linkErrorInfo.originalHref}</p>
+					<button onclick={() => showLinkError = false}>Close</button>
 				</div>
-			{/if}
+			</div>
+		{/if}
 		</div>
 	{/if}
 </div>
@@ -431,5 +527,49 @@ function handleScroll() {
 
 	.back-button:hover {
 		background: #f5f5f5;
+	}
+
+	.link-error-popup {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+	}
+
+	.popup-content {
+		background: white;
+		padding: 1.5rem;
+		border-radius: 8px;
+		max-width: 80%;
+		text-align: center;
+	}
+
+	.popup-content h3 {
+		margin-top: 0;
+		color: #d32f2f;
+	}
+
+	.debug-info {
+		font-family: monospace;
+		font-size: 0.85rem;
+		color: #666;
+		background: #f5f5f5;
+		padding: 0.5rem;
+		border-radius: 4px;
+		margin: 1rem 0;
+		word-break: break-all;
+	}
+
+	.popup-content button {
+		background: #4a9eff;
+		color: white;
+		border: none;
+		padding: 0.75rem 1.5rem;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1rem;
 	}
 </style>
