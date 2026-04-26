@@ -2,9 +2,8 @@
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
-	import TapZones from '$lib/reader/TapZones.svelte';
-	import { calculateScrollPercent } from '$lib/reader/pagination';
+import { goto } from '$app/navigation';
+import { calculateScrollPercent } from '$lib/reader/pagination';
 	import { animateScroll, jumpTo } from '$lib/reader/animation';
 	import { getBook, saveProgress, getProgress } from '$lib/storage';
 	import type { Book, Chapter } from '$lib/types';
@@ -253,11 +252,26 @@
 		animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
 	}
 
-	function handleCenterTap() {
-		showOverlay = !showOverlay;
-	}
+function handleCenterTap() {
+	showOverlay = !showOverlay;
+}
 
-	function handleScroll() {
+function handleContentClick(event: MouseEvent) {
+	const target = event.currentTarget as HTMLElement;
+	const rect = target.getBoundingClientRect();
+	const x = event.clientX - rect.left;
+	const relativeX = x / rect.width;
+
+	if (relativeX < 0.33) {
+		handleLeftTap();
+	} else if (relativeX < 0.67) {
+		handleCenterTap();
+	} else {
+		handleRightTap();
+	}
+}
+
+function handleScroll() {
 		if (!scrollContainer || !bookId || isInitializing) return;
 
 		const percent = calculateScrollPercent(
@@ -301,17 +315,12 @@
 					class="content"
 					bind:this={scrollContainer}
 					onscroll={handleScroll}
+					onclick={handleContentClick}
 					data-testid="reader-content"
 				>
 					{@html chapters[currentChapter]?.content}
 				</div>
 			{/if}
-
-			<TapZones
-				onLeftTap={handleLeftTap}
-				onCenterTap={handleCenterTap}
-				onRightTap={handleRightTap}
-			/>
 
 			{#if showOverlay}
 				<div class="overlay" transition:fade={{ duration: 200 }}>

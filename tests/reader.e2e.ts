@@ -192,11 +192,11 @@ test.describe('Reader', () => {
 		const backButton = page.getByRole('button', { name: 'Go back' });
 		await expect(backButton).not.toBeVisible();
 
-		// Tap center to show overlay (click on tap-zones button)
-		const tapZones = page.locator('button[aria-label="Reader tap zones"]');
-		const box = await tapZones.boundingBox();
+		// Tap center to show overlay (click on content div at center)
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
 		if (box) {
-			await tapZones.click({
+			await content.click({
 				position: { x: box.width * 0.5, y: box.height * 0.5 }
 			});
 		}
@@ -206,7 +206,7 @@ test.describe('Reader', () => {
 
 		// Tap center again to hide overlay
 		if (box) {
-			await tapZones.click({
+			await content.click({
 				position: { x: box.width * 0.5, y: box.height * 0.5 }
 			});
 		}
@@ -228,14 +228,12 @@ test.describe('Reader', () => {
 		// Wait for content to load
 		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 
-		const tapZones = page.locator('button[aria-label="Reader tap zones"]');
 		const content = page.locator('[data-testid="reader-content"]');
-		const reader = page.locator('.reader');
 
 		// Get initial chapter content
 		const initialContent = await content.evaluate((el) => el.innerHTML);
 
-		const box = await tapZones.boundingBox();
+		const box = await content.boundingBox();
 		expect(box).toBeTruthy();
 
 		if (box) {
@@ -250,9 +248,9 @@ test.describe('Reader', () => {
 			let lastContent = initialContent;
 			let lastScrollLeft = await content.evaluate((el) => el.scrollLeft);
 
-			// Navigate through content using right zone taps
+			// Navigate through content using right zone taps (click at 80% width for right zone)
 			for (let i = 0; i < 10; i++) {
-				await reader.click({
+				await content.click({
 					position: { x: box.width * 0.8, y: box.height * 0.5 }
 				});
 				await page.waitForTimeout(400);
@@ -277,9 +275,9 @@ test.describe('Reader', () => {
 			// Verify that some form of navigation occurred (either content or scroll changed)
 			expect(contentChanged || scrollChanged).toBe(true);
 
-			// Tap left zone to navigate back
+			// Tap left zone to navigate back (click at 20% width for left zone)
 			for (let i = 0; i < 5; i++) {
-				await tapZones.click({
+				await content.click({
 					position: { x: box.width * 0.2, y: box.height * 0.5 }
 				});
 				await page.waitForTimeout(400);
