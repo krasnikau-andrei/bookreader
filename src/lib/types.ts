@@ -17,7 +17,12 @@ export interface ReadingProgress {
 }
 
 export interface Chapter {
-	id: string;
-	title: string;
-	content: string;
+  id: string;
+  title: string;
+  content: string;
+  filePath: string;
+}
+
+export interface ChapterNavigationMap {
+  filePathToChapterIndex: Map<string, number>;
 }

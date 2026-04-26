@@ -277,11 +277,12 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<Chapter[]>
 		const serializer = new XMLSerializer();
 		const processedContent = serializer.serializeToString(chapterDoc);
 
-		chapters.push({
-			id: idref,
-			title,
-			content: processedContent
-		});
+chapters.push({
+      id: idref,
+      title,
+      content: processedContent,
+      filePath
+    });
 	}
 
 	return chapters;
