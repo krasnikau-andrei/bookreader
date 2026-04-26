@@ -4,8 +4,10 @@
 	import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import { calculateScrollPercent } from '$lib/reader/pagination';
-	import { animateScroll, jumpTo } from '$lib/reader/animation';
-	import { getBook, saveProgress, getProgress } from '$lib/storage';
+import { animateScroll, jumpTo } from '$lib/reader/animation';
+import { createSwipeHandler } from '$lib/reader/swipe';
+import { createSafetyNet } from '$lib/reader/safety-net';
+import { getBook, saveProgress, getProgress } from '$lib/storage';
 	import type { Book, Chapter } from '$lib/types';
 
 	let book: Book | undefined = $state();
@@ -21,11 +23,16 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
 	let pendingFragment: string | null = $state(null);
 
-	// Track if chapter is changing (DOM update in progress)
-	let isChangingChapter = $state(false);
-	let chapterRaf: number | null = null;
+// Track if chapter is changing (DOM update in progress)
+let isChangingChapter = $state(false);
+let chapterRaf: number | null = null;
 
-	// Flag to prevent URL updates during initial load
+// Swipe handling
+let swipeHandler: ReturnType<typeof createSwipeHandler> | null = $state(null);
+let safetyNet: ReturnType<typeof createSafetyNet> | null = $state(null);
+let isUserSwiping = $state(false);
+
+// Flag to prevent URL updates during initial load
 	let isInitializing = $state(true);
 
 	// Track previous URL params to detect changes
@@ -194,14 +201,56 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 			updateUrl(chapter, progressValue, true);
 		}
 
-		// Mark initialization complete
-		setTimeout(() => {
-			isInitializing = false;
-		}, 100);
-	});
+// Mark initialization complete
+	setTimeout(() => {
+		isInitializing = false;
+	}, 100);
+});
 
-	function handleLeftTap() {
-		if (!scrollContainer || isChangingChapter) return;
+// Set up swipe handling when scroll container is available
+$effect(() => {
+	if (!scrollContainer) return;
+
+	swipeHandler = createSwipeHandler(
+		scrollContainer,
+		{
+			onSwipeLeft: () => {
+				isUserSwiping = false;
+				handleRightTap(); // Swipe left = go to next page (right tap direction)
+			},
+			onSwipeRight: () => {
+				isUserSwiping = false;
+				handleLeftTap(); // Swipe right = go to previous page (left tap direction)
+			},
+			onSwipeCancel: () => {
+				isUserSwiping = false;
+				// Scroll back to start position if swipe cancelled
+				// (handled by CSS scroll-snap, but we could animate here)
+			}
+		}
+	);
+
+	safetyNet = createSafetyNet(
+		scrollContainer,
+		(targetScroll) => {
+			// Only correct if not currently animating
+			if (!isUserSwiping && !isChangingChapter) {
+				animateScroll(scrollContainer!, targetScroll, 200);
+			}
+		}
+	);
+
+	swipeHandler.attach();
+	safetyNet.attach();
+
+	return () => {
+		swipeHandler?.detach();
+		safetyNet?.detach();
+	};
+});
+
+function handleLeftTap() {
+	if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
 		// Check if we're at the beginning of the chapter
 		if (scrollContainer.scrollLeft <= 0) {
@@ -233,8 +282,8 @@ import { calculateScrollPercent } from '$lib/reader/pagination';
 		animateScroll(scrollContainer, Math.max(0, newScroll), 250);
 	}
 
-	function handleRightTap() {
-		if (!scrollContainer || isChangingChapter) return;
+function handleRightTap() {
+	if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
 		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
 
