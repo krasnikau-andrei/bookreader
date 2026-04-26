@@ -244,9 +244,9 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		}
 	}
 
-	// Extract chapters in spine order
-	const chapters: Chapter[] = [];
+// FIRST PASS: Build complete navigation map for all chapters
 	const filePathToChapterIndex = new Map<string, number>();
+	const chapterFiles: { idref: string; filePath: string; index: number }[] = [];
 	let chapterIndex = 0;
 
 	for (const itemref of itemrefs) {
@@ -256,12 +256,25 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const href = manifestMap.get(idref);
 		if (!href) continue;
 
-const filePath = resolvePath(opfPath, href);
+		const filePath = resolvePath(opfPath, href);
 
-		// IMPORTANT: Build the navigation map BEFORE processing content
-		// This ensures all file paths are available when transforming links
+		// Build navigation map with both full and short paths
 		filePathToChapterIndex.set(filePath, chapterIndex);
+		const shortPath = filePath.replace(/^EPUB\//, '');
+		if (shortPath !== filePath) {
+			filePathToChapterIndex.set(shortPath, chapterIndex);
+		}
+
+		// Store for second pass
+		chapterFiles.push({ idref, filePath, index: chapterIndex });
 		chapterIndex++;
+	}
+
+	// SECOND PASS: Process chapter content with complete navigation map
+	const chapters: Chapter[] = [];
+
+	for (const chapterFile of chapterFiles) {
+		const { idref, filePath } = chapterFile;
 
 		const content = await zip.file(filePath)?.async('string');
 		if (!content) continue;

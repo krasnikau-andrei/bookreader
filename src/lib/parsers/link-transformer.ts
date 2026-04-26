@@ -31,8 +31,13 @@ export function transformLinks(
       ? normalizePath(currentDir + fileName)
       : currentFilePath;
 
+    // Store debug info
+    link.setAttribute('data-resolved-path', targetFilePath);
+
     // Look up chapter index
     const chapterIndex = filePathToChapterIndex.get(targetFilePath);
+    
+    // Debug logging removed - links are now resolved correctly
 
     if (chapterIndex !== undefined) {
       // Valid internal link
