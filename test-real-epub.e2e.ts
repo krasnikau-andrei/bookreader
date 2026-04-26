@@ -29,7 +29,7 @@ test('upload Crime and Punishment EPUB', async ({ page }) => {
 	await page.locator('[data-testid="upload-button"]').click();
 	const fileChooser = await fileChooserPromise;
 
-	await fileChooser.setFiles('/Users/kikimer/Downloads/CrimePunishment-EPUB2.epub');
+	await fileChooser.setFiles('tests/fixtures/crime-punishment-real.epub');
 
 	// Wait a bit for processing
 	await page.waitForTimeout(5000);
