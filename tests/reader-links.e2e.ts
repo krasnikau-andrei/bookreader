@@ -47,18 +47,22 @@ test.describe('Reader Internal Links', () => {
 			const missingLinks = document.querySelectorAll('a.missing-link');
 
 			// Get sample internal links for verification
-			const internalSamples = Array.from(internalLinks).slice(0, 5).map(link => ({
-				href: link.getAttribute('href'),
-				chapter: link.getAttribute('data-chapter'),
-				fragment: link.getAttribute('data-fragment'),
-				text: link.textContent?.substring(0, 50)
-			}));
+			const internalSamples = Array.from(internalLinks)
+				.slice(0, 5)
+				.map((link) => ({
+					href: link.getAttribute('href'),
+					chapter: link.getAttribute('data-chapter'),
+					fragment: link.getAttribute('data-fragment'),
+					text: link.textContent?.substring(0, 50)
+				}));
 
 			// Get sample missing links for verification
-			const missingSamples = Array.from(missingLinks).slice(0, 3).map(link => ({
-				originalHref: link.getAttribute('data-original-href'),
-				text: link.textContent?.substring(0, 50)
-			}));
+			const missingSamples = Array.from(missingLinks)
+				.slice(0, 3)
+				.map((link) => ({
+					originalHref: link.getAttribute('data-original-href'),
+					text: link.textContent?.substring(0, 50)
+				}));
 
 			return {
 				internalCount: internalLinks.length,
@@ -82,7 +86,9 @@ test.describe('Reader Internal Links', () => {
 		}
 
 		// Log the ratio for debugging
-		console.log(`Links: ${linkInfo.internalCount} internal, ${linkInfo.missingCount} missing, ${linkInfo.externalCount} external`);
+		console.log(
+			`Links: ${linkInfo.internalCount} internal, ${linkInfo.missingCount} missing, ${linkInfo.externalCount} external`
+		);
 
 		// The TOC should have mostly internal links that resolve correctly
 		// If most are missing, there's a bug in link transformation
@@ -134,7 +140,9 @@ test.describe('Reader Internal Links', () => {
 
 		if (!linkInfo) return;
 
-		console.log(`Clicking link to chapter ${linkInfo.targetChapter} from chapter ${currentChapter}`);
+		console.log(
+			`Clicking link to chapter ${linkInfo.targetChapter} from chapter ${currentChapter}`
+		);
 
 		// Click the link using JavaScript
 		await page.evaluate((targetCh) => {

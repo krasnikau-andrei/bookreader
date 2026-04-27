@@ -244,7 +244,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		}
 	}
 
-// FIRST PASS: Build complete navigation map for all chapters
+	// FIRST PASS: Build complete navigation map for all chapters
 	const filePathToChapterIndex = new Map<string, number>();
 	const chapterFiles: { idref: string; filePath: string; index: number }[] = [];
 	let chapterIndex = 0;
@@ -305,11 +305,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 
 		// Transform internal links for navigation
 		// Now filePathToChapterIndex contains ALL chapters
-		processedContent = transformLinks(
-			processedContent,
-			filePath,
-			filePathToChapterIndex
-		);
+		processedContent = transformLinks(processedContent, filePath, filePathToChapterIndex);
 
 		chapters.push({
 			id: idref,

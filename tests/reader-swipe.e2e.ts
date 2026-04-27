@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 test.describe('Reader Swipe Gestures', () => {
 	test.beforeEach(async ({ page }) => {
 		// Capture console logs
-		page.on('console', msg => console.log('Browser console:', msg.text()));
+		page.on('console', (msg) => console.log('Browser console:', msg.text()));
 		await page.goto('/');
 		await page.waitForLoadState('networkidle');
 
@@ -58,66 +58,66 @@ test.describe('Reader Swipe Gestures', () => {
 		expect(Math.abs(finalScroll - expectedScroll)).toBeLessThan(clientWidth * 0.02);
 	});
 
-  test('tap left navigates to previous page', async ({ page }) => {
-    const content = page.locator('[data-testid="reader-content"]');
-    const box = await content.boundingBox();
-    expect(box).toBeTruthy();
-    if (!box) return;
+	test('tap left navigates to previous page', async ({ page }) => {
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (!box) return;
 
-    // Get initial scroll
-    const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		// Get initial scroll
+		const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 
-    // First, navigate forward using right tap
-    await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-    await page.waitForTimeout(600);
+		// First, navigate forward using right tap
+		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		await page.waitForTimeout(600);
 
-    const midScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-    expect(midScroll).toBeGreaterThan(initialScroll);
+		const midScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		expect(midScroll).toBeGreaterThan(initialScroll);
 
-    // Now tap left to go back
-    await content.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-    await page.waitForTimeout(600);
+		// Now tap left to go back
+		await content.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
+		await page.waitForTimeout(600);
 
-    // Should have moved back
-    const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-    expect(finalScroll).toBeLessThan(midScroll);
+		// Should have moved back
+		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		expect(finalScroll).toBeLessThan(midScroll);
 
-    // Should be at valid snap point
-    const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
-    const pageIndex = Math.round(finalScroll / clientWidth);
-    const expectedScroll = pageIndex * clientWidth;
-    expect(Math.abs(finalScroll - expectedScroll)).toBeLessThan(clientWidth * 0.02);
-  });
+		// Should be at valid snap point
+		const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
+		const pageIndex = Math.round(finalScroll / clientWidth);
+		const expectedScroll = pageIndex * clientWidth;
+		expect(Math.abs(finalScroll - expectedScroll)).toBeLessThan(clientWidth * 0.02);
+	});
 
-  test('content always at valid snap point', async ({ page }) => {
-    const content = page.locator('[data-testid="reader-content"]');
-    const box = await content.boundingBox();
-    expect(box).toBeTruthy();
-    if (!box) return;
+	test('content always at valid snap point', async ({ page }) => {
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (!box) return;
 
-    // Navigate forward
-    await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-    await page.waitForTimeout(600);
+		// Navigate forward
+		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		await page.waitForTimeout(600);
 
-    // Get current scroll
-    const scrollLeft = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-    const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
-    
-    // Should be at valid snap point (multiple of clientWidth)
-    const pageIndex = Math.round(scrollLeft / clientWidth);
-    const expectedScroll = pageIndex * clientWidth;
-    expect(Math.abs(scrollLeft - expectedScroll)).toBeLessThan(clientWidth * 0.02);
+		// Get current scroll
+		const scrollLeft = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
 
-    // Navigate again
-    await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-    await page.waitForTimeout(600);
+		// Should be at valid snap point (multiple of clientWidth)
+		const pageIndex = Math.round(scrollLeft / clientWidth);
+		const expectedScroll = pageIndex * clientWidth;
+		expect(Math.abs(scrollLeft - expectedScroll)).toBeLessThan(clientWidth * 0.02);
 
-    // Get new scroll
-    const scrollLeft2 = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-    const pageIndex2 = Math.round(scrollLeft2 / clientWidth);
-    const expectedScroll2 = pageIndex2 * clientWidth;
-    expect(Math.abs(scrollLeft2 - expectedScroll2)).toBeLessThan(clientWidth * 0.02);
-  });
+		// Navigate again
+		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		await page.waitForTimeout(600);
+
+		// Get new scroll
+		const scrollLeft2 = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const pageIndex2 = Math.round(scrollLeft2 / clientWidth);
+		const expectedScroll2 = pageIndex2 * clientWidth;
+		expect(Math.abs(scrollLeft2 - expectedScroll2)).toBeLessThan(clientWidth * 0.02);
+	});
 
 	test('tap navigation has smooth animation', async ({ page }) => {
 		const content = page.locator('[data-testid="reader-content"]');
