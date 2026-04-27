@@ -211,24 +211,27 @@ let isUserSwiping = $state(false);
 $effect(() => {
 	if (!scrollContainer) return;
 
-	swipeHandler = createSwipeHandler(
-		scrollContainer,
-		{
-			onSwipeLeft: () => {
-				isUserSwiping = false;
-				handleRightTap(); // Swipe left = go to next page (right tap direction)
-			},
-			onSwipeRight: () => {
-				isUserSwiping = false;
-				handleLeftTap(); // Swipe right = go to previous page (left tap direction)
-			},
-			onSwipeCancel: () => {
-				isUserSwiping = false;
-				// Scroll back to start position if swipe cancelled
-				// (handled by CSS scroll-snap, but we could animate here)
-			}
-		}
-	);
+  swipeHandler = createSwipeHandler(
+    scrollContainer,
+    {
+      onSwipeStart: () => {
+        isUserSwiping = true;
+      },
+      onSwipeLeft: () => {
+        isUserSwiping = false;
+        handleRightTap(); // Swipe left = go to next page (right tap direction)
+      },
+      onSwipeRight: () => {
+        isUserSwiping = false;
+        handleLeftTap(); // Swipe right = go to previous page (left tap direction)
+      },
+      onSwipeCancel: () => {
+        isUserSwiping = false;
+        // Scroll back to start position if swipe cancelled
+        // (handled by CSS scroll-snap, but we could animate here)
+      }
+    }
+  );
 
 	safetyNet = createSafetyNet(
 		scrollContainer,
