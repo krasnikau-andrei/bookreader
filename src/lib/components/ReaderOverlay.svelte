@@ -1,21 +1,18 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { goto } from '$app/navigation';
 
 	interface Props {
 		show: boolean;
+		onBack: () => void;
+		onShowToc: () => void;
 	}
 
-	let { show }: Props = $props();
-
-	function goBack() {
-		goto('/');
-	}
+	let { show, onBack, onShowToc }: Props = $props();
 </script>
 
 {#if show}
 	<div class="overlay" transition:fade={{ duration: 200 }}>
-		<button class="back-button" onclick={goBack} aria-label="Go back">
+		<button class="back-button" onclick={onBack} aria-label="Go back">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="24"
@@ -30,6 +27,23 @@
 				<path d="M19 12H5M12 19l-7-7 7-7" />
 			</svg>
 		</button>
+		<button class="toc-button" onclick={onShowToc} aria-label="Show table of contents">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<line x1="4" y1="6" x2="20" y2="6" />
+				<line x1="4" y1="12" x2="20" y2="12" />
+				<line x1="4" y1="18" x2="20" y2="18" />
+			</svg>
+		</button>
 	</div>
 {/if}
 
@@ -42,11 +56,13 @@
 		padding: 1rem;
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
 		z-index: 20;
 	}
 
-	.back-button {
+	.back-button,
+	.toc-button {
 		background: white;
 		border: none;
 		border-radius: 50%;
@@ -57,9 +73,11 @@
 		justify-content: center;
 		cursor: pointer;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		transition: background-color 0.15s ease;
 	}
 
-	.back-button:hover {
+	.back-button:hover,
+	.toc-button:hover {
 		background: #f5f5f5;
 	}
 </style>
