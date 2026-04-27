@@ -322,8 +322,13 @@ function handleCenterTap() {
 }
 
 function handleContentClick(event: MouseEvent) {
-		const target = event.target as HTMLElement;
-		const link = target.closest('a');
+	// If a swipe occurred, don't handle as a click
+	if (swipeHandler?.hasSwiped()) {
+		return;
+	}
+
+	const target = event.target as HTMLElement;
+	const link = target.closest('a');
 
 		if (link) {
 			// Handle internal links
@@ -377,19 +382,24 @@ function handleContentClick(event: MouseEvent) {
 			}
 		}
 
-		// Original tap zone logic
-		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		const x = event.clientX - rect.left;
-		const relativeX = x / rect.width;
+	// Original tap zone logic
+	const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+	const x = event.clientX - rect.left;
+	const relativeX = x / rect.width;
 
-		if (relativeX < 0.33) {
-			handleLeftTap();
-		} else if (relativeX < 0.67) {
-			handleCenterTap();
-		} else {
-			handleRightTap();
-		}
+	if (relativeX < 0.33) {
+		handleLeftTap();
+	} else if (relativeX < 0.67) {
+		handleCenterTap();
+	} else {
+		handleRightTap();
 	}
+}
+
+function handleContentMouseDown(event: MouseEvent) {
+	// Reset swipe state at the start of a potential swipe
+	swipeHandler?.resetSwipe();
+}
 
 	function scrollToFragment(fragmentId: string) {
 		if (!scrollContainer) return;
@@ -446,13 +456,14 @@ function handleScroll() {
 	{:else if book}
 		<div class="reader-container">
 			{#if chapters.length > 0}
-				<div
-					class="content"
-					bind:this={scrollContainer}
-					onscroll={handleScroll}
-					onclick={handleContentClick}
-					data-testid="reader-content"
-				>
+			<div
+				class="content"
+				bind:this={scrollContainer}
+				onscroll={handleScroll}
+				onclick={handleContentClick}
+				onmousedown={handleContentMouseDown}
+				data-testid="reader-content"
+			>
 					{@html chapters[currentChapter]?.content}
 				</div>
 			{/if}
