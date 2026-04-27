@@ -6,6 +6,7 @@
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
 	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
+	import TableOfContents from '$lib/components/TableOfContents.svelte';
 	import type { Book, Chapter } from '$lib/types';
 
 	// Core state
@@ -13,6 +14,7 @@
 	let chapters: Chapter[] = $state([]);
 	let currentChapter = $state(0);
 	let showOverlay = $state(false);
+	let showToc = $state(false);
 	let loading = $state(true);
 	let bookId = $derived($page.params.bookId);
 
@@ -96,6 +98,11 @@
 		showOverlay = !showOverlay;
 	}
 
+	function handleChapterSelect(chapterIndex: number) {
+		currentChapter = chapterIndex;
+		updateUrl(chapterIndex, 0, true);
+	}
+
 	function handleLinkClick(event: MouseEvent) {
 		const target = event.target as HTMLElement;
 		const link = target.closest('a');
@@ -135,7 +142,18 @@
 				/>
 			{/if}
 
-			<ReaderOverlay show={showOverlay} />
+			<ReaderOverlay
+				show={showOverlay}
+				onBack={() => goto('/')}
+				onShowToc={() => (showToc = true)}
+			/>
+			<TableOfContents
+				show={showToc}
+				{chapters}
+				{currentChapter}
+				onChapterSelect={handleChapterSelect}
+				onClose={() => (showToc = false)}
+			/>
 
 			<LinkErrorPopup
 				show={showLinkError}
