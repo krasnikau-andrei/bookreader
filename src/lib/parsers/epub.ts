@@ -198,6 +198,79 @@ export interface ParsedChapters {
 	navigationMap: ChapterNavigationMap;
 }
 
+async function extractTocLabels(
+	zip: JSZip,
+	opfDoc: Document,
+	opfPath: string
+): Promise<Map<string, string>> {
+	const labels = new Map<string, string>();
+	const parser = new DOMParser();
+
+	// Try EPUB 3 nav.xhtml first (look for item with properties="nav")
+	const navItem = opfDoc.querySelector('item[properties~="nav"]');
+	if (navItem) {
+		const navHref = navItem.getAttribute('href');
+		if (navHref) {
+			const navPath = resolvePath(opfPath, navHref);
+			const navContent = await zip.file(navPath)?.async('string');
+			if (navContent) {
+				const navDoc = parser.parseFromString(navContent, 'application/xhtml+xml');
+				// Look for nav element with epub:type="toc" or id="toc"
+				const tocNav = navDoc.querySelector('nav[epub\\:type="toc"], nav#toc');
+				if (tocNav) {
+					const links = tocNav.querySelectorAll('a');
+					for (const link of links) {
+						const href = link.getAttribute('href');
+						const label = link.textContent?.trim();
+						if (href && label) {
+							// Resolve href to full path
+							const fullPath = resolvePath(navPath, href);
+							labels.set(fullPath, label);
+							// Also store without EPUB/ prefix for flexible matching
+							const shortPath = fullPath.replace(/^EPUB\//, '');
+							if (shortPath !== fullPath) {
+								labels.set(shortPath, label);
+							}
+						}
+					}
+				}
+				return labels;
+			}
+		}
+	}
+
+	// Try EPUB 2 toc.ncx (look for item with media-type="application/x-dtbncx+xml")
+	const ncxItem = opfDoc.querySelector('item[media-type="application/x-dtbncx+xml"]');
+	if (ncxItem) {
+		const ncxHref = ncxItem.getAttribute('href');
+		if (ncxHref) {
+			const ncxPath = resolvePath(opfPath, ncxHref);
+			const ncxContent = await zip.file(ncxPath)?.async('string');
+			if (ncxContent) {
+				const ncxDoc = parser.parseFromString(ncxContent, 'application/xml');
+				const navPoints = ncxDoc.querySelectorAll('navPoint');
+				for (const navPoint of navPoints) {
+					const content = navPoint.querySelector('content');
+					const navLabel = navPoint.querySelector('navLabel text');
+					const href = content?.getAttribute('src');
+					const label = navLabel?.textContent?.trim();
+					if (href && label) {
+						const fullPath = resolvePath(ncxPath, href);
+						labels.set(fullPath, label);
+						const shortPath = fullPath.replace(/^EPUB\//, '');
+						if (shortPath !== fullPath) {
+							labels.set(shortPath, label);
+						}
+					}
+				}
+				return labels;
+			}
+		}
+	}
+
+	return labels;
+}
+
 export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChapters> {
 	let zip: JSZip;
 	try {
@@ -226,6 +299,9 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 	// Parse content.opf
 	const parser = new DOMParser();
 	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+
+	// Extract TOC labels before processing chapters
+	const tocLabels = await extractTocLabels(zip, opfDoc, opfPath);
 
 	// Extract spine items (reading order)
 	const spine = opfDoc.querySelector('spine');
@@ -281,7 +357,10 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 
 		// Parse chapter content
 		const chapterDoc = parser.parseFromString(content, 'application/xhtml+xml');
-		const title = chapterDoc.querySelector('h1, h2, title')?.textContent || 'Untitled';
+		const shortPath = filePath.replace(/^EPUB\//, '');
+		const extractedHtmlTitle = chapterDoc.querySelector('h1, h2, title')?.textContent?.trim();
+		const title =
+			tocLabels.get(filePath) || tocLabels.get(shortPath) || extractedHtmlTitle || 'Untitled';
 
 		// Process images in chapter content - convert to data URIs
 		const chapterDir = filePath.substring(0, filePath.lastIndexOf('/') + 1);
