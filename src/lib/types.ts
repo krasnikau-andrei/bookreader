@@ -21,6 +21,7 @@ export interface Chapter {
 	title: string;
 	content: string;
 	filePath: string;
+	level?: number; // 0 = root, 1 = nested, etc. for tree structure
 }
 
 export interface ChapterNavigationMap {

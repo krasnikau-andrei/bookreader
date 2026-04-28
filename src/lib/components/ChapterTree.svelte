@@ -16,19 +16,29 @@
 	function isCurrentChapter(index: number): boolean {
 		return index === currentChapter;
 	}
+
+	function getIndentation(level: number | undefined): string {
+		const basePadding = 1.5; // rem
+		const indentPerLevel = 1.5; // rem
+		return `${basePadding + (level || 0) * indentPerLevel}rem`;
+	}
 </script>
 
 <nav class="chapter-tree" aria-label="Table of contents">
-	<ul class="chapter-list">
+	<ul class="chapter-list" role="tree">
 		{#each chapters as chapter, index (chapter.id)}
-			<li class="chapter-item">
+			<li class="chapter-item" role="treeitem" aria-level={(chapter.level || 0) + 1}>
 				<button
 					class="chapter-button"
 					class:current={isCurrentChapter(index)}
+					class:nested={(chapter.level || 0) > 0}
+					style="padding-left: {getIndentation(chapter.level)}"
 					onclick={() => handleChapterClick(index)}
 					aria-current={isCurrentChapter(index) ? 'page' : undefined}
+					aria-selected={isCurrentChapter(index) ? 'true' : 'false'}
 					data-testid="chapter-item"
 					data-chapter-index={index}
+					data-level={chapter.level || 0}
 					title={chapter.title}
 				>
 					<span class="chapter-title">{chapter.title}</span>
@@ -78,6 +88,11 @@
 	.chapter-button.current {
 		background-color: rgba(74, 158, 255, 0.2);
 		font-weight: 600;
+	}
+
+	.chapter-button.nested {
+		font-size: 0.9375rem;
+		color: rgba(255, 255, 255, 0.85);
 	}
 
 	.chapter-title {

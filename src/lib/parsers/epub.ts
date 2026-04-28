@@ -198,12 +198,85 @@ export interface ParsedChapters {
 	navigationMap: ChapterNavigationMap;
 }
 
-async function extractTocLabels(
+interface TocEntry {
+	href: string;
+	label: string;
+	level: number;
+}
+
+function parseTocHierarchy(
+	olElement: Element,
+	entries: TocEntry[],
+	level: number,
+	basePath: string,
+	bookTitle: string,
+	isFirstEntry: boolean
+): void {
+	const items = olElement.querySelectorAll(':scope > li');
+
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i];
+		const link = item.querySelector(':scope > a');
+
+		if (link) {
+			const href = link.getAttribute('href');
+			const label = link.textContent?.trim();
+
+			if (href && label) {
+				// Skip book title/cover entries
+				if (isBookTitleEntry(label, bookTitle, isFirstEntry && entries.length === 0)) {
+					// Still need to parse children of this entry
+					const nestedOl = item.querySelector(':scope > ol');
+					if (nestedOl) {
+						parseTocHierarchy(nestedOl, entries, level, basePath, bookTitle, isFirstEntry);
+					}
+					continue;
+				}
+
+				const fullPath = resolvePath(basePath, href);
+				entries.push({
+					href: fullPath,
+					label,
+					level
+				});
+			}
+		}
+
+		// Recursively parse nested ol
+		const nestedOl = item.querySelector(':scope > ol');
+		if (nestedOl) {
+			parseTocHierarchy(nestedOl, entries, level + 1, basePath, bookTitle, isFirstEntry);
+		}
+	}
+}
+
+function isBookTitleEntry(label: string, bookTitle: string, isFirstEntry: boolean): boolean {
+	// Skip if it's the first entry and matches book title
+	if (isFirstEntry && label.toLowerCase() === bookTitle.toLowerCase()) {
+		return true;
+	}
+
+	// Skip common cover/title page indicators
+	const skipPatterns = [
+		/^(cover|title page|table of contents|contents|toc|front matter)$/i,
+		/^(copyright|dedication|acknowledgments|about the author)$/i
+	];
+	for (const pattern of skipPatterns) {
+		if (pattern.test(label)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+async function extractTocHierarchy(
 	zip: JSZip,
 	opfDoc: Document,
-	opfPath: string
-): Promise<Map<string, string>> {
-	const labels = new Map<string, string>();
+	opfPath: string,
+	bookTitle: string
+): Promise<TocEntry[]> {
+	const entries: TocEntry[] = [];
 	const parser = new DOMParser();
 
 	// Try EPUB 3 nav.xhtml first (look for item with properties="nav")
@@ -218,23 +291,12 @@ async function extractTocLabels(
 				// Look for nav element with epub:type="toc" or id="toc"
 				const tocNav = navDoc.querySelector('nav[epub\\:type="toc"], nav#toc');
 				if (tocNav) {
-					const links = tocNav.querySelectorAll('a');
-					for (const link of links) {
-						const href = link.getAttribute('href');
-						const label = link.textContent?.trim();
-						if (href && label) {
-							// Resolve href to full path
-							const fullPath = resolvePath(navPath, href);
-							labels.set(fullPath, label);
-							// Also store without EPUB/ prefix for flexible matching
-							const shortPath = fullPath.replace(/^EPUB\//, '');
-							if (shortPath !== fullPath) {
-								labels.set(shortPath, label);
-							}
-						}
+					const topLevelOl = tocNav.querySelector(':scope > ol');
+					if (topLevelOl) {
+						parseTocHierarchy(topLevelOl, entries, 0, navPath, bookTitle, true);
 					}
 				}
-				return labels;
+				return entries;
 			}
 		}
 	}
@@ -249,26 +311,34 @@ async function extractTocLabels(
 			if (ncxContent) {
 				const ncxDoc = parser.parseFromString(ncxContent, 'application/xml');
 				const navPoints = ncxDoc.querySelectorAll('navPoint');
+				let isFirst = true;
 				for (const navPoint of navPoints) {
 					const content = navPoint.querySelector('content');
 					const navLabel = navPoint.querySelector('navLabel text');
 					const href = content?.getAttribute('src');
 					const label = navLabel?.textContent?.trim();
 					if (href && label) {
-						const fullPath = resolvePath(ncxPath, href);
-						labels.set(fullPath, label);
-						const shortPath = fullPath.replace(/^EPUB\//, '');
-						if (shortPath !== fullPath) {
-							labels.set(shortPath, label);
+						// Skip book title entries
+						if (isBookTitleEntry(label, bookTitle, isFirst)) {
+							isFirst = false;
+							continue;
 						}
+						isFirst = false;
+
+						const fullPath = resolvePath(ncxPath, href);
+						entries.push({
+							href: fullPath,
+							label,
+							level: 0 // NCX has flat structure or uses nesting differently
+						});
 					}
 				}
-				return labels;
+				return entries;
 			}
 		}
 	}
 
-	return labels;
+	return entries;
 }
 
 export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChapters> {
@@ -300,8 +370,26 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 	const parser = new DOMParser();
 	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
 
+	// Extract book title for filtering TOC entries
+	const dcNamespace = 'http://purl.org/dc/elements/1.1/';
+	const titleElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'title');
+	const bookTitle = titleElements[0]?.textContent?.trim() || '';
+
 	// Extract TOC labels before processing chapters
-	const tocLabels = await extractTocLabels(zip, opfDoc, opfPath);
+	const tocEntries = await extractTocHierarchy(zip, opfDoc, opfPath, bookTitle);
+
+	// Build lookup maps
+	const tocLabels = new Map<string, string>();
+	const tocLevels = new Map<string, number>();
+	for (const entry of tocEntries) {
+		tocLabels.set(entry.href, entry.label);
+		tocLevels.set(entry.href, entry.level);
+		const shortPath = entry.href.replace(/^EPUB\//, '');
+		if (shortPath !== entry.href) {
+			tocLabels.set(shortPath, entry.label);
+			tocLevels.set(shortPath, entry.level);
+		}
+	}
 
 	// Extract spine items (reading order)
 	const spine = opfDoc.querySelector('spine');
@@ -386,11 +474,15 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		// Now filePathToChapterIndex contains ALL chapters
 		processedContent = transformLinks(processedContent, filePath, filePathToChapterIndex);
 
+		const tocInfo = tocLevels.get(filePath) || tocLevels.get(shortPath);
+		const level = tocInfo !== undefined ? tocInfo : 0;
+
 		chapters.push({
 			id: idref,
 			title,
 			content: processedContent,
-			filePath
+			filePath,
+			level
 		});
 	}
 

@@ -24,7 +24,7 @@
 	let pendingFragment: string | null = $state(null);
 
 	// Progress tracking
-	let savedProgress: { chapterIndex: number; scrollPercent: number } | null = null;
+	let savedProgress: { chapterIndex: number; scrollPercent: number } | null = $state(null);
 	let isUpdatingUrl = false;
 
 	onMount(async () => {
@@ -132,9 +132,11 @@
 		<div class="reader-container">
 			{#if chapters.length > 0}
 				<ReaderContent
+					{bookId}
 					{chapters}
 					{currentChapter}
 					content={chapters[currentChapter]?.content}
+					initialProgress={savedProgress?.scrollPercent ?? 0}
 					onChapterChange={handleChapterChange}
 					onUrlUpdate={updateUrl}
 					onCenterTap={handleCenterTap}

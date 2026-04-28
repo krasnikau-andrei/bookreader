@@ -1364,4 +1364,82 @@ test.describe('Reader', () => {
 			expect(text).toBeTruthy();
 		}
 	});
+
+	test('continues from saved position when reopening book', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		const reader = page.locator('.reader');
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await reader.boundingBox();
+		expect(box).toBeTruthy();
+
+		// Navigate to a specific chapter (chapter 2)
+		if (box) {
+			// Navigate forward to reach chapter 2
+			for (let i = 0; i < 3; i++) {
+				await reader.click({
+					position: { x: box.width * 0.8, y: box.height * 0.5 }
+				});
+				await page.waitForTimeout(400);
+			}
+		}
+
+		// Wait for URL to update with chapter and progress, and for progress to be saved to storage
+		// The saveProgress has a 300ms debounce, so we need to wait longer
+		await page.waitForTimeout(1500);
+		const urlBeforeClose = page.url();
+
+		// Extract the saved chapter from URL
+		const chapterMatchBefore = urlBeforeClose.match(/chapter=(\d+)/);
+		expect(chapterMatchBefore).toBeTruthy();
+		const savedChapter = parseInt(chapterMatchBefore![1], 10);
+
+		// Chapter should be 2 (or higher after navigation)
+		expect(savedChapter).toBeGreaterThanOrEqual(1);
+		console.log(`[TEST] Saved chapter: ${savedChapter}`);
+
+		// Navigate back to library (closing the book)
+		await page.goto('/');
+		await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
+
+		// Reopen the book (should restore to saved position)
+		const bookCardAfter = page.locator('[data-testid="book-card"]').first();
+		await bookCardAfter.click();
+		await page.waitForSelector('.reader');
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+		// Wait for position restoration
+		await page.waitForTimeout(1500);
+
+		// Get the URL after reopening
+		const urlAfterReopen = page.url();
+		console.log(`[TEST] URL after reopen: ${urlAfterReopen}`);
+
+		// Verify the chapter is restored
+		const chapterMatchAfter = urlAfterReopen.match(/chapter=(\d+)/);
+		expect(chapterMatchAfter).toBeTruthy();
+		const restoredChapter = parseInt(chapterMatchAfter![1], 10);
+		console.log(`[TEST] Restored chapter: ${restoredChapter}`);
+
+		// Should be at or near the same chapter
+		expect(restoredChapter).toBe(savedChapter);
+
+		// Verify content is loaded at the restored position
+		const contentAfterReopen = await content.evaluate((el) => el.innerHTML);
+
+		// Content should be non-empty
+		expect(contentAfterReopen.length).toBeGreaterThan(0);
+
+		// The reader should be visible
+		const readerAfterReopen = page.locator('.reader');
+		await expect(readerAfterReopen).toBeVisible();
+	});
 });

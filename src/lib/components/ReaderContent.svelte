@@ -7,9 +7,11 @@
 	import type { Chapter } from '$lib/types';
 
 	interface Props {
+		bookId: string;
 		chapters: Chapter[];
 		currentChapter: number;
 		content: string;
+		initialProgress?: number;
 		onChapterChange: (chapter: number) => void;
 		onUrlUpdate: (chapter: number, progress: number) => void;
 		onCenterTap: () => void;
@@ -17,9 +19,11 @@
 	}
 
 	let {
+		bookId,
 		chapters,
 		currentChapter,
 		content,
+		initialProgress = 0,
 		onChapterChange,
 		onUrlUpdate,
 		onCenterTap,
@@ -68,6 +72,24 @@
 			swipeHandler?.detach();
 			safetyNet?.detach();
 		};
+	});
+
+	// Restore scroll position when content changes (e.g., on mount or chapter change)
+	$effect(() => {
+		if (!scrollContainer || !content) return;
+
+		// Capture current values to avoid re-triggering
+		const progressToRestore = initialProgress;
+		const container = scrollContainer;
+
+		// Wait for content to render
+		requestAnimationFrame(() => {
+			if (container && progressToRestore > 0) {
+				const maxScroll = container.scrollWidth - container.clientWidth;
+				const targetScroll = Math.round(maxScroll * progressToRestore);
+				jumpTo(container, targetScroll);
+			}
+		});
 	});
 
 	function handleLeftTap() {
@@ -188,7 +210,7 @@
 	function debouncedSaveProgress(chapterIndex: number, scrollPercent: number) {
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
-			saveProgress({ bookId: '', chapterIndex, scrollPercent, lastReadAt: new Date() });
+			saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
 		}, 300);
 	}
 </script>

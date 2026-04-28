@@ -9,6 +9,7 @@
 - We support only mobile devices.
 - All components should be in storybook.
 - Keep components small
+- Dont use raw hex for colors. All colors should be from theme object
 
 ## Testing
 
