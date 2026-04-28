@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
+	import { theme } from '$lib/theme.svelte';
 
 	interface Props {
 		show: boolean;
@@ -11,7 +12,11 @@
 </script>
 
 {#if show}
-	<div class="overlay" transition:fade={{ duration: 200 }}>
+	<div
+		class="overlay"
+		transition:fade={{ duration: 200 }}
+		style="background: {theme.colors.overlay}"
+	>
 		<button class="back-button" onclick={onBack} aria-label="Go back">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +62,6 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
 		z-index: 20;
 	}
 
