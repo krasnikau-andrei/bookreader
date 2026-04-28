@@ -1194,4 +1194,174 @@ test.describe('Reader', () => {
 			}
 		}
 	});
+
+	test('shows TOC button in overlay on center tap', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (box) {
+			// Tap center to show overlay
+			await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		}
+		await page.waitForTimeout(300);
+
+		// TOC button should be visible
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await expect(tocButton).toBeVisible();
+	});
+
+	test('opens table of contents when TOC button is clicked', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (box) {
+			// Show overlay
+			await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		}
+		await page.waitForTimeout(300);
+
+		// Click TOC button
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+
+		// TOC overlay should appear
+		const tocOverlay = page.locator('[data-testid="toc-overlay"]');
+		await expect(tocOverlay).toBeVisible();
+
+		// TOC title should be visible
+		await expect(page.getByText('Table of Contents')).toBeVisible();
+	});
+
+	test('navigates to chapter when clicking in TOC', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+		await page.waitForTimeout(1000);
+
+		const initialUrl = page.url();
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (box) {
+			// Show overlay
+			await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		}
+		await page.waitForTimeout(300);
+
+		// Open TOC
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+
+		// Wait for TOC to appear
+		await page.waitForSelector('[data-testid="toc-overlay"]');
+
+		// Click second chapter
+		const chapterItems = page.locator('[data-testid="chapter-item"]');
+		await expect(chapterItems.nth(1)).toBeVisible();
+		await chapterItems.nth(1).click();
+
+		// TOC should close
+		await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible();
+
+		// URL should update
+		await page.waitForTimeout(500);
+		const newUrl = page.url();
+		expect(newUrl).not.toEqual(initialUrl);
+		expect(newUrl).toMatch(/chapter=\d+/);
+	});
+
+	test('closes TOC when clicking close button', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (box) {
+			// Show overlay
+			await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		}
+		await page.waitForTimeout(300);
+
+		// Open TOC
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+
+		// Wait for TOC
+		await page.waitForSelector('[data-testid="toc-overlay"]');
+
+		// Click close button
+		const closeButton = page.getByRole('button', { name: 'Close table of contents' });
+		await closeButton.click();
+
+		// TOC should be closed
+		await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible();
+	});
+
+	test('TOC displays all chapter titles', async ({ page }) => {
+		// Upload and open a book
+		const fileInput = page.locator('input[type="file"]');
+		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+		await fileInput.setInputFiles(testBookPath);
+		await page.waitForSelector('[data-testid="book-card"]');
+		const bookCard = page.locator('[data-testid="book-card"]').first();
+		await bookCard.click();
+		await page.waitForSelector('.reader');
+
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (box) {
+			// Show overlay
+			await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		}
+		await page.waitForTimeout(300);
+
+		// Open TOC
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+
+		// Wait for TOC
+		await page.waitForSelector('[data-testid="toc-overlay"]');
+
+		// Verify chapters are listed
+		const chapterItems = page.locator('[data-testid="chapter-item"]');
+		const count = await chapterItems.count();
+		expect(count).toBeGreaterThan(0);
+
+		// Verify each chapter has a title
+		for (let i = 0; i < Math.min(count, 5); i++) {
+			const text = await chapterItems.nth(i).textContent();
+			expect(text).toBeTruthy();
+		}
+	});
 });
