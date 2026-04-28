@@ -49,7 +49,7 @@
 	}
 
 	.chapter-item {
-		border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.chapter-item:last-child {
@@ -64,18 +64,18 @@
 		text-align: left;
 		cursor: pointer;
 		font-size: 1rem;
-		color: var(--color-text, #333);
+		color: #ffffff;
 		transition: background-color 0.15s ease;
 		display: flex;
 		align-items: center;
 	}
 
 	.chapter-button:hover {
-		background-color: var(--color-hover, rgba(0, 0, 0, 0.05));
+		background-color: rgba(255, 255, 255, 0.1);
 	}
 
 	.chapter-button.current {
-		background-color: var(--color-current, rgba(0, 0, 0, 0.08));
+		background-color: rgba(74, 158, 255, 0.2);
 		font-weight: 600;
 	}
 

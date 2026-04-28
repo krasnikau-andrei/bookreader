@@ -51,3 +51,42 @@ describe('ChapterTree', () => {
 		expect(buttons[0]).not.toHaveClass('current');
 	});
 });
+
+describe('ChapterTree colors', () => {
+	const mockChapters: Chapter[] = [
+		{ id: 'c1', title: 'Chapter 1', content: '', filePath: 'ch1.html' },
+		{ id: 'c2', title: 'Chapter 2', content: '', filePath: 'ch2.html' }
+	];
+
+	it('renders chapter buttons with proper structure for theme colors', () => {
+		render(ChapterTree, {
+			props: {
+				chapters: mockChapters,
+				currentChapter: 0,
+				onChapterSelect: vi.fn()
+			}
+		});
+
+		const buttons = screen.getAllByTestId('chapter-item');
+		expect(buttons.length).toBe(2);
+
+		// Verify buttons have the chapter-button class which has direct color values
+		buttons.forEach((button) => {
+			expect(button).toHaveClass('chapter-button');
+		});
+	});
+
+	it('current chapter uses current class for accent styling', () => {
+		render(ChapterTree, {
+			props: {
+				chapters: mockChapters,
+				currentChapter: 0,
+				onChapterSelect: vi.fn()
+			}
+		});
+
+		const button = screen.getAllByTestId('chapter-item')[0];
+		expect(button).toHaveClass('current');
+		expect(button).toHaveClass('chapter-button');
+	});
+});
