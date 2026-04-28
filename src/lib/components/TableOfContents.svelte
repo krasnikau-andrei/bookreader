@@ -81,7 +81,7 @@
 	}
 
 	.toc-panel {
-		background: var(--color-background, white);
+		background: #1a1a2e;
 		border-radius: 12px;
 		width: 100%;
 		max-width: 500px;
@@ -96,14 +96,14 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 1.5rem;
-		border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.toc-title {
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--color-text, #333);
+		color: #ffffff;
 	}
 
 	.close-button {
@@ -115,12 +115,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--color-text, #333);
+		color: #ffffff;
 		transition: background-color 0.15s ease;
 	}
 
 	.close-button:hover {
-		background-color: var(--color-hover, rgba(0, 0, 0, 0.05));
+		background-color: rgba(255, 255, 255, 0.1);
 	}
 
 	.toc-content {
