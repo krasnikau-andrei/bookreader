@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createSwipeHandler, DEFAULT_SWIPE_CONFIG, SwipeConfig } from './swipe';
+import { createSwipeHandler, type SwipeConfig } from './swipe';
 
 describe('Swipe Detection', () => {
 	let element: HTMLElement;

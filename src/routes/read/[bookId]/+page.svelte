@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getBook, saveProgress, getProgress } from '$lib/storage';
+	import { getBook, getProgress } from '$lib/storage';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
 	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
@@ -21,6 +21,7 @@
 	// Link handling
 	let showLinkError = $state(false);
 	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let pendingFragment: string | null = $state(null);
 
 	// Progress tracking
@@ -31,12 +32,14 @@
 		try {
 			console.log('[DEBUG] Reader page onMount started');
 			if (!bookId) {
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto('/');
 				return;
 			}
 
 			book = await getBook(bookId);
 			if (!book) {
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto('/');
 				return;
 			}
@@ -74,7 +77,7 @@
 		}
 	});
 
-	function updateUrl(chapterIndex: number, progressValue: number, force = false) {
+	function updateUrl(chapterIndex: number, progressValue: number) {
 		if (isUpdatingUrl) return;
 
 		isUpdatingUrl = true;
@@ -83,6 +86,7 @@
 		url.searchParams.set('chapter', chapterIndex.toString());
 		url.searchParams.set('progress', progressInt.toString());
 
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(url.toString(), { replaceState: true, keepFocus: true });
 
 		setTimeout(() => {
@@ -100,9 +104,13 @@
 
 	function handleChapterSelect(chapterIndex: number) {
 		currentChapter = chapterIndex;
+		// Reset saved progress when switching chapters via TOC
+		// so the new chapter starts at the beginning (progress = 0)
+		savedProgress = null;
 		updateUrl(chapterIndex, 0, true);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	function handleLinkClick(event: MouseEvent) {
 		const target = event.target as HTMLElement;
 		const link = target.closest('a');
@@ -146,7 +154,10 @@
 
 			<ReaderOverlay
 				show={showOverlay}
-				onBack={() => goto('/')}
+				onBack={() => {
+					// eslint-disable-next-line svelte/no-navigation-without-resolve
+					goto('/');
+				}}
 				onShowToc={() => (showToc = true)}
 			/>
 			<TableOfContents

@@ -132,7 +132,7 @@ export function createSwipeHandler(
 		moveSwipe(touch.clientX, touch.clientY);
 	}
 
-	function handleTouchEnd(event: TouchEvent) {
+	function handleTouchEnd() {
 		endSwipe();
 	}
 
@@ -153,11 +153,11 @@ export function createSwipeHandler(
 		moveSwipe(event.clientX, event.clientY);
 	}
 
-	function handleMouseUp(event: MouseEvent) {
+	function handleMouseUp() {
 		endSwipe();
 	}
 
-	function handleMouseLeave(event: MouseEvent) {
+	function handleMouseLeave() {
 		// End swipe when leaving the element
 		endSwipe();
 	}

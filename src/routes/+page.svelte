@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { theme } from '$lib/theme.svelte';
+	// Theme import kept for side effects (CSS variables)
+	import '$lib/theme.svelte';
 	import { parseEpub } from '$lib/parsers/epub';
 	import { saveBook, getAllBooks, deleteBook, bookExists } from '$lib/storage';
 	import type { Book } from '$lib/types';
@@ -51,6 +52,7 @@
 			isLongPress = false;
 			return;
 		}
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(`/read/${bookId}`);
 	}
 

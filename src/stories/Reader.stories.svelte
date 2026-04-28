@@ -1,6 +1,5 @@
 <script module lang="ts">
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import ReaderPage from '../routes/read/[bookId]/+page.svelte';
 
 	const { Story } = defineMeta({
 		title: 'Pages/Reader',

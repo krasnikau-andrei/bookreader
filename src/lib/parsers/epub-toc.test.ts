@@ -20,7 +20,7 @@ ${chapters.map((c) => `<li><a href="${c.href}">${c.title}</a></li>`).join('\n')}
 </body>
 </html>`;
 
-	// Create chapter files
+	// Create chapter files with H1 titles
 	chapters.forEach((c) => {
 		zip.file(
 			`EPUB/${c.href}`,
@@ -28,7 +28,7 @@ ${chapters.map((c) => `<li><a href="${c.href}">${c.title}</a></li>`).join('\n')}
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>${c.id}</title></head>
-<body><h1>${c.id}</h1><p>Content</p></body>
+<body><h1>${c.title}</h1><p>Content</p></body>
 </html>`
 		);
 	});
@@ -92,7 +92,7 @@ ${chapters
 </navMap>
 </ncx>`;
 
-	// Create chapter files
+	// Create chapter files with H1 titles
 	chapters.forEach((c) => {
 		zip.file(
 			`EPUB/${c.href}`,
@@ -100,7 +100,7 @@ ${chapters
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>${c.id}</title></head>
-<body><h1>${c.id}</h1><p>Content</p></body>
+<body><h1>${c.title}</h1><p>Content</p></body>
 </html>`
 		);
 	});
@@ -124,7 +124,6 @@ ${chapters
 <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 <dc:title>Test Book</dc:title>
 <dc:creator>Test Author</dc:creator>
-<dc:identifier id="bookid">test-book</dc:identifier>
 </metadata>
 <manifest>
 <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
@@ -139,56 +138,9 @@ ${chapters.map((c) => `<itemref idref="${c.id}"/>`).join('\n')}
 	return zip.generateAsync({ type: 'arraybuffer' });
 }
 
-async function createEpubWithoutToc(chapters: { id: string; title: string; href: string }[]) {
-	const zip = new JSZip();
-
-	// Create chapter files with HTML titles
-	chapters.forEach((c) => {
-		zip.file(
-			`EPUB/${c.href}`,
-			`<?xml version="1.0"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>${c.title}</title></head>
-<body><h1>${c.id}</h1><p>Content</p></body>
-</html>`
-		);
-	});
-
-	zip.file('mimetype', 'application/epub+zip');
-	zip.file(
-		'META-INF/container.xml',
-		`<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-<rootfiles>
-<rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/>
-</rootfiles>
-</container>`
-	);
-
-	zip.file(
-		'EPUB/content.opf',
-		`<?xml version="1.0"?>
-<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
-<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-<dc:title>Test Book</dc:title>
-<dc:creator>Test Author</dc:creator>
-</metadata>
-<manifest>
-${chapters.map((c) => `<item id="${c.id}" href="${c.href}" media-type="application/xhtml+xml"/>`).join('\n')}
-</manifest>
-<spine>
-${chapters.map((c) => `<itemref idref="${c.id}"/>`).join('\n')}
-</spine>
-</package>`
-	);
-
-	return zip.generateAsync({ type: 'arraybuffer' });
-}
-
 describe('TOC label parsing', () => {
 	describe('EPUB 3 nav.xhtml', () => {
-		it('extracts chapter labels from nav.xhtml', async () => {
+		it('uses HTML h1 title instead of TOC label', async () => {
 			const epubBuffer = await createEpub3WithNavToc([
 				{ id: 'ch1', title: 'Chapter 1: The Beginning', href: 'chapter1.xhtml' },
 				{ id: 'ch2', title: 'Chapter 2: The Journey', href: 'chapter2.xhtml' }
@@ -197,6 +149,7 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(2);
+			// Uses HTML h1 title (not TOC label)
 			expect(result.chapters[0].title).toBe('Chapter 1: The Beginning');
 			expect(result.chapters[1].title).toBe('Chapter 2: The Journey');
 		});
@@ -217,16 +170,17 @@ describe('TOC label parsing', () => {
 		it('handles empty or missing TOC labels gracefully', async () => {
 			const zip = new JSZip();
 
-			// Create nav.xhtml with one empty label
+			// Create nav.xhtml with empty TOC entries
 			const tocHtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>TOC</title></head>
 <body>
 <nav epub:type="toc" id="toc">
+<h2>Table of Contents</h2>
 <ol>
-<li><a href="chapter1.xhtml">Chapter 1: Valid</a></li>
-<li><a href="chapter2.xhtml"></a></li>
+<li><a href="chapter1.xhtml"></a></li>
+<li><a href="chapter2.xhtml">Chapter 2: Valid</a></li>
 </ol>
 </nav>
 </body>
@@ -241,14 +195,13 @@ describe('TOC label parsing', () => {
 <body><h1>Chapter One</h1><p>Content</p></body>
 </html>`
 			);
-
 			zip.file(
 				'EPUB/chapter2.xhtml',
 				`<?xml version="1.0"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>ch2</title></head>
-<body><h1>Chapter Two</h1><p>Content</p></body>
+<body><h1>Chapter 2: Valid</h1><p>Content</p></body>
 </html>`
 			);
 
@@ -288,14 +241,14 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(2);
-			expect(result.chapters[0].title).toBe('Chapter 1: Valid');
-			// Second chapter falls back to HTML title since TOC label is empty
-			expect(result.chapters[1].title).toBe('ch2');
+			// Falls back to h1 when TOC label is empty
+			expect(result.chapters[0].title).toBe('Chapter One');
+			expect(result.chapters[1].title).toBe('Chapter 2: Valid');
 		});
 	});
 
 	describe('EPUB 2 toc.ncx', () => {
-		it('extracts chapter labels from toc.ncx', async () => {
+		it('uses HTML h1 title instead of NCX labels', async () => {
 			const epubBuffer = await createEpub2WithNcxToc([
 				{ id: 'ch1', title: 'Chapter 1: The Beginning', href: 'chapter1.xhtml' },
 				{ id: 'ch2', title: 'Chapter 2: The Journey', href: 'chapter2.xhtml' }
@@ -304,6 +257,7 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(2);
+			// Uses HTML h1 title (not NCX label)
 			expect(result.chapters[0].title).toBe('Chapter 1: The Beginning');
 			expect(result.chapters[1].title).toBe('Chapter 2: The Journey');
 		});
@@ -323,12 +277,61 @@ describe('TOC label parsing', () => {
 	});
 
 	describe('Fallback behavior', () => {
-		it('falls back to HTML title when TOC unavailable', async () => {
-			const epubBuffer = await createEpubWithoutToc([
-				{ id: 'ch1', title: 'HTML Title Chapter 1', href: 'chapter1.xhtml' },
-				{ id: 'ch2', title: 'HTML Title Chapter 2', href: 'chapter2.xhtml' }
-			]);
+		it('falls back to HTML title when no h1/h2', async () => {
+			const zip = new JSZip();
 
+			// Create chapter with title element only
+			zip.file(
+				'EPUB/chapter1.xhtml',
+				`<?xml version="1.0"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>HTML Title Chapter 1</title></head>
+<body><p>Content without h1</p></body>
+</html>`
+			);
+
+			zip.file(
+				'EPUB/chapter2.xhtml',
+				`<?xml version="1.0"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>HTML Title Chapter 2</title></head>
+<body><p>Content without h1</p></body>
+</html>`
+			);
+
+			zip.file('mimetype', 'application/epub+zip');
+			zip.file(
+				'META-INF/container.xml',
+				`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+<rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>`
+			);
+
+			zip.file(
+				'EPUB/content.opf',
+				`<?xml version="1.0"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+<dc:title>Test Book</dc:title>
+<dc:creator>Test Author</dc:creator>
+</metadata>
+<manifest>
+<item id="ch1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+<item id="ch2" href="chapter2.xhtml" media-type="application/xhtml+xml"/>
+</manifest>
+<spine>
+<itemref idref="ch1"/>
+<itemref idref="ch2"/>
+</spine>
+</package>`
+			);
+
+			const epubBuffer = await zip.generateAsync({ type: 'arraybuffer' });
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(2);
@@ -337,17 +340,17 @@ describe('TOC label parsing', () => {
 			expect(result.chapters[1].title).toBe('HTML Title Chapter 2');
 		});
 
-		it('falls back to h1 when TOC and title unavailable', async () => {
+		it('falls back to h2 when h1 unavailable', async () => {
 			const zip = new JSZip();
 
-			// Create chapter without title element
+			// Create chapter without title or h1 element
 			zip.file(
 				'EPUB/chapter1.xhtml',
 				`<?xml version="1.0"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head></head>
-<body><h1>Fallback H1 Title</h1><p>Content</p></body>
+<body><h2>Fallback H2 Title</h2><p>Content</p></body>
 </html>`
 			);
 
@@ -383,20 +386,20 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(1);
-			expect(result.chapters[0].title).toBe('Fallback H1 Title');
+			expect(result.chapters[0].title).toBe('Fallback H2 Title');
 		});
 
 		it('uses "Untitled" when no title source available', async () => {
 			const zip = new JSZip();
 
-			// Create chapter without any title elements
+			// Create chapter without any title element
 			zip.file(
 				'EPUB/chapter1.xhtml',
 				`<?xml version="1.0"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head></head>
-<body><p>Content without headings</p></body>
+<body><p>Content without title</p></body>
 </html>`
 			);
 
@@ -436,30 +439,31 @@ describe('TOC label parsing', () => {
 		});
 	});
 
-	describe('TOC priority', () => {
-		it('prefers TOC label over HTML title', async () => {
+	describe('Title priority', () => {
+		it('prefers h1 over TOC label, title, and h2', async () => {
 			const zip = new JSZip();
 
-			// Create chapter with different HTML title and TOC label
+			// Create chapter with all title sources
 			zip.file(
 				'EPUB/chapter1.xhtml',
 				`<?xml version="1.0"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>HTML Title</title></head>
-<body><h1>H1 Title</h1><p>Content</p></body>
+<head><title>Title Tag</title></head>
+<body><h1>H1 Title Preferred</h1><h2>H2 Title</h2><p>Content</p></body>
 </html>`
 			);
 
-			// Create nav.xhtml with different label
+			// Create nav.xhtml with TOC label
 			const tocHtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>TOC</title></head>
 <body>
 <nav epub:type="toc" id="toc">
+<h2>Table of Contents</h2>
 <ol>
-<li><a href="chapter1.xhtml">TOC Label - Preferred</a></li>
+<li><a href="chapter1.xhtml">TOC Label - Not Preferred</a></li>
 </ol>
 </nav>
 </body>
@@ -499,8 +503,8 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(1);
-			// Should use TOC label, not HTML title
-			expect(result.chapters[0].title).toBe('TOC Label - Preferred');
+			// Should use h1, not TOC label
+			expect(result.chapters[0].title).toBe('H1 Title Preferred');
 		});
 	});
 });

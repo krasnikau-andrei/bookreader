@@ -340,9 +340,6 @@ test.describe('Reader', () => {
 		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 
 		const reader = page.locator('.reader');
-		const content = page.locator('[data-testid="reader-content"]');
-
-		// Navigate past cover pages to reach text chapters (skip c1, c2)
 		const box = await reader.boundingBox();
 		expect(box).toBeTruthy();
 
@@ -966,7 +963,7 @@ test.describe('Reader', () => {
 		expect(progress).toBeLessThanOrEqual(10000);
 	});
 
-	test('URL params restore position on page load', async ({ page, context }) => {
+	test('URL params restore position on page load', async ({ page }) => {
 		// Upload a book first
 		const fileInput = page.locator('input[type="file"]');
 		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
@@ -1034,7 +1031,7 @@ test.describe('Reader', () => {
 		expect(finalUrl).toContain(`progress=${savedProgress}`);
 	});
 
-	test('URL with progress overrides saved progress when sharing', async ({ page, context }) => {
+	test('URL with progress overrides saved progress when sharing', async ({ page }) => {
 		// Upload a book first
 		const fileInput = page.locator('input[type="file"]');
 		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
@@ -1053,7 +1050,6 @@ test.describe('Reader', () => {
 		const bookId = bookIdMatch![1];
 
 		const reader = page.locator('.reader');
-		const content = page.locator('[data-testid="reader-content"]');
 		const box = await reader.boundingBox();
 		expect(box).toBeTruthy();
 
@@ -1081,9 +1077,6 @@ test.describe('Reader', () => {
 		// Chapter and progress should be valid numbers
 		expect(originalChapter).toBeGreaterThanOrEqual(0);
 		expect(originalProgress).toBeGreaterThanOrEqual(0);
-
-		// Get the content at this position for later comparison
-		const originalContent = await content.evaluate((el) => el.innerHTML);
 
 		// Navigate away to library (simulating "friend receives link")
 		await page.goto('/');

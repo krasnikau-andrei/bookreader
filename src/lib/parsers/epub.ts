@@ -446,9 +446,12 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		// Parse chapter content
 		const chapterDoc = parser.parseFromString(content, 'application/xhtml+xml');
 		const shortPath = filePath.replace(/^EPUB\//, '');
-		const extractedHtmlTitle = chapterDoc.querySelector('h1, h2, title')?.textContent?.trim();
-		const title =
-			tocLabels.get(filePath) || tocLabels.get(shortPath) || extractedHtmlTitle || 'Untitled';
+
+		// Extract chapter title from HTML headers (H1 first, then H2, then title tag)
+		const htmlH1 = chapterDoc.querySelector('h1')?.textContent?.trim();
+		const htmlH2 = chapterDoc.querySelector('h2')?.textContent?.trim();
+		const htmlTitle = chapterDoc.querySelector('title')?.textContent?.trim();
+		const title = htmlH1 || htmlH2 || htmlTitle || 'Untitled';
 
 		// Process images in chapter content - convert to data URIs
 		const chapterDir = filePath.substring(0, filePath.lastIndexOf('/') + 1);

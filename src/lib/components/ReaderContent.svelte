@@ -32,7 +32,9 @@
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
 	let isChangingChapter = false;
+	/* eslint-disable @typescript-eslint/no-unused-vars */
 	let chapterRaf: number | null = null;
+	/* eslint-enable @typescript-eslint/no-unused-vars */
 	let isUserSwiping = false;
 	let isUpdatingUrl = false;
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
@@ -84,11 +86,14 @@
 
 		// Wait for content to render
 		requestAnimationFrame(() => {
-			if (container && progressToRestore > 0) {
-				const maxScroll = container.scrollWidth - container.clientWidth;
-				const targetScroll = Math.round(maxScroll * progressToRestore);
-				jumpTo(container, targetScroll);
-			}
+			if (!container) return;
+
+			// Always set scroll position, even if it's 0
+			// When progressToRestore is 0, we should reset to beginning
+			// (important for chapter changes via TOC)
+			const maxScroll = container.scrollWidth - container.clientWidth;
+			const targetScroll = Math.round(maxScroll * progressToRestore);
+			jumpTo(container, targetScroll);
 		});
 	});
 
@@ -223,6 +228,7 @@
 	onmousedown={handleContentMouseDown}
 	data-testid="reader-content"
 >
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html content}
 </div>
 

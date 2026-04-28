@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'fs';
 
 test('upload Crime and Punishment EPUB', async ({ page }) => {
 	// Capture console logs

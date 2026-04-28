@@ -170,9 +170,9 @@ test.describe('Library Page', () => {
 		await page.goto('/');
 
 		// Upload a book
-		let fileChooserPromise = page.waitForEvent('filechooser');
+		const fileChooserPromise = page.waitForEvent('filechooser');
 		await page.locator('[data-testid="upload-button"]').click();
-		let fileChooser = await fileChooserPromise;
+		const fileChooser = await fileChooserPromise;
 		await fileChooser.setFiles(join(__dirname, '../../tests/fixtures/great-gatsby.epub'));
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1);
 
