@@ -29,6 +29,7 @@
 					aria-current={isCurrentChapter(index) ? 'page' : undefined}
 					data-testid="chapter-item"
 					data-chapter-index={index}
+					title={chapter.title}
 				>
 					<span class="chapter-title">{chapter.title}</span>
 				</button>
@@ -80,8 +81,10 @@
 	}
 
 	.chapter-title {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>

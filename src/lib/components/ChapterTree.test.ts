@@ -89,4 +89,26 @@ describe('ChapterTree colors', () => {
 		expect(button).toHaveClass('current');
 		expect(button).toHaveClass('chapter-button');
 	});
+
+	it('handles long multi-line chapter titles gracefully', () => {
+		const longTitleChapter = {
+			id: '1',
+			title:
+				'Chapter 1: This is an extremely long chapter title that spans multiple lines and should be handled properly without breaking the layout',
+			content: '',
+			filePath: 'ch1.xhtml'
+		};
+
+		render(ChapterTree, {
+			props: {
+				chapters: [longTitleChapter],
+				currentChapter: 0,
+				onChapterSelect: () => {}
+			}
+		});
+
+		const button = screen.getByTestId('chapter-item');
+		// Check title attribute exists for tooltip
+		expect(button).toHaveAttribute('title', longTitleChapter.title);
+	});
 });
