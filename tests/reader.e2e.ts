@@ -343,20 +343,23 @@ test.describe('Reader', () => {
 		const box = await reader.boundingBox();
 		expect(box).toBeTruthy();
 
-		if (box) {
-			// Navigate through chapters to reach text content
-			for (let i = 0; i < 9; i++) {
-				await reader.click({
-					position: { x: box.width * 0.8, y: box.height * 0.5 }
-				});
-				await page.waitForTimeout(400);
-			}
-			// Wait for content to settle
-			await page.waitForTimeout(500);
-		}
+  if (box) {
+  // Navigate through chapters to reach text content
+  for (let i = 0; i < 9; i++) {
+  await reader.click({
+  position: { x: box.width * 0.8, y: box.height * 0.5 }
+  });
+  await page.waitForTimeout(400);
+  }
+  // Wait for content to settle
+  await page.waitForTimeout(500);
+  }
 
-		// Check that text elements are visible by verifying contrast
-		const visibilityInfo = await content.evaluate((el) => {
+  // Get the reader content element for evaluation
+  const content = page.locator('[data-testid="reader-content"]');
+
+  // Check that text elements are visible by verifying contrast
+  const visibilityInfo = await content.evaluate((el) => {
 			const selectors = ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
 			// Debug: collect info about all elements found
@@ -1235,12 +1238,12 @@ test.describe('Reader', () => {
 		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 		await tocButton.click();
 
-		// TOC overlay should appear
-		const tocOverlay = page.locator('[data-testid="toc-overlay"]');
-		await expect(tocOverlay).toBeVisible();
+  // TOC overlay should appear
+  const tocOverlay = page.locator('[data-testid="toc-overlay"]');
+  await expect(tocOverlay).toBeVisible();
 
-		// TOC title should be visible
-		await expect(page.getByText('Table of Contents')).toBeVisible();
+  // TOC title should be visible (heading in the TOC panel)
+  await expect(page.getByRole('heading', { name: 'Table of Contents' })).toBeVisible();
 	});
 
 	test('navigates to chapter when clicking in TOC', async ({ page }) => {
@@ -1358,16 +1361,23 @@ test.describe('Reader', () => {
 		}
 	});
 
-	test('continues from saved position when reopening book', async ({ page }) => {
-		// Upload and open a book
-		const fileInput = page.locator('input[type="file"]');
-		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
-		await fileInput.setInputFiles(testBookPath);
-		await page.waitForSelector('[data-testid="book-card"]');
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-		await bookCard.click();
-		await page.waitForSelector('.reader');
-		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+test('continues from saved position when reopening book', async ({ page }) => {
+  // Capture browser console logs from the start
+  const logs: string[] = [];
+  page.on('console', (msg) => {
+  const logText = `[${msg.type()}] ${msg.text()}`;
+  logs.push(logText);
+  });
+
+  // Upload and open a book
+  const fileInput = page.locator('input[type="file"]');
+  const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
+  await fileInput.setInputFiles(testBookPath);
+  await page.waitForSelector('[data-testid="book-card"]');
+  const bookCard = page.locator('[data-testid="book-card"]').first();
+  await bookCard.click();
+  await page.waitForSelector('.reader');
+  await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 
 		const reader = page.locator('.reader');
 		const content = page.locator('[data-testid="reader-content"]');
@@ -1399,15 +1409,19 @@ test.describe('Reader', () => {
 		expect(savedChapter).toBeGreaterThanOrEqual(1);
 		console.log(`[TEST] Saved chapter: ${savedChapter}`);
 
-		// Navigate back to library (closing the book)
-		await page.goto('/');
-		await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
+  // Navigate back to library (closing the book)
+  await page.goto('/');
+  await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
 
-		// Reopen the book (should restore to saved position)
-		const bookCardAfter = page.locator('[data-testid="book-card"]').first();
-		await bookCardAfter.click();
-		await page.waitForSelector('.reader');
-		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+  // Reopen the book (should restore to saved position)
+  const bookCardAfter = page.locator('[data-testid="book-card"]').first();
+
+  await bookCardAfter.click();
+  await page.waitForSelector('.reader');
+  await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+
+  // Wait for logs to come through
+  await page.waitForTimeout(500);
 
 		// Wait for position restoration
 		await page.waitForTimeout(1500);
@@ -1431,8 +1445,9 @@ test.describe('Reader', () => {
 		// Content should be non-empty
 		expect(contentAfterReopen.length).toBeGreaterThan(0);
 
-		// The reader should be visible
-		const readerAfterReopen = page.locator('.reader');
-		await expect(readerAfterReopen).toBeVisible();
-	});
-});
+  // The reader should be visible
+  const readerAfterReopen = page.locator('.reader');
+  await expect(readerAfterReopen).toBeVisible();
+
+  });
+  });

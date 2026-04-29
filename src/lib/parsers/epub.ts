@@ -5,6 +5,7 @@ export interface ParsedBook {
 	title: string;
 	author: string;
 	cover: string | null;
+	language: string;
 }
 
 export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
@@ -60,9 +61,11 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	const dcNamespace = 'http://purl.org/dc/elements/1.1/';
 	const titleElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'title');
 	const authorElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'creator');
+	const languageElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'language');
 
 	const title = titleElements[0]?.textContent?.trim() || null;
 	const author = authorElements[0]?.textContent?.trim() || null;
+	const language = languageElements[0]?.textContent?.trim() || 'en';
 
 	// Extract cover
 	const coverPath = extractCoverPath(opfDoc, opfPath);
@@ -71,7 +74,8 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	return {
 		title: title || 'Untitled',
 		author: author || 'Unknown Author',
-		cover
+		cover,
+		language
 	};
 }
 

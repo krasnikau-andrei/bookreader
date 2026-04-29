@@ -47,9 +47,20 @@ export async function deleteBook(id: string): Promise<void> {
 }
 
 export async function saveProgress(progress: ReadingProgress): Promise<void> {
-	await db.readingProgress.put(progress);
-}
+  try {
+  await db.readingProgress.put(progress);
+  } catch (e) {
+  console.error('[STORAGE] saveProgress error:', e);
+  throw e;
+  }
+  }
 
-export async function getProgress(bookId: string): Promise<ReadingProgress | undefined> {
-	return await db.readingProgress.get(bookId);
-}
+  export async function getProgress(bookId: string): Promise<ReadingProgress | undefined> {
+  try {
+  const result = await db.readingProgress.get(bookId);
+  return result;
+  } catch (e) {
+  console.error('[STORAGE] getProgress error:', e);
+  throw e;
+  }
+  }

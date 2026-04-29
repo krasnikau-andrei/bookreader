@@ -12,6 +12,7 @@
 		currentChapter: number;
 		content: string;
 		initialProgress?: number;
+		language?: string;
 		onChapterChange: (chapter: number) => void;
 		onUrlUpdate: (chapter: number, progress: number) => void;
 		onCenterTap: () => void;
@@ -24,6 +25,7 @@
 		currentChapter,
 		content,
 		initialProgress = 0,
+		language = 'en',
 		onChapterChange,
 		onUrlUpdate,
 		onCenterTap,
@@ -93,63 +95,73 @@
 			// (important for chapter changes via TOC)
 			const maxScroll = container.scrollWidth - container.clientWidth;
 			const targetScroll = Math.round(maxScroll * progressToRestore);
-			jumpTo(container, targetScroll);
-		});
-	});
+  jumpTo(container, targetScroll);
+  });
+  });
 
-	function handleLeftTap() {
-		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
+  function handleLeftTap() {
+  if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
-		if (scrollContainer.scrollLeft <= 0) {
-			if (currentChapter > 0) {
-				isChangingChapter = true;
-				onChapterChange(currentChapter - 1);
-				onUrlUpdate(currentChapter - 1, 1);
+  if (scrollContainer.scrollLeft <= 0) {
+  if (currentChapter > 0) {
+  const prevChapter = currentChapter - 1;
+  isChangingChapter = true;
+  // Clear any pending debounced saves to prevent race conditions
+  clearTimeout(debounceTimer);
+  onChapterChange(prevChapter);
+  onUrlUpdate(prevChapter, 1);
 
-				chapterRaf = requestAnimationFrame(() => {
-					if (scrollContainer) {
-						jumpTo(scrollContainer, scrollContainer.scrollWidth);
-					}
-					setTimeout(() => {
-						isChangingChapter = false;
-						chapterRaf = null;
-					}, 100);
-				});
-			}
-			return;
-		}
+  chapterRaf = requestAnimationFrame(() => {
+  if (scrollContainer) {
+  jumpTo(scrollContainer, scrollContainer.scrollWidth);
+  }
+  setTimeout(() => {
+  isChangingChapter = false;
+  chapterRaf = null;
+  // Save progress for the new chapter after transition completes
+  saveProgress({ bookId, chapterIndex: prevChapter, scrollPercent: 1, lastReadAt: new Date() });
+  }, 100);
+  });
+  }
+  return;
+  }
 
-		const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
-		animateScroll(scrollContainer, Math.max(0, newScroll), 250);
-	}
+  const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
+  animateScroll(scrollContainer, Math.max(0, newScroll), 250);
+  }
 
-	function handleRightTap() {
-		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
+function handleRightTap() {
+  if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
-		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+  const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
 
-		if (scrollContainer.scrollLeft >= maxScroll - 1) {
-			if (currentChapter < chapters.length - 1) {
-				isChangingChapter = true;
-				onChapterChange(currentChapter + 1);
-				onUrlUpdate(currentChapter + 1, 0);
+  if (scrollContainer.scrollLeft >= maxScroll - 1) {
+  if (currentChapter < chapters.length - 1) {
+  const nextChapter = currentChapter + 1;
+  isChangingChapter = true;
+  // Clear any pending debounced saves to prevent race conditions
+  clearTimeout(debounceTimer);
+  onChapterChange(nextChapter);
+  onUrlUpdate(nextChapter, 0);
 
-				chapterRaf = requestAnimationFrame(() => {
-					if (scrollContainer) {
-						jumpTo(scrollContainer, 0);
-					}
-					setTimeout(() => {
-						isChangingChapter = false;
-						chapterRaf = null;
-					}, 100);
-				});
-			}
-			return;
-		}
+  chapterRaf = requestAnimationFrame(() => {
+  if (scrollContainer) {
+  jumpTo(scrollContainer, 0);
+  }
+  setTimeout(() => {
+  isChangingChapter = false;
+  chapterRaf = null;
+  // Save progress for the new chapter after transition completes
+  saveProgress({ bookId, chapterIndex: nextChapter, scrollPercent: 0, lastReadAt: new Date() });
+  }, 100);
+  });
+  }
+  return;
+  }
 
-		const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
-		animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
-	}
+  const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
+  animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
+  }
 
 	function handleContentClick(event: MouseEvent) {
 		if (swipeHandler?.hasSwiped()) return;
@@ -199,29 +211,35 @@
 		swipeHandler?.resetSwipe();
 	}
 
-	function handleScroll() {
-		if (!scrollContainer || isUpdatingUrl) return;
+function handleScroll() {
+  if (!scrollContainer || isUpdatingUrl || isChangingChapter) return;
 
-		const percent = calculateScrollPercent(
-			scrollContainer.scrollLeft,
-			scrollContainer.scrollWidth,
-			scrollContainer.clientWidth
-		);
+  const percent = calculateScrollPercent(
+  scrollContainer.scrollLeft,
+  scrollContainer.scrollWidth,
+  scrollContainer.clientWidth
+  );
 
-		onUrlUpdate(currentChapter, percent);
-		debouncedSaveProgress(currentChapter, percent);
-	}
+  onUrlUpdate(currentChapter, percent);
 
-	function debouncedSaveProgress(chapterIndex: number, scrollPercent: number) {
-		clearTimeout(debounceTimer);
-		debounceTimer = setTimeout(() => {
-			saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
-		}, 300);
-	}
+  // Only save progress when not transitioning between chapters
+  // to avoid race conditions where we save the old chapter with the new scroll position
+  if (!isChangingChapter) {
+  debouncedSaveProgress(currentChapter, percent);
+  }
+  }
+
+function debouncedSaveProgress(chapterIndex: number, scrollPercent: number) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+  saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
+  }, 300);
+  }
 </script>
 
 <div
 	class="content"
+	lang={language}
 	bind:this={scrollContainer}
 	onscroll={handleScroll}
 	onclick={handleContentClick}
@@ -246,7 +264,7 @@
 		line-height: 1.6;
 		background: var(--color-readerBackground);
 		color: var(--color-readerText);
-		font-size: var(--font-size-reader-text, 1.5rem);
+		font-size: var(--font-size-reader-text);
 		scroll-behavior: auto;
 	}
 
@@ -264,14 +282,21 @@
 
 	.content :global(p) {
 		text-indent: 1.5em;
-		text-align: justify;
-		text-align-last: left;
 		hyphens: auto;
 		overflow-wrap: break-word;
 		padding-top: 0;
 		padding-bottom: 0;
 		margin-top: 0;
 		margin-bottom: 0;
+	}
+
+	.content :global(h1),
+	.content :global(h2),
+	.content :global(h3),
+	.content :global(h4),
+	.content :global(h5),
+	.content :global(h6) {
+		text-align: center;
 	}
 
 	.content :global(img) {

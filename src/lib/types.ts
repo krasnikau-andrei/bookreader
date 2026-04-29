@@ -7,6 +7,7 @@ export interface Book {
 	format: 'epub';
 	addedAt: Date;
 	filename: string;
+	language: string;
 }
 
 export interface ReadingProgress {
@@ -22,6 +23,7 @@ export interface Chapter {
 	content: string;
 	filePath: string;
 	level?: number; // 0 = root, 1 = nested, etc. for tree structure
+	language?: string;
 }
 
 export interface ChapterNavigationMap {

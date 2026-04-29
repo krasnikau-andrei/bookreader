@@ -74,6 +74,6 @@ export const theme: Theme = {
 		md: '0.875rem',
 		lg: '1rem',
 		xl: '1.25rem',
-		readerText: '1.5rem'
+		readerText: '1.2rem'
 	}
 };

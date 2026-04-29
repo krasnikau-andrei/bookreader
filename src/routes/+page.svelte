@@ -105,7 +105,8 @@
 				fileData: buffer,
 				format: 'epub',
 				addedAt: new Date(),
-				filename: file.name
+				filename: file.name,
+				language: parsed.language
 			};
 
 			await saveBook(book);
