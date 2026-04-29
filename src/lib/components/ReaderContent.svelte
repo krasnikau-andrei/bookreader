@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { createSwipeHandler } from '$lib/reader/swipe';
 	import { createSafetyNet } from '$lib/reader/safety-net';
 	import { animateScroll, jumpTo } from '$lib/reader/animation';
@@ -13,7 +14,7 @@
 		content: string;
 		initialProgress?: number;
 		language?: string;
-		onChapterChange: (chapter: number) => void;
+		onChapterChange: (chapter: number, progress?: number) => void;
 		onUrlUpdate: (chapter: number, progress: number) => void;
 		onCenterTap: () => void;
 		onFragmentNavigate?: (fragment: string) => void;
@@ -33,7 +34,7 @@
 	}: Props = $props();
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
-	let isChangingChapter = false;
+	let isChangingChapter = $state(false);
 	/* eslint-disable @typescript-eslint/no-unused-vars */
 	let chapterRaf: number | null = null;
 	/* eslint-enable @typescript-eslint/no-unused-vars */
@@ -78,24 +79,36 @@
 		};
 	});
 
+	// Track if we should apply initialProgress to scroll
+	let shouldRestoreScroll = $state(true);
+
 	// Restore scroll position when content changes (e.g., on mount or chapter change)
 	$effect(() => {
-		if (!scrollContainer || !content) return;
+		// This effect re-runs when content, currentChapter, or initialProgress changes
+		const _content = content;
+		const _progress = initialProgress;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _reactiveChapter = currentChapter; // Used to make effect reactive to chapter changes
 
-		// Capture current values to avoid re-triggering
-		const progressToRestore = initialProgress;
+		if (!scrollContainer || !_content) return;
+
 		const container = scrollContainer;
 
-		// Wait for content to render
-		requestAnimationFrame(() => {
-			if (!container) return;
+		// Wait for DOM to update and content to render
+		tick().then(() => {
+			requestAnimationFrame(() => {
+				if (!container) return;
 
-			// Always set scroll position, even if it's 0
-			// When progressToRestore is 0, we should reset to beginning
-			// (important for chapter changes via TOC)
-			const maxScroll = container.scrollWidth - container.clientWidth;
-			const targetScroll = Math.round(maxScroll * progressToRestore);
-			jumpTo(container, targetScroll);
+				// Only apply scroll if we should restore it
+				// (not when handleLeftTap/handleRightTap just set it)
+				if (shouldRestoreScroll) {
+					const maxScroll = container.scrollWidth - container.clientWidth;
+					const targetScroll = Math.round(maxScroll * _progress);
+					jumpTo(container, targetScroll);
+				}
+				// Reset for next time
+				shouldRestoreScroll = true;
+			});
 		});
 	});
 
@@ -108,7 +121,10 @@
 				isChangingChapter = true;
 				// Clear any pending debounced saves to prevent race conditions
 				clearTimeout(debounceTimer);
-				onChapterChange(prevChapter);
+				// Don't let the $effect restore scroll - we'll handle it manually
+				shouldRestoreScroll = false;
+				// Pass progress=1 to open previous chapter at the end
+				onChapterChange(prevChapter, 1);
 				onUrlUpdate(prevChapter, 1);
 
 				chapterRaf = requestAnimationFrame(() => {
@@ -146,7 +162,8 @@
 				isChangingChapter = true;
 				// Clear any pending debounced saves to prevent race conditions
 				clearTimeout(debounceTimer);
-				onChapterChange(nextChapter);
+				// Pass progress=0 to open next chapter at the beginning
+				onChapterChange(nextChapter, 0);
 				onUrlUpdate(nextChapter, 0);
 
 				chapterRaf = requestAnimationFrame(() => {

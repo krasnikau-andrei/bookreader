@@ -95,8 +95,14 @@
 		}, 0);
 	}
 
-	function handleChapterChange(newChapter: number) {
+	function handleChapterChange(newChapter: number, progress?: number) {
 		currentChapter = newChapter;
+		// Update savedProgress when chapter changes with a specific progress
+		// This ensures navigation to previous chapter opens at the end (progress=1)
+		// and navigation to next chapter opens at the beginning (progress=0)
+		if (progress !== undefined) {
+			savedProgress = { chapterIndex: newChapter, scrollPercent: progress };
+		}
 	}
 
 	function handleCenterTap() {
