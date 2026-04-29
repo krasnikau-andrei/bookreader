@@ -48,31 +48,31 @@
 			const result = await parseEpubChapters(book.fileData);
 			chapters = result.chapters;
 
-  // Fetch saved progress from storage
-  const progress = await getProgress(bookId);
-  if (progress) {
-  savedProgress = {
-  chapterIndex: progress.chapterIndex,
-  scrollPercent: progress.scrollPercent
-  };
-  }
+			// Fetch saved progress from storage
+			const progress = await getProgress(bookId);
+			if (progress) {
+				savedProgress = {
+					chapterIndex: progress.chapterIndex,
+					scrollPercent: progress.scrollPercent
+				};
+			}
 
-  const urlSearchParams = $page.url.searchParams;
-  const hasChapterParam = urlSearchParams.has('chapter');
-  const hasProgressParam = urlSearchParams.has('progress');
+			const urlSearchParams = $page.url.searchParams;
+			const hasChapterParam = urlSearchParams.has('chapter');
+			const hasProgressParam = urlSearchParams.has('progress');
 
-  if (hasChapterParam || hasProgressParam) {
-  const targetChapter = parseInt(urlSearchParams.get('chapter') || '0', 10);
-  currentChapter = Math.min(targetChapter, chapters.length - 1);
-  } else if (savedProgress) {
-  currentChapter = Math.min(savedProgress.chapterIndex, chapters.length - 1);
-  }
+			if (hasChapterParam || hasProgressParam) {
+				const targetChapter = parseInt(urlSearchParams.get('chapter') || '0', 10);
+				currentChapter = Math.min(targetChapter, chapters.length - 1);
+			} else if (savedProgress) {
+				currentChapter = Math.min(savedProgress.chapterIndex, chapters.length - 1);
+			}
 
-  await new Promise((resolve) => setTimeout(resolve, 200));
+			await new Promise((resolve) => setTimeout(resolve, 200));
 
-  if (!hasChapterParam && !hasProgressParam) {
-  updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
-  }
+			if (!hasChapterParam && !hasProgressParam) {
+				updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
+			}
 		} finally {
 			loading = false;
 		}
