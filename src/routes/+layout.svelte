@@ -12,6 +12,36 @@
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 	<meta name="apple-mobile-web-app-title" content="BookReader" />
+	<style>
+		@font-face {
+			font-family: 'Bookerly';
+			src: url('/fonts/Bookerly.ttf') format('truetype');
+			font-weight: normal;
+			font-style: normal;
+			font-display: swap;
+		}
+		@font-face {
+			font-family: 'Bookerly';
+			src: url('/fonts/Bookerly%20Italic.ttf') format('truetype');
+			font-weight: normal;
+			font-style: italic;
+			font-display: swap;
+		}
+		@font-face {
+			font-family: 'Bookerly';
+			src: url('/fonts/Bookerly%20Bold.ttf') format('truetype');
+			font-weight: bold;
+			font-style: normal;
+			font-display: swap;
+		}
+		@font-face {
+			font-family: 'Bookerly';
+			src: url('/fonts/Bookerly%20Bold%20Italic.ttf') format('truetype');
+			font-weight: bold;
+			font-style: italic;
+			font-display: swap;
+		}
+	</style>
 </svelte:head>
 
 <div

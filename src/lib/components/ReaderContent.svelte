@@ -262,6 +262,18 @@
 		background: transparent !important;
 	}
 
+	.content :global(p) {
+		text-indent: 1.5em;
+		text-align: justify;
+		text-align-last: left;
+		hyphens: auto;
+		overflow-wrap: break-word;
+		padding-top: 0;
+		padding-bottom: 0;
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+
 	.content :global(img) {
 		filter: var(--image-filter, none);
 		max-width: 100%;
