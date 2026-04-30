@@ -23,6 +23,7 @@
 	let contextMenu: { bookId: string; x: number; y: number } | null = $state(null);
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
+	let menuJustOpened = false;
 
 	onMount(async () => {
 		books = await getAllBooks();
@@ -58,10 +59,12 @@
 
 	function handleTouchStart(bookId: string, event: TouchEvent | MouseEvent) {
 		isLongPress = false;
+		// Capture touch coordinates immediately, not in the setTimeout
+		const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+		const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
 		longPressTimer = setTimeout(() => {
 			isLongPress = true;
-			const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
-			const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+			menuJustOpened = true;
 			contextMenu = { bookId, x: clientX, y: clientY };
 		}, 500);
 	}
@@ -74,6 +77,12 @@
 	}
 
 	function closeContextMenu() {
+		// Don't close menu if it was just opened via long press
+		// This prevents iOS click event from closing menu immediately after long press
+		if (menuJustOpened) {
+			menuJustOpened = false;
+			return;
+		}
 		contextMenu = null;
 	}
 

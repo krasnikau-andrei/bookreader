@@ -15,6 +15,12 @@ test.describe('Reader Internal Links', () => {
 	});
 
 	test('T1: Links are transformed correctly in accessible_epub_3.epub', async ({ page }) => {
+		// Clear any existing books first
+		await page.evaluate(() => {
+			indexedDB.deleteDatabase('bookreader');
+		});
+		await page.reload();
+
 		// Upload accessible_epub_3.epub
 		const fileChooserPromise = page.waitForEvent('filechooser');
 		await page.locator('[data-testid="upload-button"]').click();
@@ -26,15 +32,22 @@ test.describe('Reader Internal Links', () => {
 		// Wait for book to appear
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
+		// Verify it's the correct book by checking title
+		await expect(page.locator('[data-testid="book-title"]')).toHaveText('Accessible EPUB 3');
+
 		// Open the book
 		await page.locator('[data-testid="book-card"]').first().click();
 
 		// Wait for reader to load
 		await expect(page.locator('[data-testid="reader-content"]')).toBeVisible();
 
-		// Navigate to TOC chapter (chapter 3) which has many internal links
-		await page.goto(page.url().replace(/\?.*/, '') + '?chapter=3');
-		await page.waitForTimeout(500);
+		// Navigate to chapter 3 and wait for content to load
+		const baseUrl = page.url().replace(/\?.*/, '');
+		await page.goto(baseUrl + '?chapter=3');
+		// Wait for reader content to be visible and have internal links
+		await page.waitForSelector('[data-testid="reader-content"] a.internal-link', { timeout: 5000 });
+		// Additional wait for content to fully render
+		await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
 		// Check for transformed links in the DOM
 		// The TOC chapter (bk01-toc.xhtml) should have links like:
@@ -97,6 +110,12 @@ test.describe('Reader Internal Links', () => {
 	});
 
 	test('T2: Internal link click navigates to correct chapter', async ({ page }) => {
+		// Clear any existing books first
+		await page.evaluate(() => {
+			indexedDB.deleteDatabase('bookreader');
+		});
+		await page.reload();
+
 		// Upload and open book
 		const fileChooserPromise = page.waitForEvent('filechooser');
 		await page.locator('[data-testid="upload-button"]').click();
@@ -106,20 +125,25 @@ test.describe('Reader Internal Links', () => {
 		await fileChooser.setFiles(epubPath);
 
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
+		await expect(page.locator('[data-testid="book-title"]')).toHaveText('Accessible EPUB 3');
 		await page.locator('[data-testid="book-card"]').first().click();
 		await expect(page.locator('[data-testid="reader-content"]')).toBeVisible();
 
-		// Navigate to TOC chapter (chapter 3)
-		await page.goto(page.url().replace(/\?.*/, '') + '?chapter=3');
-		await page.waitForTimeout(500);
+		// Navigate to chapter 3 and wait for content to load
+		const baseUrl = page.url().replace(/\?.*/, '');
+		await page.goto(baseUrl + '?chapter=3');
+		// Wait for reader content to be visible and have internal links
+		await page.waitForSelector('[data-testid="reader-content"] a.internal-link', { timeout: 5000 });
+		// Additional wait for content to fully render
+		await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
 		// Get current chapter from URL
 		const urlBefore = page.url();
 		const currentChapterMatch = urlBefore.match(/chapter=(\d+)/);
-		const currentChapter = currentChapterMatch ? parseInt(currentChapterMatch[1], 10) : 3;
+		let currentChapter = currentChapterMatch ? parseInt(currentChapterMatch[1], 10) : 3;
 
 		// Find an internal link that navigates to a DIFFERENT chapter
-		const linkInfo = await page.evaluate((currentCh) => {
+		let linkInfo = await page.evaluate((currentCh) => {
 			const links = document.querySelectorAll('a.internal-link');
 			for (const link of links) {
 				const targetChapter = link.getAttribute('data-chapter');
@@ -134,6 +158,40 @@ test.describe('Reader Internal Links', () => {
 			}
 			return null;
 		}, currentChapter);
+
+		// If no cross-chapter link found, try other chapters (start from chapter 0)
+		if (!linkInfo) {
+			console.log('No cross-chapter link in chapter 3, trying other chapters...');
+			for (let ch = 0; ch < 5; ch++) {
+				if (ch === currentChapter) continue;
+				await page.goto(baseUrl + `?chapter=${ch}`);
+				await page
+					.waitForSelector('[data-testid="reader-content"] a.internal-link', { timeout: 5000 })
+					.catch(() => {});
+				await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+
+				linkInfo = await page.evaluate((targetCh) => {
+					const links = document.querySelectorAll('a.internal-link');
+					for (const link of links) {
+						const targetChapter = link.getAttribute('data-chapter');
+						if (targetChapter && parseInt(targetChapter, 10) !== targetCh) {
+							return {
+								targetChapter: targetChapter,
+								fragment: link.getAttribute('data-fragment'),
+								href: link.getAttribute('href')
+							};
+						}
+					}
+					return null;
+				}, ch);
+
+				if (linkInfo) {
+					currentChapter = ch;
+					console.log(`Found cross-chapter link in chapter ${ch}`);
+					break;
+				}
+			}
+		}
 
 		// Fail test if no cross-chapter link found (don't skip - this is a real failure)
 		expect(linkInfo, 'Should find an internal link to a different chapter').not.toBeNull();

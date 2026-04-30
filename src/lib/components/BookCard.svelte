@@ -22,7 +22,7 @@
 	data-testid="book-card"
 >
 	{#if book.cover}
-		<img src={book.cover} alt={book.title} class="book-cover" />
+		<img src={book.cover} alt={book.title} class="book-cover" draggable="false" />
 	{:else}
 		<div class="book-cover-placeholder">
 			<span class="filename">{book.filename}</span>
@@ -55,6 +55,7 @@
 		-ms-user-select: none;
 		user-select: none;
 		-webkit-touch-callout: none;
+		-webkit-user-drag: none;
 	}
 
 	.book-card:hover {
@@ -79,6 +80,8 @@
 
 	.book-cover {
 		object-fit: contain;
+		-webkit-user-drag: none;
+		-webkit-touch-callout: none;
 	}
 
 	.book-cover-placeholder .filename {

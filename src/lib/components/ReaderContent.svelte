@@ -330,5 +330,6 @@
 		filter: var(--image-filter, none);
 		max-width: 100%;
 		height: auto;
+		-webkit-user-drag: none;
 	}
 </style>
