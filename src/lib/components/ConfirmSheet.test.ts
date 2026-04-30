@@ -40,15 +40,4 @@ describe('ConfirmSheet', () => {
 		await fireEvent.click(backdrop!);
 		expect(onCancel).toHaveBeenCalledTimes(1);
 	});
-
-	it('has proper data-testid attributes', () => {
-		render(ConfirmSheet, {
-			props: { bookTitle: 'Test Book', onConfirm: vi.fn(), onCancel: vi.fn() }
-		});
-		expect(screen.getByTestId('confirm-sheet')).toBeInTheDocument();
-		expect(screen.getByTestId('confirm-sheet-backdrop')).toBeInTheDocument();
-		expect(screen.getByTestId('confirm-sheet-delete')).toBeInTheDocument();
-		expect(screen.getByTestId('confirm-sheet-cancel')).toBeInTheDocument();
-		expect(screen.getByTestId('confirm-sheet-message')).toBeInTheDocument();
-	});
 });

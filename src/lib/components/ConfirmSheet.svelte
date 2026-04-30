@@ -14,11 +14,17 @@
 	role="button"
 	tabindex="0"
 	onclick={onCancel}
-	onkeydown={(e) => e.key === 'Enter' && onCancel()}
+	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCancel()}
 ></div>
 
 <!-- Sheet -->
-<div class="sheet" data-testid="confirm-sheet" role="dialog" aria-label="Delete confirmation">
+<div
+	class="sheet"
+	data-testid="confirm-sheet"
+	role="dialog"
+	aria-label="Delete confirmation"
+	aria-modal="true"
+>
 	<p class="message" data-testid="confirm-sheet-message">
 		Delete "{bookTitle}"?
 	</p>
@@ -75,10 +81,6 @@
 		border-radius: var(--radius-sm);
 	}
 
-	.btn-delete:hover {
-		background: rgba(255, 68, 68, 0.1);
-	}
-
 	.btn-cancel {
 		background: transparent;
 		border: none;
@@ -87,9 +89,5 @@
 		padding: var(--padding-md);
 		cursor: pointer;
 		border-radius: var(--radius-sm);
-	}
-
-	.btn-cancel:hover {
-		background: rgba(74, 158, 255, 0.1);
 	}
 </style>
