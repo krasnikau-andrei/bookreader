@@ -88,12 +88,14 @@ export function createSwipeHandler(
 		const deltaTime = endTime - state.startTime;
 		const viewportWidth = element.clientWidth;
 
-		// Calculate velocity in viewports per second
+		// Calculate velocity in viewports per second based on FINGER movement, not scroll
 		const velocity = deltaTime > 0 ? Math.abs(deltaX) / viewportWidth / (deltaTime / 1000) : 0;
 
-		// Calculate progress based on scroll change
-		const scrollDelta = element.scrollLeft - state.startScrollLeft;
-		const progress = Math.abs(scrollDelta) / viewportWidth;
+		// Calculate progress based on FINGER movement, not scroll position change
+		// This fixes the bug where native scroll-snap could scroll multiple pages,
+		// causing progress > 1 and resulting in multiple page turns.
+		// We only care about how far the user's finger moved, not how far content scrolled.
+		const progress = Math.abs(deltaX) / viewportWidth;
 
 		// Determine if swipe should complete
 		const shouldComplete =

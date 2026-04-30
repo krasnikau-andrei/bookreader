@@ -140,4 +140,103 @@ test.describe('Reader Swipe Gestures', () => {
 		const hasAnimation = scrollAfter50ms > initialScroll || scrollAfter100ms > scrollAfter50ms;
 		expect(hasAnimation || scrollAfter100ms > initialScroll).toBe(true);
 	});
+
+	test('swipe should only move one page regardless of distance', async ({ page }) => {
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (!box) return;
+
+		// Get initial page
+		const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
+		const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const initialPage = Math.round(initialScroll / clientWidth);
+
+		// BUG REPRODUCTION: The issue is that during touch gestures on mobile devices,
+		// the browser's native scrolling (with scroll-snap) moves the content.
+		// The swipe.ts calculates "progress" based on scrollLeft change, not finger movement.
+		// If user drags 2.5 pages worth, scrollDelta = 2.5 * viewportWidth,
+		// which means progress = 2.5 (> 0.3 threshold), triggering a page turn.
+		// Then handleRightTap() scrolls ANOTHER page on top.
+		// Result: 2.5 + 1 = 3.5 pages scrolled instead of 1.
+
+		// Simulate the native scroll happening during a long drag (like on real mobile):
+		// First, programmatically set scrollLeft to simulate native scroll during drag
+		const simulatedNativeScroll = clientWidth * 2.5; // User dragged 2.5 pages
+		await content.evaluate((el, amount) => {
+			(el as HTMLElement).scrollLeft = amount;
+		}, simulatedNativeScroll);
+
+		// Now perform a mouse swipe gesture (simulates touchend after long drag)
+		const startX = box.x + box.width * 0.8;
+		const endX = box.x + box.width * 0.2; // 60% movement
+		const centerY = box.y + box.height * 0.5;
+
+		await page.mouse.move(startX, centerY);
+		await page.mouse.down();
+		await page.mouse.move(endX, centerY, { steps: 5 });
+		await page.mouse.up();
+
+		// Wait for animation
+		await page.waitForTimeout(600);
+
+		// Get final page
+		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const finalPage = Math.round(finalScroll / clientWidth);
+
+		// EXPECTED: Only 1 page from where native scroll stopped (at page 2)
+		// So final should be at page 3 (from initial 0)
+		// BUG: We're at page 4 or 5 because native scroll (2.5 pages) + swipe (1 page) = 3.5 pages total
+		const expectedPageMin = 2; // At minimum should be page 2
+		const expectedPageMax = 3; // At maximum should be page 3, NOT page 4 or 5
+
+		expect(
+			finalPage,
+			`BUG: Swipe moved ${finalPage - initialPage} pages instead of 1. ` +
+				`Native scroll was at ${simulatedNativeScroll}px (${simulatedNativeScroll / clientWidth} pages). ` +
+				`Final page: ${finalPage}, expected between ${expectedPageMin}-${expectedPageMax}. ` +
+				`Initial page: ${initialPage}, ClientWidth: ${clientWidth}`
+		).toBeLessThanOrEqual(expectedPageMax);
+	});
+
+	test('swipe should use constant animation speed', async ({ page }) => {
+		const content = page.locator('[data-testid="reader-content"]');
+		const box = await content.boundingBox();
+		expect(box).toBeTruthy();
+		if (!box) return;
+
+		// First swipe: fast
+		const startX = box.x + box.width * 0.7;
+		const endXFast = box.x + box.width * 0.3;
+		const endXSlow = box.x + box.width * 0.4;
+		const centerY = box.y + box.height * 0.5;
+
+		// Fast swipe (small steps = fast movement)
+		await page.mouse.move(startX, centerY);
+		await page.mouse.down();
+		await page.mouse.move(endXFast, centerY, { steps: 3 });
+		await page.mouse.up();
+
+		await page.waitForTimeout(600);
+		const scrollAfterFast = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
+		const pageAfterFast = Math.round(scrollAfterFast / clientWidth);
+
+		// Slow swipe (large steps = slow movement)
+		await page.mouse.move(startX, centerY);
+		await page.mouse.down();
+		await page.mouse.move(endXSlow, centerY, { steps: 20 });
+		await page.mouse.up();
+
+		await page.waitForTimeout(600);
+		const scrollAfterSlow = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+		const pageAfterSlow = Math.round(scrollAfterSlow / clientWidth);
+
+		// Both should move exactly one page
+		// If animation speed varied with swipe speed, pages would differ
+		expect(
+			pageAfterSlow - pageAfterFast,
+			`Both swipes should move exactly 1 page each. Fast ended at page ${pageAfterFast}, slow at page ${pageAfterSlow}`
+		).toBe(1);
+	});
 });

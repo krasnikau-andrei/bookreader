@@ -170,15 +170,16 @@ describe('Swipe Detection', () => {
 		});
 
 		test('triggers onSwipeRight when progress exceeds threshold', () => {
-			// Start at scroll position 400
-			element.scrollLeft = 400;
-
-			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			// For right swipe: finger moves from left to right
+			// Start touch at x=50 (left side)
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Move scroll to 250px (37.5% progress backwards)
-			element.scrollLeft = 250;
+			// Move finger to x=350 (right side) - 300px movement = 75% progress
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 350, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
 
+			// End touch at x=350
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 350, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
