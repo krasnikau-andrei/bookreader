@@ -49,6 +49,12 @@
 		padding: var(--padding-lg);
 		z-index: 101;
 		transform: translateY(0);
+		animation: slideUp 0.3s ease-out;
+	}
+
+	@keyframes slideUp {
+		from { transform: translateY(100%); }
+		to { transform: translateY(0); }
 	}
 
 	.message {

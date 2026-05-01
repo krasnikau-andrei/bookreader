@@ -31,6 +31,15 @@ describe('ConfirmSheet', () => {
 		expect(onCancel).toHaveBeenCalledTimes(1);
 	});
 
+	it('renders with slide-up animation class', () => {
+		render(ConfirmSheet, {
+			props: { bookTitle: 'Test Book', onConfirm: vi.fn(), onCancel: vi.fn() }
+		});
+		const sheet = screen.getByTestId('confirm-sheet');
+		expect(sheet).toBeInTheDocument();
+		expect(sheet).toHaveClass('sheet');
+	});
+
 	it('calls onCancel when backdrop tapped', async () => {
 		const onCancel = vi.fn();
 		render(ConfirmSheet, {
