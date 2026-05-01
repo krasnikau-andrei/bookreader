@@ -35,7 +35,6 @@
 	.backdrop {
 		position: fixed;
 		inset: 0;
-		background: var(--color-overlay);
 		z-index: 100;
 	}
 
