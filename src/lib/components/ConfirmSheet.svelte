@@ -7,9 +7,6 @@
 	let { bookTitle, onConfirm, onCancel }: Props = $props();
 </script>
 
-<!-- Backdrop -->
-<div class="backdrop" data-testid="confirm-sheet-backdrop" onclick={onCancel}></div>
-
 <!-- Sheet -->
 <div
 	class="sheet"
@@ -32,13 +29,6 @@
 </div>
 
 <style>
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		background: var(--color-overlay);
-		z-index: 100;
-	}
-
 	.sheet {
 		position: fixed;
 		bottom: 0;

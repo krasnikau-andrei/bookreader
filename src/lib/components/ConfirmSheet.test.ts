@@ -39,14 +39,4 @@ describe('ConfirmSheet', () => {
 		expect(sheet).toBeInTheDocument();
 		expect(sheet).toHaveClass('sheet');
 	});
-
-	it('calls onCancel when backdrop tapped', async () => {
-		const onCancel = vi.fn();
-		render(ConfirmSheet, {
-			props: { bookTitle: 'Test Book', onConfirm: vi.fn(), onCancel }
-		});
-		const backdrop = document.querySelector('.backdrop');
-		await fireEvent.click(backdrop!);
-		expect(onCancel).toHaveBeenCalledTimes(1);
-	});
 });
