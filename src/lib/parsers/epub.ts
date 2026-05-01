@@ -385,6 +385,9 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 	// Build lookup maps
 	const tocLabels = new Map<string, string>();
 	const tocLevels = new Map<string, number>();
+	// Map of filePath -> array of { fragmentId, level } for nested TOC entries
+	const subchapterFragments = new Map<string, Array<{ fragmentId: string; level: number }>>();
+
 	for (const entry of tocEntries) {
 		tocLabels.set(entry.href, entry.label);
 		tocLevels.set(entry.href, entry.level);
@@ -392,6 +395,22 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		if (shortPath !== entry.href) {
 			tocLabels.set(shortPath, entry.label);
 			tocLevels.set(shortPath, entry.level);
+		}
+
+		// Track subchapter fragments (level > 0 with fragment identifiers)
+		const hashIndex = entry.href.indexOf('#');
+		if (hashIndex !== -1 && entry.level > 0) {
+			const filePart = entry.href.substring(0, hashIndex);
+			const fragmentId = entry.href.substring(hashIndex + 1);
+			const normalizedPath = filePart.replace(/^EPUB\//, '');
+
+			// Add for both full and normalized paths
+			for (const path of [filePart, normalizedPath].filter((p) => p)) {
+				if (!subchapterFragments.has(path)) {
+					subchapterFragments.set(path, []);
+				}
+				subchapterFragments.get(path)!.push({ fragmentId, level: entry.level });
+			}
 		}
 	}
 
@@ -470,6 +489,20 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 				if (imageDataUri) {
 					img.setAttribute('src', imageDataUri);
 				}
+			}
+		}
+
+		// Mark subchapter elements (nested TOC entries with fragments) for page breaks
+		const chapterFragments =
+			subchapterFragments.get(filePath) || subchapterFragments.get(shortPath) || [];
+		for (const { fragmentId } of chapterFragments) {
+			const element = chapterDoc.getElementById(fragmentId);
+			if (element) {
+				const existingClass = element.getAttribute('class') || '';
+				element.setAttribute(
+					'class',
+					existingClass ? `${existingClass} subchapter-start` : 'subchapter-start'
+				);
 			}
 		}
 

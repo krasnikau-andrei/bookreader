@@ -367,4 +367,8 @@
 		height: auto;
 		-webkit-user-drag: none;
 	}
+
+	.content :global(.subchapter-start) {
+		break-before: column;
+	}
 </style>
