@@ -77,77 +77,165 @@ test.describe('Library', () => {
 		expect(firstBookTitle).toBeTruthy();
 	});
 
-	test('shows delete menu on long press', async ({ page }) => {
-		// Upload a test book
-		const fileInput = page.locator('input[type="file"]');
-		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
-		await fileInput.setInputFiles(testBookPath);
+	test('shows delete confirmation sheet on long press', async ({ page }) => {
+		await page.evaluate(() => {
+			indexedDB.deleteDatabase('bookreader');
+		});
+		await page.reload();
+		const fileChooserPromise = page.waitForEvent('filechooser');
+		await page.locator('[data-testid="upload-button"]').click();
+		const fileChooser = await fileChooserPromise;
+		await fileChooser.setFiles(path.join(__dirname, 'fixtures/accessible_epub_3.epub'));
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
-		// Wait for book to appear
-		await page.waitForSelector('[data-testid="book-card"]');
-
-		// Long press on book card (500ms) using right-click since Playwright desktop doesn't support touch
+		// Simulate long press via touch events
 		const bookCard = page.locator('[data-testid="book-card"]').first();
-		await bookCard.click({ button: 'right' });
 
-		// Context menu should appear
-		const contextMenu = page.locator('.context-menu');
-		await expect(contextMenu).toBeVisible();
+		await page.evaluate(() => {
+			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
+			if (card) {
+				const rect = card.getBoundingClientRect();
+				const touchEvent = new TouchEvent('touchstart', {
+					bubbles: true,
+					cancelable: true,
+					touches: [
+						new Touch({
+							identifier: 0,
+							target: card,
+							clientX: rect.left + rect.width / 2,
+							clientY: rect.top + rect.height / 2
+						})
+					]
+				});
+				card.dispatchEvent(touchEvent);
 
-		// Delete button should be visible in menu
-		const deleteButton = page.locator('[data-testid="delete-book-button"]');
-		await expect(deleteButton).toBeVisible();
-		await expect(deleteButton).toHaveText('Delete');
+				setTimeout(() => {
+					const touchEndEvent = new TouchEvent('touchend', {
+						bubbles: true,
+						cancelable: true
+					});
+					card.dispatchEvent(touchEndEvent);
+				}, 500);
+			}
+		});
+
+		// Wait for the setTimeout to complete and UI to update
+		await page.waitForTimeout(700);
+
+		// Verify bottom sheet appears
+		const sheet = page.locator('[data-testid="confirm-sheet"]');
+		await expect(sheet).toBeVisible();
+		await expect(page.locator('[data-testid="confirm-sheet-message"]')).toHaveText(
+			'Delete "Accessible EPUB 3"?'
+		);
+		await expect(page.locator('[data-testid="confirm-sheet-delete"]')).toBeVisible();
+		await expect(page.locator('[data-testid="confirm-sheet-cancel"]')).toBeVisible();
 	});
 
-	test('deletes book from context menu', async ({ page }) => {
-		// Upload a test book
-		const fileInput = page.locator('input[type="file"]');
-		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
-		await fileInput.setInputFiles(testBookPath);
+	test('deletes book after confirming in sheet', async ({ page }) => {
+		await page.evaluate(() => {
+			indexedDB.deleteDatabase('bookreader');
+		});
+		await page.reload();
+		const fileChooserPromise = page.waitForEvent('filechooser');
+		await page.locator('[data-testid="upload-button"]').click();
+		const fileChooser = await fileChooserPromise;
+		await fileChooser.setFiles(path.join(__dirname, 'fixtures/accessible_epub_3.epub'));
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
-		// Wait for book to appear
-		await page.waitForSelector('[data-testid="book-card"]');
-		const initialBooks = await page.locator('[data-testid="book-card"]').count();
-		expect(initialBooks).toBe(1);
-
-		// Right-click on book card to open context menu
+		// Simulate long press via touch events
 		const bookCard = page.locator('[data-testid="book-card"]').first();
-		await bookCard.click({ button: 'right' });
 
-		// Click delete in context menu
-		const deleteButton = page.locator('[data-testid="delete-book-button"]');
-		await deleteButton.click();
+		await page.evaluate(() => {
+			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
+			if (card) {
+				const rect = card.getBoundingClientRect();
+				const touchEvent = new TouchEvent('touchstart', {
+					bubbles: true,
+					cancelable: true,
+					touches: [
+						new Touch({
+							identifier: 0,
+							target: card,
+							clientX: rect.left + rect.width / 2,
+							clientY: rect.top + rect.height / 2
+						})
+					]
+				});
+				card.dispatchEvent(touchEvent);
 
-		// Book should be removed
-		await page.waitForSelector('[data-testid="empty-state"]');
-		const emptyState = page.locator('[data-testid="empty-state"]');
-		await expect(emptyState).toBeVisible();
+				setTimeout(() => {
+					const touchEndEvent = new TouchEvent('touchend', {
+						bubbles: true,
+						cancelable: true
+					});
+					card.dispatchEvent(touchEndEvent);
+				}, 500);
+			}
+		});
+
+		// Wait for the setTimeout to complete and UI to update
+		await page.waitForTimeout(700);
+
+		// Click Delete button
+		await page.locator('[data-testid="confirm-sheet-delete"]').click();
+
+		// Verify book is deleted
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(0, { timeout: 15000 });
 	});
 
-	test('hides context menu when tapping elsewhere', async ({ page }) => {
-		// Upload a test book
-		const fileInput = page.locator('input[type="file"]');
-		const testBookPath = path.join(__dirname, 'fixtures', 'crime-punishment.epub');
-		await fileInput.setInputFiles(testBookPath);
+	test('cancels delete and dismisses sheet', async ({ page }) => {
+		await page.evaluate(() => {
+			indexedDB.deleteDatabase('bookreader');
+		});
+		await page.reload();
+		const fileChooserPromise = page.waitForEvent('filechooser');
+		await page.locator('[data-testid="upload-button"]').click();
+		const fileChooser = await fileChooserPromise;
+		await fileChooser.setFiles(path.join(__dirname, 'fixtures/accessible_epub_3.epub'));
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
-		// Wait for book to appear
-		await page.waitForSelector('[data-testid="book-card"]');
-
-		// Right-click on book card to open context menu
+		// Simulate long press via touch events
 		const bookCard = page.locator('[data-testid="book-card"]').first();
-		await bookCard.click({ button: 'right' });
 
-		// Context menu should appear
-		const contextMenu = page.locator('.context-menu');
-		await expect(contextMenu).toBeVisible();
+		await page.evaluate(() => {
+			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
+			if (card) {
+				const rect = card.getBoundingClientRect();
+				const touchEvent = new TouchEvent('touchstart', {
+					bubbles: true,
+					cancelable: true,
+					touches: [
+						new Touch({
+							identifier: 0,
+							target: card,
+							clientX: rect.left + rect.width / 2,
+							clientY: rect.top + rect.height / 2
+						})
+					]
+				});
+				card.dispatchEvent(touchEvent);
 
-		// Click elsewhere (on the grid)
-		const grid = page.locator('.books-grid');
-		await grid.click();
+				setTimeout(() => {
+					const touchEndEvent = new TouchEvent('touchend', {
+						bubbles: true,
+						cancelable: true
+					});
+					card.dispatchEvent(touchEndEvent);
+				}, 500);
+			}
+		});
 
-		// Context menu should disappear
-		await expect(contextMenu).not.toBeVisible();
+		// Wait for the setTimeout to complete and UI to update
+		await page.waitForTimeout(700);
+		await expect(page.locator('[data-testid="confirm-sheet"]')).toBeVisible();
+
+		// Click Cancel button
+		await page.locator('[data-testid="confirm-sheet-cancel"]').click();
+
+		// Verify sheet is dismissed, book still exists
+		await expect(page.locator('[data-testid="confirm-sheet"]')).not.toBeVisible();
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1);
 	});
 });
 
