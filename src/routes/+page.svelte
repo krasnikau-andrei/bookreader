@@ -9,7 +9,7 @@
 	import {
 		UploadButton,
 		BookCard,
-		ContextMenu,
+		ConfirmSheet,
 		ErrorBanner,
 		InfoBanner,
 		EmptyState
@@ -20,10 +20,9 @@
 	let fileInput: HTMLInputElement | undefined = $state();
 	let errorMessage: string | null = $state(null);
 	let infoMessage: string | null = $state(null);
-	let contextMenu: { bookId: string; x: number; y: number } | null = $state(null);
+	let confirmSheet: { bookId: string; bookTitle: string } | null = $state(null);
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
-	let menuJustOpened = false;
 
 	onMount(async () => {
 		books = await getAllBooks();
@@ -42,10 +41,10 @@
 	}
 
 	async function handleDeleteBook() {
-		if (!contextMenu) return;
-		await deleteBook(contextMenu.bookId);
+		if (!confirmSheet) return;
+		await deleteBook(confirmSheet.bookId);
 		books = await getAllBooks();
-		contextMenu = null;
+		confirmSheet = null;
 	}
 
 	function handleBookClick(bookId: string) {
@@ -59,13 +58,14 @@
 
 	function handleTouchStart(bookId: string, event: TouchEvent | MouseEvent) {
 		isLongPress = false;
-		// Capture touch coordinates immediately, not in the setTimeout
 		const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
 		const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
 		longPressTimer = setTimeout(() => {
 			isLongPress = true;
-			menuJustOpened = true;
-			contextMenu = { bookId, x: clientX, y: clientY };
+			const book = books.find((b) => b.id === bookId);
+			if (book) {
+				confirmSheet = { bookId, bookTitle: book.title };
+			}
 		}, 500);
 	}
 
@@ -76,14 +76,13 @@
 		}
 	}
 
-	function closeContextMenu() {
-		// Don't close menu if it was just opened via long press
-		// This prevents iOS click event from closing menu immediately after long press
-		if (menuJustOpened) {
-			menuJustOpened = false;
-			return;
-		}
-		contextMenu = null;
+	function handleDeleteConfirm() {
+		if (!confirmSheet) return;
+		handleDeleteBook();
+	}
+
+	function handleDeleteCancel() {
+		confirmSheet = null;
 	}
 
 	async function handleFileChange(event: Event) {
@@ -148,13 +147,7 @@
 		/>
 	</div>
 
-	<div
-		class="books-grid"
-		role="button"
-		tabindex="0"
-		onclick={closeContextMenu}
-		onkeydown={(e) => e.key === 'Enter' && closeContextMenu()}
-	>
+	<div class="books-grid">
 		{#if books.length === 0}
 			<EmptyState />
 		{:else}
@@ -173,8 +166,12 @@
 		{/if}
 	</div>
 
-	{#if contextMenu}
-		<ContextMenu x={contextMenu.x} y={contextMenu.y} onDelete={handleDeleteBook} />
+	{#if confirmSheet}
+		<ConfirmSheet
+			bookTitle={confirmSheet.bookTitle}
+			onConfirm={handleDeleteConfirm}
+			onCancel={handleDeleteCancel}
+		/>
 	{/if}
 </div>
 
