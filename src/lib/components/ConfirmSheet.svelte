@@ -8,14 +8,7 @@
 </script>
 
 <!-- Backdrop -->
-<div
-	class="backdrop"
-	data-testid="confirm-sheet-backdrop"
-	role="button"
-	tabindex="0"
-	onclick={onCancel}
-	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onCancel()}
-></div>
+<div class="backdrop" data-testid="confirm-sheet-backdrop" onclick={onCancel}></div>
 
 <!-- Sheet -->
 <div
