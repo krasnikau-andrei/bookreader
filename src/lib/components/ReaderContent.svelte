@@ -14,6 +14,7 @@
 		content: string;
 		initialProgress?: number;
 		language?: string;
+		fragment?: string | null;
 		onChapterChange: (chapter: number, progress?: number) => void;
 		onUrlUpdate: (chapter: number, progress: number) => void;
 		onCenterTap: () => void;
@@ -27,6 +28,7 @@
 		content,
 		initialProgress = 0,
 		language = 'en',
+		fragment = null,
 		onChapterChange,
 		onUrlUpdate,
 		onCenterTap,
@@ -35,6 +37,7 @@
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
 	let isChangingChapter = $state(false);
+	let isFragmentNavigation = $state(false);
 	/* eslint-disable @typescript-eslint/no-unused-vars */
 	let chapterRaf: number | null = null;
 	/* eslint-enable @typescript-eslint/no-unused-vars */
@@ -98,6 +101,10 @@
 		tick().then(() => {
 			requestAnimationFrame(() => {
 				if (!container) return;
+
+				// Skip restore if fragment navigation will handle scrolling
+				// (isFragmentNavigation is set synchronously in the fragment effect body)
+				if (isFragmentNavigation) return;
 
 				// Only apply scroll if we should restore it
 				// (not when handleLeftTap/handleRightTap just set it)
@@ -262,6 +269,34 @@
 			saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
 		}, 300);
 	}
+
+	$effect(() => {
+		const frag = fragment;
+		if (!frag || !scrollContainer) return;
+
+		isFragmentNavigation = true;
+
+		tick().then(() => {
+			requestAnimationFrame(() => {
+				if (!scrollContainer) return;
+				const el = document.getElementById(frag);
+				if (!el) {
+					isFragmentNavigation = false;
+					return;
+				}
+
+				const containerRect = scrollContainer.getBoundingClientRect();
+				const elRect = el.getBoundingClientRect();
+
+				const relativeLeft = elRect.left - containerRect.left + scrollContainer.scrollLeft;
+				const columnWidth = scrollContainer.clientWidth;
+				const targetScroll = Math.floor(relativeLeft / columnWidth) * columnWidth;
+
+				jumpTo(scrollContainer, targetScroll);
+				isFragmentNavigation = false;
+			});
+		});
+	});
 </script>
 
 <div

@@ -309,4 +309,103 @@ test.describe('Reader Internal Links', () => {
 		expect(externalLinkInfo.rel).toBe('noopener');
 		expect(externalLinkInfo.href).toMatch(/^https?:\/\//);
 	});
+
+	test('T5: Internal link with fragment scrolls to element in target chapter', async ({ page }) => {
+		page.on('console', (msg) => {
+			if (msg.text().includes('[DEBUG]')) {
+				console.log('Browser:', msg.text());
+			}
+		});
+
+		await page.evaluate(() => indexedDB.deleteDatabase('bookreader'));
+		await page.reload();
+
+		const fileChooserPromise = page.waitForEvent('filechooser');
+		await page.locator('[data-testid="upload-button"]').click();
+		const fileChooser = await fileChooserPromise;
+		await fileChooser.setFiles(join(__dirname, 'fixtures/accessible_epub_3.epub'));
+
+		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
+		await page.locator('[data-testid="book-card"]').first().click();
+		await expect(page.locator('[data-testid="reader-content"]')).toBeVisible();
+
+		// Navigate to TOC (chapter 3) which has links with fragments to other chapters
+		const baseUrl = page.url().replace(/\?.*/, '');
+		await page.goto(baseUrl + '?chapter=3');
+		await page.waitForSelector('[data-testid="reader-content"] a.internal-link', { timeout: 5000 });
+		await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+
+		// Find a link with a fragment pointing to a different chapter
+		const linkInfo = await page.evaluate(() => {
+			const links = document.querySelectorAll('a.internal-link');
+			for (const link of links) {
+				const chapter = link.getAttribute('data-chapter');
+				const fragment = link.getAttribute('data-fragment');
+				if (chapter && fragment && parseInt(chapter, 10) !== 3) {
+					return { chapter, fragment, text: link.textContent?.trim().substring(0, 30) };
+				}
+			}
+			return null;
+		});
+
+		expect(linkInfo, 'Should find a link with fragment to another chapter').not.toBeNull();
+		if (!linkInfo) return;
+
+		console.log(
+			`Clicking link to chapter ${linkInfo.chapter} with fragment #${linkInfo.fragment} ("${linkInfo.text}")`
+		);
+
+		// Click the link with the specific fragment
+		await page.evaluate(
+			({ targetCh, targetFragment }) => {
+				const links = document.querySelectorAll('a.internal-link');
+				for (const link of links) {
+					if (
+						link.getAttribute('data-chapter') === targetCh &&
+						link.getAttribute('data-fragment') === targetFragment
+					) {
+						(link as HTMLAnchorElement).click();
+						break;
+					}
+				}
+			},
+			{ targetCh: linkInfo.chapter, targetFragment: linkInfo.fragment }
+		);
+
+		// Wait for navigation and content to load
+		await page.waitForTimeout(1500);
+
+		// Verify chapter changed
+		const urlAfter = page.url();
+		const newChapterMatch = urlAfter.match(/chapter=(\d+)/);
+		const newChapter = newChapterMatch ? parseInt(newChapterMatch[1], 10) : -1;
+		expect(newChapter).toBe(parseInt(linkInfo.chapter, 10));
+
+		// Verify the fragment element exists in the new chapter
+		const fragmentExists = await page.evaluate((frag) => {
+			return document.getElementById(frag) !== null;
+		}, linkInfo.fragment);
+		expect(
+			fragmentExists,
+			`Fragment #${linkInfo.fragment} should exist in chapter ${newChapter}`
+		).toBe(true);
+
+		// Verify the fragment element is visible (scrolled to)
+		// In column layout, check if element's column is the current visible column
+		const isFragmentVisible = await page.evaluate((frag) => {
+			const el = document.getElementById(frag);
+			if (!el) return false;
+			const container = document.querySelector('[data-testid="reader-content"]') as HTMLElement;
+			if (!container) return false;
+			const elRect = el.getBoundingClientRect();
+			const containerRect = container.getBoundingClientRect();
+			// Element should be within the visible horizontal area of the container
+			return elRect.left >= containerRect.left - 10 && elRect.right <= containerRect.right + 10;
+		}, linkInfo.fragment);
+
+		expect(
+			isFragmentVisible,
+			`Fragment #${linkInfo.fragment} should be visible after navigation`
+		).toBe(true);
+	});
 });

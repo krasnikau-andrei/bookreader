@@ -153,6 +153,7 @@
 					content={chapters[currentChapter]?.content}
 					initialProgress={savedProgress?.scrollPercent ?? 0}
 					language={book.language}
+					fragment={pendingFragment}
 					onChapterChange={handleChapterChange}
 					onUrlUpdate={updateUrl}
 					onCenterTap={handleCenterTap}

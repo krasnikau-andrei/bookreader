@@ -176,11 +176,14 @@ test.describe('Library Page', () => {
 		await fileChooser.setFiles(join(__dirname, '../../tests/fixtures/great-gatsby.epub'));
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1);
 
-		// Right-click on book to open context menu
+		// Right-click on book to open context menu (triggers long-press with 500ms delay)
 		await page.locator('[data-testid="book-card"]').first().click({ button: 'right' });
 
-		// Click delete button in context menu
-		await page.locator('[data-testid="delete-book-button"]').click();
+		// Wait for ConfirmSheet to appear after 500ms long-press timer
+		await expect(page.locator('[data-testid="confirm-sheet"]')).toBeVisible();
+
+		// Click delete button in confirm sheet
+		await page.locator('[data-testid="confirm-sheet-delete"]').click();
 
 		// Book should be removed
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(0);
