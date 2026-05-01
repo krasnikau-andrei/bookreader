@@ -49,7 +49,7 @@ export const theme: Theme = {
 		'text-secondary': '#a0a0a0',
 		accent: '#4a9eff',
 		shadow: 'rgba(0, 0, 0, 0.3)',
-		cardBackground: 'rgba(255, 255, 255, 0.05)',
+		cardBackground: 'rgba(38, 38, 57)',
 		error: '#ff4444',
 		overlay: 'rgba(40, 40, 60, 0.95)'
 	},
