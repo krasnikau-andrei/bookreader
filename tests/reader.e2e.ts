@@ -89,8 +89,6 @@ test.describe('Library', () => {
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
 		// Simulate long press via touch events
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-
 		await page.evaluate(() => {
 			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
 			if (card) {
@@ -144,8 +142,6 @@ test.describe('Library', () => {
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
 		// Simulate long press via touch events
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-
 		await page.evaluate(() => {
 			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
 			if (card) {
@@ -196,8 +192,6 @@ test.describe('Library', () => {
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 
 		// Simulate long press via touch events
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-
 		await page.evaluate(() => {
 			const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
 			if (card) {

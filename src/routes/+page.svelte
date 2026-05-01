@@ -56,10 +56,8 @@
 		goto(`/read/${bookId}`);
 	}
 
-	function handleTouchStart(bookId: string, event: TouchEvent | MouseEvent) {
+	function handleTouchStart(bookId: string) {
 		isLongPress = false;
-		const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
-		const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
 		longPressTimer = setTimeout(() => {
 			isLongPress = true;
 			const book = books.find((b) => b.id === bookId);

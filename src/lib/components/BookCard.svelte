@@ -18,6 +18,8 @@
 	oncontextmenu={onContextMenu}
 	ontouchstart={onTouchStart}
 	ontouchend={onTouchEnd}
+	onmousedown={onTouchStart}
+	onmouseup={onTouchEnd}
 	type="button"
 	data-testid="book-card"
 >
