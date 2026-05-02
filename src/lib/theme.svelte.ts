@@ -54,7 +54,7 @@ export const theme: Theme = {
 		overlay: 'rgba(40, 40, 60, 0.95)'
 	},
 	imageFilter: 'invert(100%) hue-rotate(180deg) brightness(0.8)',
-	fontFamily: "'Bookerly', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+	fontFamily: "'Literata', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 	padding: {
 		xs: '4px',
 		sm: '8px',
