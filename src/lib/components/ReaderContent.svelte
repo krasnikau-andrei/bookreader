@@ -330,6 +330,9 @@
 		scroll-behavior: auto;
 	}
 
+	/* Side gap on children, not on .content — putting it on .content would shift
+	   scrollLeft by padding-left, breaking scrollContainer.scrollLeft <= 0
+	   as the chapter-boundary check in handleLeftTap/handleRightTap */
 	.content :global(> *) {
 		padding: 0 var(--reader-gap-sides);
 		margin: 0;
