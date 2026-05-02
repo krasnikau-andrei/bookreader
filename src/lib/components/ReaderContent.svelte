@@ -15,9 +15,12 @@
 		initialProgress?: number;
 		language?: string;
 		fragment?: string | null;
+		showOverlay?: boolean;
+		showToc?: boolean;
 		onChapterChange: (chapter: number, progress?: number) => void;
 		onUrlUpdate: (chapter: number, progress: number) => void;
 		onCenterTap: () => void;
+		onCloseMenus: () => void;
 		onFragmentNavigate?: (fragment: string) => void;
 	}
 
@@ -29,9 +32,12 @@
 		initialProgress = 0,
 		language = 'en',
 		fragment = null,
+		showOverlay = false,
+		showToc = false,
 		onChapterChange,
 		onUrlUpdate,
 		onCenterTap,
+		onCloseMenus,
 		onFragmentNavigate
 	}: Props = $props();
 
@@ -120,6 +126,11 @@
 	});
 
 	function handleLeftTap() {
+		if (showOverlay || showToc) {
+			onCloseMenus();
+			return;
+		}
+
 		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
 		if (scrollContainer.scrollLeft <= 0) {
@@ -159,6 +170,11 @@
 	}
 
 	function handleRightTap() {
+		if (showOverlay || showToc) {
+			onCloseMenus();
+			return;
+		}
+
 		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
 		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
@@ -199,6 +215,11 @@
 
 	function handleContentClick(event: MouseEvent) {
 		if (swipeHandler?.hasSwiped()) return;
+
+		if (showOverlay || showToc) {
+			onCloseMenus();
+			return;
+		}
 
 		const target = event.target as HTMLElement;
 		const link = target.closest('a');
