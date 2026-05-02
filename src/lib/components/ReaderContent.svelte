@@ -352,7 +352,7 @@
 	}
 
 	.content :global(> *) {
-		padding: var(--reader-content-padding, 1rem);
+		padding: var(--reader-gap-top) var(--reader-gap-sides) var(--reader-gap-bottom);
 		margin: 0;
 	}
 
@@ -383,7 +383,7 @@
 	}
 
 	.content :global(img) {
-		filter: var(--image-filter, none);
+		filter: var(--image-filter);
 		max-width: 100%;
 		height: auto;
 		-webkit-user-drag: none;

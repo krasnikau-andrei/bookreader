@@ -1,3 +1,5 @@
+// All theme fields are always initialized with values.
+// CSS custom properties derived from this object always exist — never use fallback values like var(--x, default).
 export interface Theme {
 	colors: {
 		background: string;
@@ -35,6 +37,11 @@ export interface Theme {
 		lg: string;
 		xl: string;
 		readerText: string;
+	};
+	reader: {
+		gapTop: string;
+		gapBottom: string;
+		gapSides: string;
 	};
 }
 
@@ -75,5 +82,10 @@ export const theme: Theme = {
 		lg: '1rem',
 		xl: '1.25rem',
 		readerText: '1.2rem'
+	},
+	reader: {
+		gapTop: '48px',
+		gapBottom: '48px',
+		gapSides: '24px'
 	}
 };

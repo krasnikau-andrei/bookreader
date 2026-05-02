@@ -48,6 +48,9 @@
 		--font-size-lg: {theme.fontSize.lg};
 --font-size-xl: {theme.fontSize.xl};
     --font-size-reader-text: {theme.fontSize.readerText};
+    --reader-gap-top: {theme.reader.gapTop};
+    --reader-gap-bottom: {theme.reader.gapBottom};
+    --reader-gap-sides: {theme.reader.gapSides};
     --font-family: {theme.fontFamily};
     --image-filter: {theme.imageFilter}
 "
