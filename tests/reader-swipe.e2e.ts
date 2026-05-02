@@ -37,9 +37,9 @@ test.describe('Reader Swipe Gestures', () => {
 			await reader.click({
 				position: { x: readerBox.width * 0.8, y: readerBox.height * 0.5 }
 			});
-			await page.waitForTimeout(300);
+			await page.waitForTimeout(500);
 		}
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(800);
 
 		const box = await content.boundingBox();
 		expect(box).toBeTruthy();
@@ -50,7 +50,7 @@ test.describe('Reader Swipe Gestures', () => {
 
 		// Click right zone to navigate forward (reliable with Playwright clicks)
 		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(600);
+		await page.waitForTimeout(1000);
 
 		// Should have moved to next page
 		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -86,9 +86,9 @@ test.describe('Reader Swipe Gestures', () => {
 			await reader.click({
 				position: { x: readerBox.width * 0.8, y: readerBox.height * 0.5 }
 			});
-			await page.waitForTimeout(300);
+			await page.waitForTimeout(500);
 		}
-		await page.waitForTimeout(800);
+		await page.waitForTimeout(1000);
 
 		const box = await content.boundingBox();
 		expect(box).toBeTruthy();
@@ -99,14 +99,14 @@ test.describe('Reader Swipe Gestures', () => {
 
 		// First, navigate forward using right tap
 		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(600);
+		await page.waitForTimeout(800);
 
 		const midScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 		expect(midScroll).toBeGreaterThan(initialScroll);
 
 		// Now tap left to go back
 		await content.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-		await page.waitForTimeout(600);
+		await page.waitForTimeout(800);
 
 		// Should have moved back
 		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -161,9 +161,9 @@ test.describe('Reader Swipe Gestures', () => {
 			await reader.click({
 				position: { x: readerBox.width * 0.8, y: readerBox.height * 0.5 }
 			});
-			await page.waitForTimeout(300);
+			await page.waitForTimeout(500);
 		}
-		await page.waitForTimeout(800);
+		await page.waitForTimeout(1000);
 
 		const box = await content.boundingBox();
 		expect(box).toBeTruthy();

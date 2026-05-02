@@ -33,10 +33,10 @@ test.describe('Reader Previous Chapter Bug', () => {
 		expect(box).toBeTruthy();
 		if (!box) return;
 
-		// Navigate forward to reach the next chapter
-		// We need to go far enough to ensure we're in chapter 2
-		console.log('Navigating forward to reach chapter 2...');
-		for (let i = 0; i < 15; i++) {
+		// Navigate forward deep into the book so the PREVIOUS chapter has multi-page content
+		// Chapter 6 has 10240px scrollable, so we need to reach chapter 7+ to validate
+		console.log('Navigating forward to reach a deep chapter...');
+		for (let i = 0; i < 22; i++) {
 			await reader.click({
 				position: { x: box.width * 0.8, y: box.height * 0.5 }
 			});
@@ -55,8 +55,8 @@ test.describe('Reader Previous Chapter Bug', () => {
 		const currentChapter = parseInt(chapterMatch![1], 10);
 		console.log('Current chapter:', currentChapter);
 
-		// We should be on chapter 1 or higher (not chapter 0)
-		expect(currentChapter).toBeGreaterThan(0);
+		// Ensure the PREVIOUS chapter has multi-page content for a valid assertion
+		expect(currentChapter).toBeGreaterThanOrEqual(7);
 
 		// Get scroll position before going back
 		const scrollBeforeBack = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -119,17 +119,15 @@ test.describe('Reader Previous Chapter Bug', () => {
 		);
 		console.log('Scroll after back:', scrollAfterBack, 'Max scroll:', maxScrollAfterBack);
 
+		// The previous chapter MUST have scrollable content (we verified currentChapter >= 7)
+		expect(maxScrollAfterBack).toBeGreaterThan(0);
+
 		// Scroll should be at or near max (end of chapter)
 		// The bug would show scroll near 0 (beginning)
-		const scrollPercent = maxScrollAfterBack > 0 ? scrollAfterBack / maxScrollAfterBack : 0;
+		const scrollPercent = scrollAfterBack / maxScrollAfterBack;
 		console.log('Scroll percent after back:', scrollPercent);
 
-		if (maxScrollAfterBack > 0) {
-			expect(scrollPercent).toBeGreaterThan(0.9); // Multi-page chapter: should be at end
-		} else {
-			// Single-viewport chapter: entire content is visible, trivially at end
-			expect(scrollPercent).toBe(0);
-		}
+		expect(scrollPercent).toBeGreaterThan(0.9); // Should be at least 90% through the chapter
 
 		// Take screenshot for debugging
 		await page.screenshot({ path: 'test-results/previous-chapter-bug.png' });
