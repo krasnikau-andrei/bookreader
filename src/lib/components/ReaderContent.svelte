@@ -342,12 +342,10 @@
 		background: transparent !important;
 	}
 
-	.content :global(p) {
+	.content :global(:where(p)) {
 		text-indent: 1.5em;
 		hyphens: auto;
 		overflow-wrap: break-word;
-		padding-top: 0;
-		padding-bottom: 0;
 		margin-top: 0;
 		margin-bottom: 0;
 	}
