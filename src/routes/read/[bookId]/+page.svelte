@@ -21,7 +21,6 @@
 	// Link handling
 	let showLinkError = $state(false);
 	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let pendingFragment: string | null = $state(null);
 
 	// Progress tracking
@@ -109,11 +108,19 @@
 		showOverlay = !showOverlay;
 	}
 
+	function handleCloseMenus() {
+		showOverlay = false;
+		showToc = false;
+	}
+
 	function handleChapterSelect(chapterIndex: number) {
 		currentChapter = chapterIndex;
 		// Reset saved progress when switching chapters via TOC
 		// so the new chapter starts at the beginning (progress = 0)
 		savedProgress = null;
+		// Close all menus when selecting a chapter
+		showOverlay = false;
+		showToc = false;
 		updateUrl(chapterIndex, 0, true);
 	}
 
@@ -154,9 +161,12 @@
 					initialProgress={savedProgress?.scrollPercent ?? 0}
 					language={book.language}
 					fragment={pendingFragment}
+					{showOverlay}
+					{showToc}
 					onChapterChange={handleChapterChange}
 					onUrlUpdate={updateUrl}
 					onCenterTap={handleCenterTap}
+					onCloseMenus={handleCloseMenus}
 					onFragmentNavigate={handleFragmentNavigate}
 				/>
 			{/if}
