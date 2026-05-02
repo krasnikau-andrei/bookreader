@@ -5,6 +5,34 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+async function dispatchTouch(
+	page: import('@playwright/test').Page,
+	clientX: number,
+	clientY: number,
+	type: 'touchstart' | 'touchmove' | 'touchend'
+) {
+	await page.evaluate(
+		({ x, y, t }) => {
+			const el = document.querySelector('[data-testid="reader-content"]');
+			if (!el) return;
+			const touch = new Touch({
+				identifier: 0,
+				target: el,
+				clientX: x,
+				clientY: y
+			});
+			const event = new TouchEvent(t, {
+				touches: t === 'touchend' ? [] : [touch],
+				changedTouches: [touch],
+				bubbles: true,
+				cancelable: true
+			});
+			el.dispatchEvent(event);
+		},
+		{ x: clientX, y: clientY, t: type }
+	);
+}
+
 test.describe('Reader Swipe Gestures', () => {
 	test.beforeEach(async ({ page }) => {
 		page.on('console', (msg) => console.log('Browser console:', msg.text()));
@@ -23,13 +51,12 @@ test.describe('Reader Swipe Gestures', () => {
 	});
 
 	test('swipe left completes to next page with velocity', async ({ page }) => {
-		// Tests the page-turn behavior that swipe left triggers.
-		// Uses content.click() to navigate forward — this directly calls handleRightTap(),
-		// the same function the swipe handler calls. The swipe handler's gesture detection
-		// (velocity/progress thresholds) is covered by swipe.test.ts unit tests.
+		// Uses touch events to simulate a real mobile swipe left (next page).
+		// touchstart → touchmove → touchend triggers the swipe handler's touch listener,
+		// which calls handleRightTap() to advance one page.
 		const content = page.locator('[data-testid="reader-content"]');
 
-		// Navigate past cover chapter (single column) to reach multi-column text
+		// Navigate past cover chapter (single viewport) to reach multi-column content
 		const reader = page.locator('.reader');
 		const readerBox = await reader.boundingBox();
 		expect(readerBox).toBeTruthy();
@@ -48,7 +75,17 @@ test.describe('Reader Swipe Gestures', () => {
 
 		const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 
-		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		// Swipe left: finger moves from right (80%) to left (20%)
+		const startX = box.x + box.width * 0.8;
+		const endX = box.x + box.width * 0.2;
+		const centerY = box.y + box.height * 0.5;
+
+		await dispatchTouch(page, startX, centerY, 'touchstart');
+		await dispatchTouch(page, endX, centerY, 'touchmove');
+		await page.waitForTimeout(50);
+		await dispatchTouch(page, endX, centerY, 'touchend');
+
+		// Wait for animation to complete
 		await page.waitForTimeout(800);
 
 		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -71,6 +108,7 @@ test.describe('Reader Swipe Gestures', () => {
 	});
 
 	test('tap left navigates to previous page', async ({ page }) => {
+		// Uses touch events to simulate a mobile swipe right (previous page).
 		const content = page.locator('[data-testid="reader-content"]');
 
 		const reader = page.locator('.reader');
@@ -89,15 +127,23 @@ test.describe('Reader Swipe Gestures', () => {
 		expect(box).toBeTruthy();
 		if (!box) return;
 
-		const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-
+		// Navigate forward one page first so we have a page to go back from
 		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(800);
 
 		const midScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-		expect(midScroll).toBeGreaterThan(initialScroll);
+		expect(midScroll).toBeGreaterThan(0);
 
-		await content.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
+		// Swipe right: finger moves from left (20%) to right (80%)
+		const startX = box.x + box.width * 0.2;
+		const endX = box.x + box.width * 0.8;
+		const centerY = box.y + box.height * 0.5;
+
+		await dispatchTouch(page, startX, centerY, 'touchstart');
+		await dispatchTouch(page, endX, centerY, 'touchmove');
+		await page.waitForTimeout(50);
+		await dispatchTouch(page, endX, centerY, 'touchend');
+
 		await page.waitForTimeout(800);
 
 		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -188,7 +234,16 @@ test.describe('Reader Swipe Gestures', () => {
 		const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 		const initialPage = Math.round(initialScroll / clientWidth);
 
-		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		// Big swipe across 80% of the screen
+		const startX = box.x + box.width * 0.9;
+		const endX = box.x + box.width * 0.1;
+		const centerY = box.y + box.height * 0.5;
+
+		await dispatchTouch(page, startX, centerY, 'touchstart');
+		await dispatchTouch(page, endX, centerY, 'touchmove');
+		await page.waitForTimeout(50);
+		await dispatchTouch(page, endX, centerY, 'touchend');
+
 		await page.waitForTimeout(800);
 
 		const finalScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
@@ -197,7 +252,7 @@ test.describe('Reader Swipe Gestures', () => {
 		const pagesMoved = finalPage - initialPage;
 		expect(
 			pagesMoved,
-			`Click moved ${pagesMoved} pages (from ${initialPage} to ${finalPage}). Should be exactly 1.`
+			`Swipe moved ${pagesMoved} pages (from ${initialPage} to ${finalPage}). Should be exactly 1 regardless of swipe distance.`
 		).toBe(1);
 	});
 
