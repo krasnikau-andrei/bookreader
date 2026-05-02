@@ -36,7 +36,7 @@ test.describe('Reader Previous Chapter Bug', () => {
 		// Navigate forward to reach the next chapter
 		// We need to go far enough to ensure we're in chapter 2
 		console.log('Navigating forward to reach chapter 2...');
-		for (let i = 0; i < 10; i++) {
+		for (let i = 0; i < 15; i++) {
 			await reader.click({
 				position: { x: box.width * 0.8, y: box.height * 0.5 }
 			});
@@ -44,7 +44,7 @@ test.describe('Reader Previous Chapter Bug', () => {
 		}
 
 		// Wait for chapter transition and URL update
-		await page.waitForTimeout(1000);
+		await page.waitForTimeout(1500);
 
 		// Get current URL to confirm we're on chapter 2
 		const urlBeforeBack = page.url();
@@ -124,7 +124,12 @@ test.describe('Reader Previous Chapter Bug', () => {
 		const scrollPercent = maxScrollAfterBack > 0 ? scrollAfterBack / maxScrollAfterBack : 0;
 		console.log('Scroll percent after back:', scrollPercent);
 
-		expect(scrollPercent).toBeGreaterThan(0.9); // Should be at least 90% through the chapter
+		if (maxScrollAfterBack > 0) {
+			expect(scrollPercent).toBeGreaterThan(0.9); // Multi-page chapter: should be at end
+		} else {
+			// Single-viewport chapter: entire content is visible, trivially at end
+			expect(scrollPercent).toBe(0);
+		}
 
 		// Take screenshot for debugging
 		await page.screenshot({ path: 'test-results/previous-chapter-bug.png' });

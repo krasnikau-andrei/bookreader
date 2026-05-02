@@ -321,7 +321,7 @@
 		overflow-y: hidden;
 		scroll-snap-type: x mandatory;
 		scroll-snap-stop: always;
-		padding: 0;
+		padding: var(--reader-gap-top) 0 var(--reader-gap-bottom);
 		box-sizing: border-box;
 		line-height: 1.6;
 		background: var(--color-readerBackground);
@@ -331,7 +331,7 @@
 	}
 
 	.content :global(> *) {
-		padding: var(--reader-gap-top) var(--reader-gap-sides) var(--reader-gap-bottom);
+		padding: 0 var(--reader-gap-sides);
 		margin: 0;
 	}
 
@@ -342,10 +342,12 @@
 		background: transparent !important;
 	}
 
-	.content :global(:where(p)) {
+	.content :global(p) {
 		text-indent: 1.5em;
 		hyphens: auto;
 		overflow-wrap: break-word;
+		padding-top: 0;
+		padding-bottom: 0;
 		margin-top: 0;
 		margin-bottom: 0;
 	}
