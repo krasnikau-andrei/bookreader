@@ -84,8 +84,8 @@ export const theme: Theme = {
 		readerText: '1.2rem'
 	},
 	reader: {
-		gapTop: '48px',
-		gapBottom: '48px',
-		gapSides: '24px'
+		gapTop: '5px',
+		gapBottom: '25px',
+		gapSides: '20px'
 	}
 };

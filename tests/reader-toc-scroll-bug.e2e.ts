@@ -34,7 +34,7 @@ test.describe('TOC Chapter Switch Scroll Bug', () => {
 		if (!box) return;
 
 		// Navigate forward to reach chapter 2
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 8; i++) {
 			await content.click({
 				position: { x: box.width * 0.8, y: box.height * 0.5 }
 			});
@@ -42,18 +42,18 @@ test.describe('TOC Chapter Switch Scroll Bug', () => {
 		}
 
 		// Wait for URL to update with chapter info
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(800);
 
 		// Step 2: Scroll within chapter 2
 		console.log('[TEST] Scrolling within chapter 2...');
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 8; i++) {
 			await content.click({
 				position: { x: box.width * 0.8, y: box.height * 0.5 }
 			});
 			await page.waitForTimeout(400);
 		}
 
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(800);
 
 		// Get the scroll position after scrolling
 		const scrollAfterScrolling = await content.evaluate((el) => el.scrollLeft);

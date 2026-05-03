@@ -342,7 +342,7 @@
 		overflow-y: hidden;
 		scroll-snap-type: x mandatory;
 		scroll-snap-stop: always;
-		padding: 0;
+		padding: var(--reader-gap-top) 0 var(--reader-gap-bottom);
 		box-sizing: border-box;
 		line-height: 1.6;
 		background: var(--color-readerBackground);
@@ -351,8 +351,11 @@
 		scroll-behavior: auto;
 	}
 
+	/* Side gap on children, not on .content — putting it on .content would shift
+	   scrollLeft by padding-left, breaking scrollContainer.scrollLeft <= 0
+	   as the chapter-boundary check in handleLeftTap/handleRightTap */
 	.content :global(> *) {
-		padding: var(--reader-gap-top) var(--reader-gap-sides) var(--reader-gap-bottom);
+		padding: 0 var(--reader-gap-sides);
 		margin: 0;
 	}
 
