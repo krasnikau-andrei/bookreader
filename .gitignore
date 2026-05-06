@@ -31,5 +31,9 @@ playwright-report/
 docs/
 .features-gen/
 
+# Broken books test fixtures (keep directory, ignore files inside)
+broken_books/*
+!broken_books/.gitkeep
+
 # Storybook
 storybook-static/
