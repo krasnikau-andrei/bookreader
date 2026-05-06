@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import '@testing-library/jest-dom/vitest';
 import TableOfContents from './TableOfContents.svelte';
@@ -67,5 +67,63 @@ describe('TableOfContents', () => {
 		await fireEvent.click(screen.getByText('Chapter 2'));
 		expect(onSelect).toHaveBeenCalledWith(1);
 		expect(onClose).toHaveBeenCalled();
+	});
+});
+
+describe('TableOfContents scrolling', () => {
+	const manyChapters: Chapter[] = Array.from({ length: 20 }, (_, i) => ({
+		id: `c${i}`,
+		title: `Chapter ${i + 1}`,
+		content: '',
+		filePath: `ch${i}.html`
+	}));
+
+	let originalRAF: typeof window.requestAnimationFrame;
+	let scrollIntoView: ReturnType<typeof vi.fn>;
+
+	beforeEach(() => {
+		originalRAF = window.requestAnimationFrame;
+		window.requestAnimationFrame = (cb: FrameRequestCallback) => {
+			cb(0);
+			return 0;
+		};
+		scrollIntoView = vi.fn();
+		Element.prototype.scrollIntoView =
+			scrollIntoView as unknown as typeof Element.prototype.scrollIntoView;
+	});
+
+	afterEach(() => {
+		window.requestAnimationFrame = originalRAF;
+		delete Element.prototype.scrollIntoView;
+	});
+
+	it('scrolls current chapter into view centered when TOC opens', async () => {
+		render(TableOfContents, {
+			props: {
+				show: true,
+				chapters: manyChapters,
+				currentChapter: 5,
+				onChapterSelect: vi.fn(),
+				onClose: vi.fn()
+			}
+		});
+
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'center' });
+	});
+
+	it('does not scroll when TOC is closed', () => {
+		render(TableOfContents, {
+			props: {
+				show: false,
+				chapters: manyChapters,
+				currentChapter: 5,
+				onChapterSelect: vi.fn(),
+				onClose: vi.fn()
+			}
+		});
+
+		expect(scrollIntoView).not.toHaveBeenCalled();
 	});
 });

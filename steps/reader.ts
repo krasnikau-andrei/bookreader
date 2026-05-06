@@ -819,6 +819,47 @@ Then('I navigate past the cover chapter', async ({ page }) => {
 	await page.waitForTimeout(800);
 });
 
+When('I navigate forward to a later chapter', async ({ page }) => {
+	const url = page.url();
+	const urlObj = new URL(url);
+	urlObj.searchParams.set('chapter', '99');
+	urlObj.searchParams.set('progress', '0');
+	await page.goto(urlObj.toString());
+	await page.waitForSelector('.reader');
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+	await page.waitForTimeout(2000);
+});
+
+When('I open the TOC', async ({ page }) => {
+	const content = page.locator('[data-testid="reader-content"]');
+	const box = await content.boundingBox();
+	expect(box).toBeTruthy();
+	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
+	await page.waitForTimeout(300);
+	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+	await tocButton.click();
+	await page.waitForSelector('[data-testid="toc-overlay"]');
+	await expect(page.locator('[data-testid="toc-overlay"]')).toBeVisible();
+	await page.waitForTimeout(500);
+});
+
+Then(
+	'the current chapter button should be visible in the TOC scrollable area',
+	async ({ page }) => {
+		const tocContent = page.locator('.toc-content');
+		const currentChapterButton = tocContent.locator('[aria-current="page"]');
+		await expect(currentChapterButton).toBeVisible();
+	}
+);
+
+Then('the current chapter should be centered in the TOC viewport', async ({ page }) => {
+	const tocContent = page.locator('.toc-content');
+	const currentChapterButton = tocContent.locator('[aria-current="page"]');
+	await expect(currentChapterButton).toBeVisible();
+	const scrollTop = await tocContent.evaluate((el) => (el as HTMLElement).scrollTop);
+	expect(scrollTop, 'TOC should scroll to center current chapter').toBeGreaterThan(0);
+});
+
 When('I navigate forward one page', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();

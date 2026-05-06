@@ -134,3 +134,12 @@ Feature: Reader
     And I navigate to chapter 2
     When I close the book and reopen it
     Then the reader should restore to chapter 2
+
+  Scenario: TOC scrolls to current chapter when opened
+    Given the library page is open
+    And a book "crime-punishment.epub" is uploaded
+    And I open the book in the reader
+    When I navigate forward to a later chapter
+    And I open the TOC
+    Then the current chapter button should be visible in the TOC scrollable area
+    And the current chapter should be centered in the TOC viewport
