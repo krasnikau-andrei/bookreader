@@ -31,9 +31,8 @@ playwright-report/
 docs/
 .features-gen/
 
-# Broken books test fixtures (keep directory, ignore files inside)
-broken_books/*
-!broken_books/.gitkeep
+# Broken books test fixtures (ignore epub files only)
+broken_books/*.epub
 
 # Storybook
 storybook-static/
