@@ -31,5 +31,8 @@ playwright-report/
 docs/
 .features-gen/
 
+# Broken books test fixtures (ignore epub files only)
+broken_books/*.epub
+
 # Storybook
 storybook-static/

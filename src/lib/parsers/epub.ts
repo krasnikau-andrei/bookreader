@@ -1,6 +1,13 @@
 import JSZip from 'jszip';
 import { transformLinks } from './link-transformer';
 
+function parseXml(xml: string, mimeType: DOMParserSupportedType): Document {
+	if (xml.charCodeAt(0) === 0xfeff) {
+		xml = xml.slice(1);
+	}
+	return new DOMParser().parseFromString(xml, mimeType);
+}
+
 export interface ParsedBook {
 	title: string;
 	author: string;
@@ -46,8 +53,7 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	}
 
 	// Parse content.opf using DOMParser
-	const parser = new DOMParser();
-	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+	const opfDoc = parseXml(opfContent, 'application/xml');
 
 	// Check for parsing errors
 	const parserError = opfDoc.querySelector('parsererror');
@@ -80,17 +86,22 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 }
 
 function extractOpfPath(containerXml: string): string | null {
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(containerXml, 'application/xml');
+	const doc = parseXml(containerXml, 'application/xml');
 
-	const rootfile = doc.querySelector('rootfile[media-type="application/oebps-package+xml"]');
-	if (rootfile) {
-		return rootfile.getAttribute('full-path');
+	const ns = 'urn:oasis:names:tc:opendocument:xmlns:container';
+	const rootfiles = doc.getElementsByTagNameNS(ns, 'rootfile');
+	for (let i = 0; i < rootfiles.length; i++) {
+		const rootfile = rootfiles[i];
+		if (rootfile.getAttribute('media-type') === 'application/oebps-package+xml') {
+			return rootfile.getAttribute('full-path');
+		}
 	}
 
-	// Fallback: try to find any rootfile
-	const anyRootfile = doc.querySelector('rootfile');
-	return anyRootfile?.getAttribute('full-path') || null;
+	if (rootfiles.length > 0) {
+		return rootfiles[0].getAttribute('full-path');
+	}
+
+	return null;
 }
 
 function extractCoverPath(opfDoc: Document, opfPath: string): string | null {
@@ -281,7 +292,6 @@ async function extractTocHierarchy(
 	bookTitle: string
 ): Promise<TocEntry[]> {
 	const entries: TocEntry[] = [];
-	const parser = new DOMParser();
 
 	// Try EPUB 3 nav.xhtml first (look for item with properties="nav")
 	const navItem = opfDoc.querySelector('item[properties~="nav"]');
@@ -291,7 +301,7 @@ async function extractTocHierarchy(
 			const navPath = resolvePath(opfPath, navHref);
 			const navContent = await zip.file(navPath)?.async('string');
 			if (navContent) {
-				const navDoc = parser.parseFromString(navContent, 'application/xhtml+xml');
+				const navDoc = parseXml(navContent, 'application/xhtml+xml');
 				// Look for nav element with epub:type="toc" or id="toc"
 				const tocNav = navDoc.querySelector('nav[epub\\:type="toc"], nav#toc');
 				if (tocNav) {
@@ -313,7 +323,7 @@ async function extractTocHierarchy(
 			const ncxPath = resolvePath(opfPath, ncxHref);
 			const ncxContent = await zip.file(ncxPath)?.async('string');
 			if (ncxContent) {
-				const ncxDoc = parser.parseFromString(ncxContent, 'application/xml');
+				const ncxDoc = parseXml(ncxContent, 'application/xml');
 				const navPoints = ncxDoc.querySelectorAll('navPoint');
 				let isFirst = true;
 				for (const navPoint of navPoints) {
@@ -371,8 +381,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 	}
 
 	// Parse content.opf
-	const parser = new DOMParser();
-	const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+	const opfDoc = parseXml(opfContent, 'application/xml');
 
 	// Extract book title for filtering TOC entries
 	const dcNamespace = 'http://purl.org/dc/elements/1.1/';
@@ -467,7 +476,7 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		if (!content) continue;
 
 		// Parse chapter content
-		const chapterDoc = parser.parseFromString(content, 'application/xhtml+xml');
+		const chapterDoc = parseXml(content, 'application/xhtml+xml');
 		const shortPath = filePath.replace(/^EPUB\//, '');
 
 		// Extract chapter title from HTML headers (H1 first, then H2, then title tag)
