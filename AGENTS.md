@@ -23,10 +23,12 @@
 - Note: Use `bunx vitest run` instead of `bun test` because Bun's test runner doesn't provide DOMParser/XMLSerializer globals even with jsdom environment
 - Vitest properly sets up jsdom environment with DOM globals available
 
-### E2E Tests (Playwright)
+### E2E Tests (Playwright - BDD)
 
-- Run: `bun run test:e2e` or `bunx playwright test`
-- Tests use real browser with actual DOM rendering
-- Test files: `**/*.e2e.{ts,js}`
+- Run: `bun run test:e2e` (runs `bddgen && playwright test`)
+- Tests are Gherkin feature files in `features/*.feature`
+- Step definitions in `steps/*.ts`
+- Compiled to Playwright tests in `.features-gen/` (auto-generated, don't edit)
+- Run `npx bddgen` manually to regenerate compiled tests
 
 ---

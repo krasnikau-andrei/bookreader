@@ -65,11 +65,20 @@ Or with verbose output:
 bunx vitest run --reporter=verbose
 ```
 
-### E2E Tests (Playwright)
+### E2E Tests (Playwright - BDD)
+
+E2E tests are written as behavior-driven **Gherkin stories** in `features/` and compiled to Playwright tests via `playwright-bdd`.
 
 ```sh
 bun run test:e2e
 ```
+
+Test workflow:
+
+1. Write scenarios in `features/*.feature` (Given/When/Then)
+2. Define step implementations in `steps/*.ts`
+3. Run `bddgen` to compile features into Playwright test files (auto-runs with `test:e2e`)
+4. Generated tests run via standard Playwright runner in `.features-gen/`
 
 Or simply:
 
