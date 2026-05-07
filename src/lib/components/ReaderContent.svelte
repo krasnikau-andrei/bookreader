@@ -48,6 +48,7 @@
 	let chapterRaf: number | null = null;
 	/* eslint-enable @typescript-eslint/no-unused-vars */
 	let isUserSwiping = false;
+	let swipeStartScrollLeft = 0;
 	let isUpdatingUrl = false;
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
@@ -59,17 +60,21 @@
 		swipeHandler = createSwipeHandler(scrollContainer, {
 			onSwipeStart: () => {
 				isUserSwiping = true;
+				swipeStartScrollLeft = scrollContainer!.scrollLeft;
 			},
 			onSwipeLeft: () => {
 				isUserSwiping = false;
-				handleRightTap();
+				handleRightTap(swipeStartScrollLeft);
 			},
 			onSwipeRight: () => {
 				isUserSwiping = false;
-				handleLeftTap();
+				handleLeftTap(swipeStartScrollLeft);
 			},
 			onSwipeCancel: () => {
 				isUserSwiping = false;
+				if (scrollContainer) {
+					animateScroll(scrollContainer, swipeStartScrollLeft, 200);
+				}
 			}
 		});
 
@@ -125,7 +130,7 @@
 		});
 	});
 
-	function handleLeftTap() {
+	function handleLeftTap(baseScrollLeft?: number) {
 		if (showOverlay || showToc) {
 			onCloseMenus();
 			return;
@@ -133,7 +138,9 @@
 
 		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
-		if (scrollContainer.scrollLeft <= 0) {
+		const currentScroll = baseScrollLeft ?? scrollContainer.scrollLeft;
+
+		if (currentScroll <= 0) {
 			if (currentChapter > 0) {
 				const prevChapter = currentChapter - 1;
 				isChangingChapter = true;
@@ -165,11 +172,11 @@
 			return;
 		}
 
-		const newScroll = scrollContainer.scrollLeft - scrollContainer.clientWidth;
+		const newScroll = currentScroll - scrollContainer.clientWidth;
 		animateScroll(scrollContainer, Math.max(0, newScroll), 250);
 	}
 
-	function handleRightTap() {
+	function handleRightTap(baseScrollLeft?: number) {
 		if (showOverlay || showToc) {
 			onCloseMenus();
 			return;
@@ -178,8 +185,9 @@
 		if (!scrollContainer || isChangingChapter || isUserSwiping) return;
 
 		const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+		const currentScroll = baseScrollLeft ?? scrollContainer.scrollLeft;
 
-		if (scrollContainer.scrollLeft >= maxScroll - 1) {
+		if (currentScroll >= maxScroll - 1) {
 			if (currentChapter < chapters.length - 1) {
 				const nextChapter = currentChapter + 1;
 				isChangingChapter = true;
@@ -209,7 +217,7 @@
 			return;
 		}
 
-		const newScroll = scrollContainer.scrollLeft + scrollContainer.clientWidth;
+		const newScroll = currentScroll + scrollContainer.clientWidth;
 		animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
 	}
 
