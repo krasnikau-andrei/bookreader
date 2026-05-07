@@ -13,6 +13,22 @@
 
 	let { show, chapters, currentChapter, onChapterSelect, onClose }: Props = $props();
 
+	let tocContentEl: HTMLDivElement | undefined = $state();
+
+	function scrollToCurrentChapter() {
+		if (!tocContentEl) return;
+		const button = tocContentEl.querySelector(
+			`[data-chapter-index="${currentChapter}"]`
+		) as HTMLElement | null;
+		button?.scrollIntoView?.({ behavior: 'auto', block: 'center' });
+	}
+
+	$effect(() => {
+		if (show) {
+			requestAnimationFrame(scrollToCurrentChapter);
+		}
+	});
+
 	function handleChapterSelect(index: number) {
 		onChapterSelect(index);
 		onClose();
@@ -61,7 +77,7 @@
 					</svg>
 				</button>
 			</header>
-			<div class="toc-content">
+			<div class="toc-content" bind:this={tocContentEl}>
 				<ChapterTree {chapters} {currentChapter} onChapterSelect={handleChapterSelect} />
 			</div>
 		</div>
