@@ -12,6 +12,7 @@ export interface ParsedBook {
 	title: string;
 	author: string;
 	cover: string | null;
+	description: string | null;
 	language: string;
 }
 
@@ -68,10 +69,12 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	const titleElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'title');
 	const authorElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'creator');
 	const languageElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'language');
+	const descriptionElements = opfDoc.getElementsByTagNameNS(dcNamespace, 'description');
 
 	const title = titleElements[0]?.textContent?.trim() || null;
 	const author = authorElements[0]?.textContent?.trim() || null;
 	const language = languageElements[0]?.textContent?.trim() || 'en';
+	const description = descriptionElements[0]?.textContent?.trim() || null;
 
 	// Extract cover
 	const coverPath = extractCoverPath(opfDoc, opfPath);
@@ -81,6 +84,7 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		title: title || 'Untitled',
 		author: author || 'Unknown Author',
 		cover,
+		description,
 		language
 	};
 }

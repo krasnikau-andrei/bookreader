@@ -3,6 +3,7 @@ export interface Book {
 	title: string;
 	author: string;
 	cover: string | null;
+	description: string | null;
 	fileData: ArrayBuffer;
 	format: 'epub';
 	addedAt: Date;
