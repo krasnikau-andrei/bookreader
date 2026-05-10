@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getBook, getProgress } from '$lib/storage';
+	import { getBook, getProgress, saveProgress } from '$lib/storage';
+	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
 	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
@@ -26,6 +27,8 @@
 	// Progress tracking
 	let savedProgress: { chapterIndex: number; scrollPercent: number } | null = $state(null);
 	let isUpdatingUrl = false;
+	let progressChapterSizes: number[] | undefined = $state();
+	let currentScrollPercent = $state(0);
 
 	onMount(async () => {
 		try {
@@ -56,6 +59,25 @@
 				};
 			}
 
+			// Ensure chapterSizes exist (compute if missing)
+			if (chapters.length > 0) {
+				if (progress && progress.chapterSizes) {
+					progressChapterSizes = progress.chapterSizes;
+				} else {
+					const sizes = chapters.map((c) => c.content.length);
+					const existing = await getProgress(bookId);
+					const toSave = existing || {
+						bookId,
+						chapterIndex: 0,
+						scrollPercent: 0,
+						lastReadAt: new Date()
+					};
+					toSave.chapterSizes = sizes;
+					await saveProgress(toSave);
+					progressChapterSizes = sizes;
+				}
+			}
+
 			const urlSearchParams = $page.url.searchParams;
 			const hasChapterParam = urlSearchParams.has('chapter');
 			const hasProgressParam = urlSearchParams.has('progress');
@@ -78,6 +100,7 @@
 	});
 
 	function updateUrl(chapterIndex: number, progressValue: number) {
+		currentScrollPercent = progressValue;
 		if (isUpdatingUrl) return;
 
 		isUpdatingUrl = true;
@@ -194,6 +217,16 @@
 				onClose={() => (showLinkError = false)}
 			/>
 		</div>
+
+		{#if progressChapterSizes}
+			<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
+				<BookProgressBar
+					chapterSizes={progressChapterSizes}
+					{currentChapter}
+					scrollPercent={currentScrollPercent}
+				/>
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -217,5 +250,23 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+	}
+
+	.progress-bottom-bar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		z-index: 10;
+		padding: 4px 20px 8px;
+		background: var(--color-readerBackground);
+	}
+
+	.progress-bottom-bar :global(.progress-track) {
+		height: 3px !important;
+	}
+
+	.progress-bottom-bar :global(.progress-percentage) {
+		font-size: 10px !important;
 	}
 </style>
