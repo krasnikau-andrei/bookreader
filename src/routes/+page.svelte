@@ -11,7 +11,7 @@
 		saveProgress
 	} from '$lib/storage';
 	import type { Book } from '$lib/types';
-	import { calculateBookProgress } from '$lib/reader/progress';
+	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { BookCard, ConfirmSheet, ErrorBanner, InfoBanner, EmptyState } from '$lib/components';
@@ -76,7 +76,7 @@
 			try {
 				const { parseEpubChapters } = await import('$lib/parsers/epub');
 				const result = await parseEpubChapters(book.fileData);
-				progress.chapterSizes = result.chapters.map((c) => c.content.length);
+				progress.chapterSizes = result.chapters.map((c) => measureChapterContent(c.content));
 				await saveProgress(progress);
 			} catch (e) {
 				console.error(`[LIBRARY] Failed to compute chapter sizes for ${book.id}:`, e);

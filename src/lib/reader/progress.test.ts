@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { calculateBookProgress } from './progress';
+import { calculateBookProgress, measureChapterContent } from './progress';
 
 describe('calculateBookProgress', () => {
 	test('returns 0 for empty chapterSizes', () => {
@@ -39,5 +39,25 @@ describe('calculateBookProgress', () => {
 	test('handles very large chapter size differences', () => {
 		const result = calculateBookProgress([1, 999], 0, 0.5);
 		expect(result).toBeCloseTo(0.0005, 4);
+	});
+});
+
+describe('measureChapterContent', () => {
+	test('plain text length is unchanged', () => {
+		const content = '<p>Hello world</p>';
+		expect(measureChapterContent(content)).toBe(content.length);
+	});
+
+	test('strips long base64 data URIs from length', () => {
+		const fakeImg = 'x'.repeat(500);
+		const content = `<p>Text</p><img src="data:image/jpeg;base64,${fakeImg}" />`;
+		const stripped = measureChapterContent(content);
+		expect(stripped).toBeLessThan(content.length);
+		expect(stripped).toBe('<p>Text</p><img  />'.length);
+	});
+
+	test('short data URIs are not stripped', () => {
+		const content = '<p>Hello</p><img src="data:image/svg+xml,<svg></svg>" />';
+		expect(measureChapterContent(content)).toBe(content.length);
 	});
 });

@@ -1,3 +1,9 @@
+const BASE64_DATA_RE = /src\s*=\s*"data:[^"]{100,}"/gi;
+
+export function measureChapterContent(content: string): number {
+	return content.replace(BASE64_DATA_RE, '').length;
+}
+
 export function calculateBookProgress(
 	chapterSizes: number[],
 	currentChapter: number,

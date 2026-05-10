@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { getBook, getProgress, saveProgress } from '$lib/storage';
 	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
+	import { measureChapterContent } from '$lib/reader/progress';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
 	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
@@ -64,7 +65,7 @@
 				if (progress && progress.chapterSizes) {
 					progressChapterSizes = progress.chapterSizes;
 				} else {
-					const sizes = chapters.map((c) => c.content.length);
+					const sizes = chapters.map((c) => measureChapterContent(c.content));
 					const existing = await getProgress(bookId);
 					const toSave = existing || {
 						bookId,
