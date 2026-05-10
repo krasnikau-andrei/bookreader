@@ -65,18 +65,11 @@ export async function getProgress(bookId: string): Promise<ReadingProgress | und
 	}
 }
 
-export async function getMostRecentProgress(): Promise<
-	{ book: Book; progress: ReadingProgress } | undefined
-> {
+export async function getAllProgress(): Promise<ReadingProgress[]> {
 	try {
-		const allProgress = await db.readingProgress.orderBy('lastReadAt').reverse().toArray();
-		if (allProgress.length === 0) return;
-		const latest = allProgress[0];
-		const book = await db.books.get(latest.bookId);
-		if (!book) return;
-		return { book, progress: latest };
+		return await db.readingProgress.toArray();
 	} catch (e) {
-		console.error('[STORAGE] getMostRecentProgress error:', e);
+		console.error('[STORAGE] getAllProgress error:', e);
 		throw e;
 	}
 }
