@@ -39,6 +39,7 @@
 		--color-cardVignette: {theme.colors.cardVignette};
 		--color-error: {theme.colors.error};
 		--color-overlay: {theme.colors.overlay};
+		--color-progressTrack: {theme.colors.progressTrack};
 		--padding-xs: {theme.padding.xs};
 		--padding-sm: {theme.padding.sm};
 		--padding-md: {theme.padding.md};

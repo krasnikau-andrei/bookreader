@@ -17,6 +17,7 @@ export interface Theme {
 		cardVignette: string;
 		error: string;
 		overlay: string;
+		progressTrack: string;
 	};
 	imageFilter: string;
 	fontFamily: string;
@@ -64,7 +65,8 @@ export const theme: Theme = {
 		borderMuted: '#241a15',
 		cardVignette: 'rgba(0, 0, 0, 0.8)',
 		error: '#c44a4a',
-		overlay: 'rgba(15, 11, 10, 0.95)'
+		overlay: 'rgba(15, 11, 10, 0.95)',
+		progressTrack: 'rgba(255, 255, 255, 0.15)'
 	},
 	imageFilter: 'sepia(0.15) brightness(0.85)',
 	fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

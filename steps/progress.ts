@@ -39,7 +39,8 @@ Then('the progress percentage should increase', async ({ page }) => {
 	const percentage = bottomBar.locator('[data-testid="progress-percentage"]');
 	await expect(percentage).toBeVisible();
 	const text = await percentage.textContent();
-	const value = parseInt(text || '0', 10);
+	const value = parseInt((text || '0').replace('%', ''), 10);
+	// Book opens at chapter 0 with 0% progress; navigating forward must increase it
 	expect(value).toBeGreaterThan(0);
 });
 
@@ -48,17 +49,27 @@ Then('the card progress should be greater than 0%', async ({ page }) => {
 	const percentage = bookCard.locator('[data-testid="progress-percentage"]');
 	await expect(percentage).toBeVisible();
 	const text = await percentage.textContent();
-	const value = parseInt(text || '0', 10);
+	const value = parseInt((text || '0').replace('%', ''), 10);
 	expect(value).toBeGreaterThan(0);
 });
 
 Then('the reader progress should match the saved position', async ({ page }) => {
+	// Verify restored position via URL params (most precise indicator)
+	const url = page.url();
+	const chapterMatch = url.match(/chapter=(\d+)/);
+	expect(chapterMatch, 'URL should have chapter param').toBeTruthy();
+	const chapter = parseInt(chapterMatch![1], 10);
+	expect(chapter).toBeGreaterThanOrEqual(2);
+	const progressMatch = url.match(/progress=(\d+)/);
+	expect(progressMatch, 'URL should have progress param').toBeTruthy();
+
+	// DOM percentage should also reflect non-zero progress
 	const bottomBar = page.locator('[data-testid="progress-bottom-bar"]');
 	const percentage = bottomBar.locator('[data-testid="progress-percentage"]');
 	await expect(percentage).toBeVisible();
 	const text = await percentage.textContent();
-	const value = parseInt(text || '0', 10);
-	expect(value).toBeGreaterThan(0);
+	const pctValue = parseInt((text || '0').replace('%', ''), 10);
+	expect(pctValue).toBeGreaterThan(0);
 });
 
 Then('the progress bar should contain chapter segments', async ({ page }) => {
