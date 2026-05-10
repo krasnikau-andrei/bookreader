@@ -64,3 +64,19 @@ export async function getProgress(bookId: string): Promise<ReadingProgress | und
 		throw e;
 	}
 }
+
+export async function getMostRecentProgress(): Promise<
+	{ book: Book; progress: ReadingProgress } | undefined
+> {
+	try {
+		const allProgress = await db.readingProgress.orderBy('lastReadAt').reverse().toArray();
+		if (allProgress.length === 0) return;
+		const latest = allProgress[0];
+		const book = await db.books.get(latest.bookId);
+		if (!book) return;
+		return { book, progress: latest };
+	} catch (e) {
+		console.error('[STORAGE] getMostRecentProgress error:', e);
+		throw e;
+	}
+}

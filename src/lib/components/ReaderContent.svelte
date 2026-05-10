@@ -355,6 +355,7 @@
 		line-height: 1.6;
 		background: var(--color-readerBackground);
 		color: var(--color-readerText);
+		font-family: 'Literata', serif;
 		font-size: var(--font-size-reader-text);
 		scroll-behavior: auto;
 	}

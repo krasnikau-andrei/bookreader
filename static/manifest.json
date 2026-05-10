@@ -4,8 +4,8 @@
 	"description": "A simple book reading application",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#ffffff",
-	"theme_color": "#ff3e00",
+	"background_color": "#0f0b0a",
+	"theme_color": "#0f0b0a",
 	"orientation": "portrait-primary",
 	"scope": "/",
 	"icons": [

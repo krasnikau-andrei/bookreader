@@ -12,6 +12,9 @@ export interface Theme {
 		accent: string;
 		shadow: string;
 		cardBackground: string;
+		cardBorder: string;
+		borderMuted: string;
+		cardVignette: string;
 		error: string;
 		overlay: string;
 	};
@@ -47,21 +50,24 @@ export interface Theme {
 
 export const theme: Theme = {
 	colors: {
-		background: '#1a1a2e',
-		backgroundSecondary: '#2a2a4a',
-		backgroundTertiary: '#1a1a3a',
+		background: '#0f0b0a',
+		backgroundSecondary: '#16110e',
+		backgroundTertiary: '#1c1512',
 		readerBackground: '#000000',
-		readerText: '#ffffff',
-		'text-primary': '#ffffff',
-		'text-secondary': '#a0a0a0',
-		accent: '#4a9eff',
-		shadow: 'rgba(0, 0, 0, 0.3)',
-		cardBackground: 'rgba(38, 38, 57)',
-		error: '#ff4444',
-		overlay: 'rgba(40, 40, 60, 0.95)'
+		readerText: '#d6caba',
+		'text-primary': '#d6caba',
+		'text-secondary': '#85705a',
+		accent: '#a08868',
+		shadow: 'rgba(0, 0, 0, 0.5)',
+		cardBackground: '#1c1512',
+		cardBorder: '#2a1f1a',
+		borderMuted: '#241a15',
+		cardVignette: 'rgba(0, 0, 0, 0.8)',
+		error: '#c44a4a',
+		overlay: 'rgba(15, 11, 10, 0.95)'
 	},
-	imageFilter: 'invert(100%) hue-rotate(180deg) brightness(0.8)',
-	fontFamily: "'Literata', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+	imageFilter: 'sepia(0.15) brightness(0.85)',
+	fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
 	padding: {
 		xs: '4px',
 		sm: '8px',
@@ -76,11 +82,11 @@ export const theme: Theme = {
 		xl: '16px'
 	},
 	fontSize: {
-		xs: '0.625rem',
-		sm: '0.75rem',
-		md: '0.875rem',
-		lg: '1rem',
-		xl: '1.25rem',
+		xs: '0.75rem',
+		sm: '0.875rem',
+		md: '1rem',
+		lg: '1.125rem',
+		xl: '1.5rem',
 		readerText: '1.2rem'
 	},
 	reader: {
