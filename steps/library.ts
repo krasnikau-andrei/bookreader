@@ -120,15 +120,12 @@ Then('the book should not display a cover image', async ({ page }) => {
 	await expect(coverImage).toHaveCount(0);
 });
 
-Then(
-	'it should show a filename placeholder containing {string}',
-	async ({ page }, _text: string) => {
-		const bookCard = page.locator('[data-testid="book-card"]').first();
-		const placeholder = bookCard.locator('.cover-placeholder');
-		await expect(placeholder).toBeVisible();
-		await expect(placeholder).not.toBeEmpty();
-	}
-);
+Then('it should show a filename placeholder containing {string}', async ({ page }) => {
+	const bookCard = page.locator('[data-testid="book-card"]').first();
+	const placeholder = bookCard.locator('.cover-placeholder');
+	await expect(placeholder).toBeVisible();
+	await expect(placeholder).not.toBeEmpty();
+});
 
 Then('I should see {int} book cards', async ({ page }, count: number) => {
 	await expect(page.locator('[data-testid="book-card"]')).toHaveCount(count);

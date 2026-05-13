@@ -62,6 +62,69 @@ describe('parseEpubChapters', () => {
 	});
 });
 
+test('converts SVG image xlink:href to data URI', async () => {
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	zip.file('mimetype', 'application/epub+zip');
+
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`
+	);
+
+	zip.file('cover.jpeg', new Uint8Array([0xff, 0xd8, 0xff, 0xe0]));
+
+	zip.file(
+		'cover.xhtml',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Cover</title>
+</head>
+<body>
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="411" height="616" viewBox="0 0 411 616" preserveAspectRatio="none">
+      <image width="411" height="616" xlink:href="cover.jpeg"></image>
+    </svg>
+  </div>
+</body>
+</html>`
+	);
+
+	zip.file(
+		'content.opf',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Test SVG Book</dc:title>
+    <dc:creator>Test Author</dc:creator>
+    <dc:identifier id="bookid">test-svg-id</dc:identifier>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="cover_img" href="cover.jpeg" media-type="image/jpeg"/>
+    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="cover"/>
+  </spine>
+</package>`
+	);
+
+	const buffer = await zip.generateAsync({ type: 'arraybuffer' });
+	const result = await parseEpubChapters(buffer);
+
+	expect(result.chapters).toHaveLength(1);
+	expect(result.chapters[0].content).toContain('data:image/jpeg;base64,');
+});
+
 async function createEpubWithChapters(
 	chapters: Array<{ id: string; title: string; content: string }>
 ): Promise<ArrayBuffer> {
