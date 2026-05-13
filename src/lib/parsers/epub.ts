@@ -505,6 +505,22 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 			}
 		}
 
+		// Process SVG image elements (xlink:href references in SVG)
+		const svgNamespace = 'http://www.w3.org/2000/svg';
+		const xlinkNamespace = 'http://www.w3.org/1999/xlink';
+		const svgImages = chapterDoc.getElementsByTagNameNS(svgNamespace, 'image');
+
+		for (const svgImg of Array.from(svgImages)) {
+			const href = svgImg.getAttribute('href') || svgImg.getAttributeNS(xlinkNamespace, 'href');
+			if (href && !href.startsWith('data:') && !href.startsWith('http')) {
+				const imagePath = resolvePath(chapterDir, href);
+				const imageDataUri = await extractImageAsDataUri(zip, imagePath);
+				if (imageDataUri) {
+					svgImg.setAttribute('href', imageDataUri);
+				}
+			}
+		}
+
 		// Mark subchapter elements (nested TOC entries with fragments) for page breaks
 		const chapterFragments =
 			subchapterFragments.get(filePath) || subchapterFragments.get(shortPath) || [];
