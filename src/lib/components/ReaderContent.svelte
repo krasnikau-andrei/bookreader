@@ -377,6 +377,7 @@
 
 	.content :global(p) {
 		text-indent: 1.5em;
+		text-align: justify;
 		hyphens: auto;
 		overflow-wrap: break-word;
 		padding-top: 0;
