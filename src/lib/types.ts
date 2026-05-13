@@ -16,6 +16,7 @@ export interface ReadingProgress {
 	chapterIndex: number;
 	scrollPercent: number; // 0.0 - 1.0
 	lastReadAt: Date;
+	chapterSizes?: number[];
 }
 
 export interface Chapter {

@@ -65,6 +65,15 @@ export async function getProgress(bookId: string): Promise<ReadingProgress | und
 	}
 }
 
+export async function getAllProgress(): Promise<ReadingProgress[]> {
+	try {
+		return await db.readingProgress.toArray();
+	} catch (e) {
+		console.error('[STORAGE] getAllProgress error:', e);
+		throw e;
+	}
+}
+
 export async function getMostRecentProgress(): Promise<
 	{ book: Book; progress: ReadingProgress } | undefined
 > {

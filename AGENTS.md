@@ -31,4 +31,11 @@
 - Compiled to Playwright tests in `.features-gen/` (auto-generated, don't edit)
 - Run `npx bddgen` manually to regenerate compiled tests
 
+## iOS (Phone) Status Bar
+
+- **`src/app.html`**: `<meta name="viewport" content="viewport-fit=cover">` is required for content to extend under the status bar
+- **`src/routes/+layout.svelte`**: `:global(html) { background-color: #000000; }` ensures the status bar area is always black (shows through transparent `black-translucent` status bar)
+- **`<meta name="theme-color">`**: Must be `#000000` (not the page background color) or the status bar icons render wrong colors
+- All 3 parts are needed. Missing any one will make the status bar look wrong.
+
 ---

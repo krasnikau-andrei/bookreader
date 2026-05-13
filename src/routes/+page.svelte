@@ -7,9 +7,11 @@
 		deleteBook,
 		bookExists,
 		getMostRecentProgress,
-		getProgress
+		getAllProgress,
+		saveProgress
 	} from '$lib/storage';
 	import type { Book } from '$lib/types';
+	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { BookCard, ConfirmSheet, ErrorBanner, InfoBanner, EmptyState } from '$lib/components';
@@ -18,7 +20,8 @@
 	let books: Book[] = $state([]);
 	let focusBook: Book | null = $state(null);
 	let focusProgress: number = $state(0);
-	let progressMap: Record<string, number> = $state({});
+	let bookProgressMap = $state<Record<string, number>>({});
+	let chapterSizesReady = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();
 	let errorMessage: string | null = $state(null);
 	let infoMessage: string | null = $state(null);
@@ -31,20 +34,56 @@
 		const recent = await getMostRecentProgress();
 		if (recent) {
 			focusBook = recent.book;
-			focusProgress = Math.round((recent.progress.scrollPercent || 0) * 100);
+			focusProgress = recent.progress.chapterSizes
+				? Math.round(
+						calculateBookProgress(
+							recent.progress.chapterSizes,
+							recent.progress.chapterIndex,
+							recent.progress.scrollPercent
+						) * 100
+					)
+				: Math.round((recent.progress.scrollPercent || 0) * 100);
 		}
-		await loadAllProgress();
+		await loadAllBookProgress();
+		computeMissingChapterSizes();
 	});
 
-	async function loadAllProgress() {
+	async function loadAllBookProgress() {
+		const allProgress = await getAllProgress();
 		const map: Record<string, number> = {};
-		for (const b of books) {
-			const p = await getProgress(b.id);
-			if (p && (p.scrollPercent || 0) > 0) {
-				map[b.id] = Math.round((p.scrollPercent || 0) * 100);
+		for (const p of allProgress) {
+			if (p.chapterSizes && p.chapterSizes.length > 0) {
+				const pct = calculateBookProgress(p.chapterSizes, p.chapterIndex, p.scrollPercent);
+				map[p.bookId] = Math.round(pct * 100);
 			}
 		}
-		progressMap = map;
+		bookProgressMap = map;
+		if (focusBook && map[focusBook.id] !== undefined) {
+			focusProgress = map[focusBook.id];
+		}
+	}
+
+	async function computeMissingChapterSizes() {
+		const allProgress = await getAllProgress();
+		const missing = allProgress.filter((p) => !p.chapterSizes || p.chapterSizes.length === 0);
+		if (missing.length === 0) {
+			chapterSizesReady = true;
+			return;
+		}
+		for (const progress of missing) {
+			const book = books.find((b) => b.id === progress.bookId);
+			if (!book) continue;
+			try {
+				const { parseEpubChapters } = await import('$lib/parsers/epub');
+				const result = await parseEpubChapters(book.fileData);
+				progress.chapterSizes = result.chapters.map((c) => measureChapterContent(c.content));
+				await saveProgress(progress);
+			} catch (e) {
+				console.error(`[LIBRARY] Failed to compute chapter sizes for ${book.id}:`, e);
+			}
+		}
+		await loadAllBookProgress();
+		chapterSizesReady = true;
 	}
 
 	function clearError() {
@@ -153,6 +192,8 @@
 			input.value = '';
 		}
 	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	void chapterSizesReady;
 </script>
 
 <div class="library" data-testid="library-container">
@@ -225,7 +266,7 @@
 			{#each books as book (book.id)}
 				<BookCard
 					{book}
-					progressPercent={progressMap[book.id] || 0}
+					progressPercent={bookProgressMap[book.id] || 0}
 					onClick={() => handleBookClick(book.id)}
 					onTouchStart={() => handleTouchStart(book.id)}
 					onTouchEnd={handleTouchEnd}
