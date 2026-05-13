@@ -6,6 +6,7 @@
 	import { calculateScrollPercent } from '$lib/reader/pagination';
 	import { saveProgress } from '$lib/storage';
 	import type { Chapter } from '$lib/types';
+	import ImageFullscreen from './ImageFullscreen.svelte';
 
 	interface Props {
 		bookId: string;
@@ -53,6 +54,7 @@
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let fullscreenSrc: string | null = $state(null);
 
 	$effect(() => {
 		if (!scrollContainer) return;
@@ -230,6 +232,13 @@
 		}
 
 		const target = event.target as HTMLElement;
+
+		if (target.tagName === 'IMG') {
+			event.stopPropagation();
+			fullscreenSrc = (target as HTMLImageElement).src;
+			return;
+		}
+
 		const link = target.closest('a');
 
 		if (link) {
@@ -340,6 +349,10 @@
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html content}
 </div>
+
+{#if fullscreenSrc}
+	<ImageFullscreen src={fullscreenSrc} onClose={() => (fullscreenSrc = null)} />
+{/if}
 
 <style>
 	.content {
