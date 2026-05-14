@@ -28,8 +28,6 @@
 	}
 
 	function handleTouchStart(e: TouchEvent) {
-		e.preventDefault();
-		e.stopPropagation();
 		if (e.touches.length === 1) {
 			const t = e.touches[0];
 			touchStartX = t.clientX;
@@ -48,7 +46,6 @@
 	function handleTouchMove(e: TouchEvent) {
 		if (gestureType === 'none') return;
 		e.preventDefault();
-		e.stopPropagation();
 
 		if (gestureType === 'pinch' && e.touches.length === 2) {
 			const currentDist = distance(e.touches[0], e.touches[1]);
@@ -94,7 +91,7 @@
 	ontouchend={handleTouchEnd}
 	transition:fade={{ duration: 200 }}
 >
-	<button class="close-btn" onclick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close fullscreen image"> &times; </button>
+	<button class="close-btn" onclick={onClose} aria-label="Close fullscreen image"> &times; </button>
 	<img
 		{src}
 		alt=""
