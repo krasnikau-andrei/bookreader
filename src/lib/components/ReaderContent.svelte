@@ -380,7 +380,7 @@
 	.content :global(> *) {
 		padding: 0 var(--reader-gap-sides);
 		margin: 0;
-		overflow-x: hidden;
+		overflow-x: clip;
 	}
 
 	.content :global(p),
