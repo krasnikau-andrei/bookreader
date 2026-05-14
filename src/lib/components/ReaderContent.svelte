@@ -6,6 +6,7 @@
 	import { calculateScrollPercent } from '$lib/reader/pagination';
 	import { saveProgress } from '$lib/storage';
 	import type { Chapter } from '$lib/types';
+	import ImageFullscreen from './ImageFullscreen.svelte';
 
 	interface Props {
 		bookId: string;
@@ -53,6 +54,7 @@
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let fullscreenSrc: string | null = $state(null);
 
 	$effect(() => {
 		if (!scrollContainer) return;
@@ -230,6 +232,14 @@
 		}
 
 		const target = event.target as HTMLElement;
+
+		if (target.tagName === 'IMG') {
+			event.preventDefault();
+			event.stopPropagation();
+			fullscreenSrc = (target as HTMLImageElement).src;
+			return;
+		}
+
 		const link = target.closest('a');
 
 		if (link) {
@@ -341,6 +351,10 @@
 	{@html content}
 </div>
 
+{#if fullscreenSrc}
+	<ImageFullscreen src={fullscreenSrc} onClose={() => (fullscreenSrc = null)} />
+{/if}
+
 <style>
 	.content {
 		height: 100vh;
@@ -366,6 +380,7 @@
 	.content :global(> *) {
 		padding: 0 var(--reader-gap-sides);
 		margin: 0;
+		overflow-x: clip;
 	}
 
 	.content :global(p),
@@ -382,8 +397,15 @@
 		overflow-wrap: break-word;
 		padding-top: 0;
 		padding-bottom: 0;
+		padding-left: 0;
+		padding-right: 0;
 		margin-top: 0;
 		margin-bottom: 0;
+	}
+
+	.content :global(p img) {
+		display: block;
+		margin: 0;
 	}
 
 	.content :global(h1),
@@ -397,9 +419,15 @@
 
 	.content :global(img) {
 		filter: var(--image-filter);
-		max-width: 100%;
-		height: auto;
+		max-width: 100% !important;
+		height: auto !important;
 		-webkit-user-drag: none;
+	}
+
+	.content :global(figure),
+	.content :global(picture) {
+		max-width: 100% !important;
+		margin: 0 !important;
 	}
 
 	.content :global(.subchapter-start) {

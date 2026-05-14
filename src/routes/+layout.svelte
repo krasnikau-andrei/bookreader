@@ -63,6 +63,7 @@
 </div>
 
 <style>
+	/* DO NOT CHANGE: #000000 keeps the status bar (notch/battery/time) black on mobile */
 	:global(html) {
 		background-color: #000000;
 	}
