@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>Mock 4 — Timeline History</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			:root {
+				--green: #22c55e;
+				--green-dim: rgba(34, 197, 94, 0.08);
+				--bg: #080c0a;
+				--surface: #0f1411;
+				--card: #161d18;
+				--text: #dce8e0;
+				--muted: #4a6652;
+			}
+			body {
+				font-family: 'Syne', sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+				padding: 24px 20px 60px;
+			}
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background-image:
+					linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+				background-size: 24px 24px;
+				pointer-events: none;
+			}
+			.top {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				margin-bottom: 32px;
+			}
+			.top h1 {
+				font-size: 28px;
+				font-weight: 800;
+				letter-spacing: -1px;
+				text-transform: uppercase;
+				line-height: 1;
+			}
+			.top h1 span {
+				display: block;
+				font-size: 12px;
+				font-weight: 400;
+				color: var(--muted);
+				letter-spacing: 3px;
+				text-transform: uppercase;
+				margin-top: 6px;
+			}
+			.top-actions button {
+				width: 44px;
+				height: 44px;
+				border-radius: 50%;
+				border: 2px solid var(--surface);
+				background: transparent;
+				color: var(--green);
+				font-size: 20px;
+				cursor: pointer;
+				transition: all 0.15s;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.top-actions button:active {
+				background: var(--green-dim);
+				border-color: var(--green);
+			}
+			.timeline {
+				position: relative;
+				padding-left: 28px;
+			}
+			.timeline::before {
+				content: '';
+				position: absolute;
+				left: 8px;
+				top: 4px;
+				bottom: 0;
+				width: 2px;
+				background: linear-gradient(180deg, var(--green), var(--surface));
+				opacity: 0.3;
+			}
+			.tl-section {
+				position: relative;
+				margin-bottom: 32px;
+			}
+			.tl-section::before {
+				content: '';
+				position: absolute;
+				left: -24px;
+				top: 6px;
+				width: 10px;
+				height: 10px;
+				border-radius: 50%;
+				background: var(--green);
+				box-shadow:
+					0 0 12px rgba(34, 197, 94, 0.2),
+					0 0 0 4px var(--bg);
+			}
+			.tl-section.inactive::before {
+				background: var(--surface);
+				box-shadow: 0 0 0 4px var(--bg);
+			}
+			.tl-label {
+				font-size: 11px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 2px;
+				color: var(--muted);
+				margin-bottom: 12px;
+			}
+			.tl-label .date {
+				color: var(--green);
+			}
+			.tl-scroll {
+				display: flex;
+				gap: 10px;
+				overflow-x: auto;
+				scrollbar-width: none;
+				-webkit-overflow-scrolling: touch;
+			}
+			.tl-scroll::-webkit-scrollbar {
+				display: none;
+			}
+			.tl-card {
+				flex: 0 0 110px;
+				background: var(--card);
+				border-radius: 12px;
+				overflow: hidden;
+				border: 1px solid rgba(255, 255, 255, 0.02);
+				transition: all 0.15s;
+			}
+			.tl-card:active {
+				transform: scale(0.95);
+				border-color: var(--green-dim);
+			}
+			.tl-card img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				display: block;
+			}
+			.tl-card .info {
+				padding: 6px 8px 10px;
+			}
+			.tl-card .info .t {
+				font-size: 11px;
+				font-weight: 600;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.tl-card .info .a {
+				font-size: 9px;
+				color: var(--muted);
+				margin-top: 1px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.tl-card .info .bar {
+				margin-top: 6px;
+				height: 3px;
+				background: rgba(255, 255, 255, 0.04);
+				border-radius: 2px;
+				overflow: hidden;
+			}
+			.tl-card .info .bar .fill {
+				height: 100%;
+				background: var(--green);
+				border-radius: 2px;
+			}
+			.stats-bar {
+				display: flex;
+				gap: 8px;
+				margin-bottom: 28px;
+			}
+			.stat-card {
+				flex: 1;
+				background: var(--surface);
+				border: 1px solid rgba(255, 255, 255, 0.02);
+				border-radius: 12px;
+				padding: 14px 12px;
+				text-align: center;
+			}
+			.stat-card .num {
+				font-size: 22px;
+				font-weight: 800;
+				color: var(--green);
+			}
+			.stat-card .lbl {
+				font-size: 9px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				color: var(--muted);
+				margin-top: 2px;
+			}
+			.stat-card .num.muted {
+				color: var(--muted);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="top">
+			<div>
+				<h1>Timeline<span>Reading History</span></h1>
+			</div>
+			<div class="top-actions"><button>+</button></div>
+		</div>
+
+		<div class="stats-bar">
+			<div class="stat-card">
+				<div class="num">3</div>
+				<div class="lbl">This Week</div>
+			</div>
+			<div class="stat-card">
+				<div class="num">142</div>
+				<div class="lbl">Pages</div>
+			</div>
+			<div class="stat-card">
+				<div class="num muted">8.2</div>
+				<div class="lbl">hrs Read</div>
+			</div>
+			<div class="stat-card">
+				<div class="num">9</div>
+				<div class="lbl">Total</div>
+			</div>
+		</div>
+
+		<div class="timeline" id="timeline"></div>
+
+		<script>
+			const books = [
+				{
+					title: 'The Great Gatsby',
+					author: 'F. Scott Fitzgerald',
+					seed: 'gatsby',
+					pct: 72,
+					period: 'now'
+				},
+				{ title: '1984', author: 'George Orwell', seed: '1984', pct: 34, period: 'now' },
+				{ title: 'Dune', author: 'Frank Herbert', seed: 'dune', pct: 58, period: 'now' },
+				{
+					title: 'The Hobbit',
+					author: 'J.R.R. Tolkien',
+					seed: 'hobbit',
+					pct: 15,
+					period: 'recent'
+				},
+				{
+					title: 'Neuromancer',
+					author: 'William Gibson',
+					seed: 'neuromancer',
+					pct: 7,
+					period: 'recent'
+				},
+				{
+					title: 'Brave New World',
+					author: 'Aldous Huxley',
+					seed: 'brave',
+					pct: 44,
+					period: 'recent'
+				},
+				{
+					title: 'Pride and Prejudice',
+					author: 'Jane Austen',
+					seed: 'pride',
+					pct: 91,
+					period: 'month'
+				},
+				{
+					title: 'Fahrenheit 451',
+					author: 'Ray Bradbury',
+					seed: 'fahrenheit',
+					pct: 100,
+					period: 'month'
+				},
+				{
+					title: 'The Catcher in the Rye',
+					author: 'J.D. Salinger',
+					seed: 'catcher',
+					pct: 23,
+					period: 'older'
+				}
+			];
+
+			const periods = [
+				{ id: 'now', label: 'Now', date: 'This Week', active: true },
+				{ id: 'recent', label: 'Recent', date: 'Last Week', active: true },
+				{ id: 'month', label: 'This Month', date: 'April 2026', active: false },
+				{ id: 'older', label: 'Earlier', date: 'March 2026', active: false }
+			];
+
+			const timeline = document.getElementById('timeline');
+			timeline.innerHTML = periods
+				.map((p) => {
+					const sectionBooks = books.filter((b) => b.period === p.id);
+					if (sectionBooks.length === 0) return '';
+					return `
+        <div class="tl-section ${p.active ? '' : 'inactive'}">
+          <div class="tl-label"><span class="date">${p.date}</span> — ${p.label}</div>
+          <div class="tl-scroll">
+            ${sectionBooks
+							.map(
+								(b) => `
+              <div class="tl-card">
+                <img src="https://picsum.photos/seed/${b.seed}/300/420" alt="${b.title}" loading="lazy">
+                <div class="info">
+                  <div class="t">${b.title}</div>
+                  <div class="a">${b.author}</div>
+                  <div class="bar"><div class="fill" style="width:${b.pct}%"></div></div>
+                </div>
+              </div>
+            `
+							)
+							.join('')}
+          </div>
+        </div>
+      `;
+				})
+				.join('');
+		</script>
+	</body>
+</html>

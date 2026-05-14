@@ -234,6 +234,7 @@
 		const target = event.target as HTMLElement;
 
 		if (target.tagName === 'IMG') {
+			event.preventDefault();
 			event.stopPropagation();
 			fullscreenSrc = (target as HTMLImageElement).src;
 			return;
@@ -397,6 +398,13 @@
 		padding-bottom: 0;
 		margin-top: 0;
 		margin-bottom: 0;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.content :global(p img) {
+		display: block;
+		margin: 0;
 	}
 
 	.content :global(h1),
@@ -410,9 +418,15 @@
 
 	.content :global(img) {
 		filter: var(--image-filter);
-		max-width: 100%;
-		height: auto;
+		max-width: 100% !important;
+		height: auto !important;
 		-webkit-user-drag: none;
+	}
+
+	.content :global(figure),
+	.content :global(picture) {
+		max-width: 100% !important;
+		margin: 0 !important;
 	}
 
 	.content :global(.subchapter-start) {

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>Library</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			:root {
+				--gold: #c9a84c;
+				--gold-dim: rgba(201, 168, 76, 0.08);
+				--gold-border: rgba(201, 168, 76, 0.12);
+				--bg: #100d0a;
+				--surface: #1a1511;
+				--card: #221c16;
+				--text: #e2d9cc;
+				--muted: #7a6a52;
+				--radius: 16px;
+			}
+			body {
+				font-family: 'Inter', sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+				font-size: 17px;
+				line-height: 1.4;
+			}
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.012'/%3E%3C/svg%3E");
+				pointer-events: none;
+			}
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 28px 24px 0;
+			}
+			.header h1 {
+				font-size: 26px;
+				font-weight: 600;
+				letter-spacing: -0.5px;
+				color: #f0e8dc;
+			}
+			.header button {
+				width: 48px;
+				height: 48px;
+				border-radius: 14px;
+				border: 1px solid var(--gold-border);
+				background: var(--surface);
+				color: var(--gold);
+				font-size: 24px;
+				cursor: pointer;
+				transition: all 0.15s;
+			}
+			.header button:active {
+				background: var(--gold-dim);
+				border-color: var(--gold);
+			}
+			.focus-sec {
+				margin: 20px 24px;
+				padding: 28px;
+				border-radius: var(--radius);
+				background: var(--surface);
+				border: 1px solid rgba(255, 255, 255, 0.03);
+				position: relative;
+				overflow: hidden;
+			}
+			.focus-sec::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 1px;
+				background: linear-gradient(90deg, transparent, var(--gold-border), transparent);
+			}
+			.focus-label {
+				font-family: 'Playfair Display', serif;
+				font-size: 15px;
+				font-style: italic;
+				color: var(--gold);
+				margin-bottom: 18px;
+				letter-spacing: 0.3px;
+			}
+			.focus-row {
+				display: flex;
+				gap: 22px;
+			}
+			.focus-row .cover {
+				width: 110px;
+				height: 154px;
+				border-radius: 10px;
+				object-fit: cover;
+				flex-shrink: 0;
+				box-shadow:
+					0 6px 24px rgba(0, 0, 0, 0.4),
+					0 0 0 1px rgba(201, 168, 76, 0.04);
+			}
+			.focus-row .info {
+				flex: 1;
+				min-width: 0;
+			}
+			.focus-row .info .t {
+				font-family: 'Playfair Display', serif;
+				font-size: 24px;
+				font-weight: 600;
+				line-height: 1.15;
+				color: #f0e8dc;
+			}
+			.focus-row .info .a {
+				font-size: 15px;
+				color: var(--muted);
+				margin-top: 3px;
+			}
+			.focus-row .info .q {
+				font-size: 14px;
+				color: var(--muted);
+				margin-top: 8px;
+				font-style: italic;
+				line-height: 1.5;
+				padding-left: 12px;
+				border-left: 2px solid var(--gold-border);
+			}
+			.focus-prog {
+				margin-top: 18px;
+			}
+			.focus-prog .row1 {
+				display: flex;
+				justify-content: space-between;
+				font-size: 14px;
+				color: var(--muted);
+			}
+			.focus-prog .row1 strong {
+				color: var(--gold);
+				font-family: 'Playfair Display', serif;
+			}
+			.focus-prog .track {
+				margin-top: 8px;
+				height: 5px;
+				background: rgba(255, 255, 255, 0.03);
+				border-radius: 3px;
+				overflow: hidden;
+			}
+			.focus-prog .track .fill {
+				height: 100%;
+				width: 72%;
+				background: linear-gradient(90deg, var(--gold), #dbb85c);
+				border-radius: 3px;
+				box-shadow: 0 0 8px rgba(201, 168, 76, 0.15);
+			}
+			.focus-btn {
+				margin-top: 18px;
+				padding: 14px 0;
+				width: 100%;
+				border: none;
+				border-radius: 12px;
+				background: rgba(201, 168, 76, 0.06);
+				color: var(--gold);
+				font-size: 16px;
+				font-weight: 600;
+				cursor: pointer;
+				font-family: inherit;
+				border: 1px solid var(--gold-border);
+				transition: all 0.15s;
+			}
+			.focus-btn:active {
+				background: rgba(201, 168, 76, 0.12);
+			}
+			.rest-hdr {
+				padding: 0 24px;
+				margin: 24px 0 16px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.rest-hdr h2 {
+				font-size: 17px;
+				font-weight: 600;
+			}
+			.rest-hdr h2 span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			.rest-hdr .sort {
+				font-size: 14px;
+				color: var(--gold);
+				font-style: italic;
+				font-family: 'Playfair Display', serif;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 14px;
+				padding: 0 24px 48px;
+			}
+			.item {
+				text-align: center;
+			}
+			.item img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				border-radius: 8px;
+				transition: transform 0.15s;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+			}
+			.item:active img {
+				transform: scale(0.93);
+			}
+			.item .t {
+				font-size: 13px;
+				margin-top: 6px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				color: var(--text);
+				font-weight: 500;
+			}
+			.item .pct {
+				display: inline-flex;
+				margin-top: 5px;
+				width: 26px;
+				height: 26px;
+				border-radius: 50%;
+				background: var(--gold-dim);
+				font-size: 11px;
+				font-weight: 600;
+				align-items: center;
+				justify-content: center;
+				color: var(--gold);
+				border: 1px solid var(--gold-border);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1>Library</h1>
+			<button>+</button>
+		</div>
+		<div class="focus-sec">
+			<div class="focus-label">✦ Currently Reading</div>
+			<div class="focus-row">
+				<img class="cover" src="https://picsum.photos/seed/gatsby/300/420" alt="" loading="lazy" />
+				<div class="info">
+					<div class="t">The Great Gatsby</div>
+					<div class="a">F. Scott Fitzgerald</div>
+					<div class="q">
+						"So we beat on, boats against the current, borne back ceaselessly into the past."
+					</div>
+				</div>
+			</div>
+			<div class="focus-prog">
+				<div class="row1">
+					<span>Chapter 7 of 9</span><span><strong>72%</strong> complete</span>
+				</div>
+				<div class="track"><div class="fill"></div></div>
+			</div>
+			<button class="focus-btn">Resume Reading</button>
+		</div>
+		<div class="rest-hdr">
+			<h2>All Books <span>· 8 more</span></h2>
+			<span class="sort">Sort ↕</span>
+		</div>
+		<div class="grid" id="g"></div>
+		<script>
+			const b = [
+				{ t: '1984', a: 'George Orwell', s: '1984', p: 34 },
+				{ t: 'Pride & Prejudice', a: 'Jane Austen', s: 'pride', p: 91 },
+				{ t: 'The Hobbit', a: 'J.R.R. Tolkien', s: 'hobbit', p: 15 },
+				{ t: 'Dune', a: 'Frank Herbert', s: 'dune', p: 58 },
+				{ t: 'Neuromancer', a: 'W. Gibson', s: 'neuromancer', p: 7 },
+				{ t: 'Brave New World', a: 'A. Huxley', s: 'brave', p: 44 },
+				{ t: 'Fahrenheit 451', a: 'R. Bradbury', s: 'fahrenheit', p: 100 },
+				{ t: 'Catcher in the Rye', a: 'J.D. Salinger', s: 'catcher', p: 23 }
+			];
+			document.getElementById('g').innerHTML = b
+				.map(
+					(x) =>
+						`<div class="item"><img src="https://picsum.photos/seed/${x.s}/200/280" alt="${x.t}" loading="lazy"><div class="t">${x.t}</div><span class="pct">${x.p}%</span></div>`
+				)
+				.join('');
+		</script>
+	</body>
+</html>

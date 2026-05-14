@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>Mock 9 — Reading Focus</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			:root {
+				--sepia: #d4a853;
+				--sepia-dim: rgba(212, 168, 83, 0.06);
+				--bg: #0e0b09;
+				--surface: #16120e;
+				--card: #1e1814;
+				--text: #d6cdc0;
+				--muted: #6b5c4c;
+			}
+			body {
+				font-family: 'Inter', sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+			}
+			body::after {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+				pointer-events: none;
+			}
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 20px 20px 0;
+			}
+			.header h1 {
+				font-size: 15px;
+				font-weight: 500;
+				text-transform: uppercase;
+				letter-spacing: 3px;
+				color: var(--muted);
+			}
+			.header button {
+				width: 38px;
+				height: 38px;
+				border-radius: 50%;
+				border: 1px solid rgba(255, 255, 255, 0.03);
+				background: var(--surface);
+				color: var(--muted);
+				font-size: 16px;
+				cursor: pointer;
+			}
+			.focus-section {
+				padding: 20px 20px 24px;
+				margin: 16px 16px 20px;
+				border-radius: 24px;
+				background: linear-gradient(145deg, var(--surface), var(--card));
+				position: relative;
+				overflow: hidden;
+			}
+			.focus-section::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 1px;
+				background: linear-gradient(90deg, transparent, var(--sepia-dim), transparent);
+			}
+			.focus-label {
+				font-family: 'STIX Two Text', serif;
+				font-size: 12px;
+				font-style: italic;
+				color: var(--sepia);
+				margin-bottom: 12px;
+			}
+			.focus-row {
+				display: flex;
+				gap: 20px;
+			}
+			.focus-row .cover {
+				width: 100px;
+				height: 140px;
+				object-fit: cover;
+				border-radius: 8px;
+				flex-shrink: 0;
+				box-shadow:
+					0 8px 32px rgba(0, 0, 0, 0.4),
+					0 0 0 1px rgba(212, 168, 83, 0.05);
+			}
+			.focus-row .info {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+			}
+			.focus-row .info .t {
+				font-family: 'STIX Two Text', serif;
+				font-size: 22px;
+				font-weight: 700;
+				line-height: 1.15;
+				color: #e8ddd0;
+			}
+			.focus-row .info .a {
+				font-size: 13px;
+				color: var(--muted);
+				margin-top: 2px;
+				font-family: 'STIX Two Text', serif;
+				font-style: italic;
+			}
+			.focus-row .info .quote {
+				font-family: 'STIX Two Text', serif;
+				font-size: 12px;
+				font-style: italic;
+				color: var(--muted);
+				margin-top: 6px;
+				line-height: 1.4;
+				border-left: 2px solid var(--sepia-dim);
+				padding-left: 10px;
+			}
+			.focus-progress {
+				margin-top: 16px;
+			}
+			.focus-progress .row1 {
+				display: flex;
+				justify-content: space-between;
+				font-size: 12px;
+				color: var(--muted);
+			}
+			.focus-progress .row1 strong {
+				color: var(--sepia);
+			}
+			.focus-progress .track {
+				margin-top: 6px;
+				height: 4px;
+				background: rgba(255, 255, 255, 0.03);
+				border-radius: 2px;
+				overflow: hidden;
+			}
+			.focus-progress .track .fill {
+				height: 100%;
+				width: 72%;
+				background: linear-gradient(90deg, var(--sepia), #e8c04a);
+				border-radius: 2px;
+			}
+			.focus-btn {
+				margin-top: 14px;
+				padding: 12px 0;
+				width: 100%;
+				border: 1px solid rgba(212, 168, 83, 0.15);
+				border-radius: 12px;
+				background: rgba(212, 168, 83, 0.04);
+				color: var(--sepia);
+				font-size: 13px;
+				font-weight: 500;
+				cursor: pointer;
+				font-family: inherit;
+				transition: all 0.15s;
+			}
+			.focus-btn:active {
+				background: rgba(212, 168, 83, 0.1);
+			}
+			.rest-header {
+				padding: 0 20px;
+				margin-bottom: 12px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.rest-header h2 {
+				font-family: 'STIX Two Text', serif;
+				font-size: 16px;
+				font-weight: 600;
+			}
+			.rest-header h2 span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			.rest-header .sort {
+				font-size: 11px;
+				color: var(--sepia);
+			}
+			.compact-grid {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 8px;
+				padding: 0 20px 40px;
+			}
+			.compact-item {
+				text-align: center;
+			}
+			.compact-item img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				border-radius: 6px;
+				transition: transform 0.15s;
+			}
+			.compact-item:active img {
+				transform: scale(0.93);
+			}
+			.compact-item .t {
+				font-size: 10px;
+				margin-top: 4px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				color: var(--muted);
+			}
+			.compact-item .pct-dot {
+				display: inline-block;
+				margin-top: 2px;
+				width: 20px;
+				height: 20px;
+				border-radius: 50%;
+				background: var(--surface);
+				font-size: 8px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--sepia);
+				border: 1px solid rgba(255, 255, 255, 0.02);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1>Reading</h1>
+			<button>+</button>
+		</div>
+
+		<div class="focus-section">
+			<div class="focus-label">✦ Currently Reading</div>
+			<div class="focus-row">
+				<img class="cover" src="https://picsum.photos/seed/gatsby/300/420" alt="" loading="lazy" />
+				<div class="info">
+					<div class="t">The Great Gatsby</div>
+					<div class="a">F. Scott Fitzgerald</div>
+					<div class="quote">"So we beat on, boats against the current..."</div>
+				</div>
+			</div>
+			<div class="focus-progress">
+				<div class="row1">
+					<span>Chapter 7 of 9</span><span><strong>72%</strong> complete</span>
+				</div>
+				<div class="track"><div class="fill"></div></div>
+			</div>
+			<button class="focus-btn">⟳ Resume Reading</button>
+		</div>
+
+		<div class="rest-header">
+			<h2>Library <span>· 8 more</span></h2>
+			<span class="sort">Sort ▾</span>
+		</div>
+
+		<div class="compact-grid" id="compact"></div>
+
+		<script>
+			const books = [
+				{ title: '1984', author: 'George Orwell', seed: '1984', pct: 34 },
+				{ title: 'Pride & Prejudice', author: 'Jane Austen', seed: 'pride', pct: 91 },
+				{ title: 'The Hobbit', author: 'J.R.R. Tolkien', seed: 'hobbit', pct: 15 },
+				{ title: 'Dune', author: 'Frank Herbert', seed: 'dune', pct: 58 },
+				{ title: 'Neuromancer', author: 'W. Gibson', seed: 'neuromancer', pct: 7 },
+				{ title: 'Brave New World', author: 'A. Huxley', seed: 'brave', pct: 44 },
+				{ title: 'Fahrenheit 451', author: 'R. Bradbury', seed: 'fahrenheit', pct: 100 },
+				{ title: 'Catcher in the Rye', author: 'J.D. Salinger', seed: 'catcher', pct: 23 }
+			];
+
+			document.getElementById('compact').innerHTML = books
+				.map(
+					(b) => `
+      <div class="compact-item">
+        <img src="https://picsum.photos/seed/${b.seed}/200/280" alt="${b.title}" loading="lazy">
+        <div class="t">${b.title}</div>
+        <span class="pct-dot">${b.pct}%</span>
+      </div>
+    `
+				)
+				.join('');
+		</script>
+	</body>
+</html>

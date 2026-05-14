@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>Mock 10 — Cover Stack</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			:root {
+				--accent: #f59e0b;
+				--accent-dim: rgba(245, 158, 11, 0.06);
+				--bg: #0a0908;
+				--surface: #12100e;
+				--text: #e0d8cc;
+				--muted: #5a5248;
+			}
+			body {
+				font-family: 'Inter', sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+				padding: 24px 20px 40px;
+				overflow-x: hidden;
+			}
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background: radial-gradient(
+					ellipse at 50% 30%,
+					rgba(245, 158, 11, 0.03) 0%,
+					transparent 60%
+				);
+				pointer-events: none;
+			}
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 32px;
+			}
+			.header h1 {
+				font-family: 'JetBrains Mono', monospace;
+				font-size: 15px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 3px;
+				color: var(--accent);
+			}
+			.header .actions {
+				display: flex;
+				gap: 6px;
+			}
+			.header .actions button {
+				width: 36px;
+				height: 36px;
+				border: none;
+				background: var(--surface);
+				color: var(--muted);
+				font-size: 15px;
+				cursor: pointer;
+				border-radius: 6px;
+				font-family: 'JetBrains Mono', monospace;
+				transition: all 0.15s;
+			}
+			.header .actions button:active {
+				background: var(--accent-dim);
+				color: var(--accent);
+			}
+			.desk {
+				position: relative;
+				height: 340px;
+				margin-bottom: 32px;
+				display: flex;
+				align-items: flex-end;
+				justify-content: center;
+			}
+			.stack-layer {
+				position: absolute;
+				border-radius: 6px;
+				overflow: hidden;
+				box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+				transition: all 0.2s;
+				cursor: pointer;
+			}
+			.stack-layer:nth-child(1) {
+				bottom: 0;
+				transform: rotate(-4deg);
+				z-index: 1;
+				width: 130px;
+			}
+			.stack-layer:nth-child(2) {
+				bottom: 8px;
+				transform: rotate(2deg);
+				z-index: 2;
+				width: 140px;
+			}
+			.stack-layer:nth-child(3) {
+				bottom: 16px;
+				transform: rotate(-1deg);
+				z-index: 3;
+				width: 135px;
+			}
+			.stack-layer:nth-child(4) {
+				bottom: 24px;
+				transform: rotate(3deg);
+				z-index: 4;
+				width: 145px;
+			}
+			.stack-layer:nth-child(5) {
+				bottom: 32px;
+				transform: rotate(-2deg);
+				z-index: 5;
+				width: 138px;
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+			}
+			.stack-layer img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				display: block;
+			}
+			.stack-layer .label {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				padding: 20px 8px 8px;
+				background: linear-gradient(0deg, rgba(10, 9, 8, 0.95) 0%, transparent 100%);
+			}
+			.stack-layer .label .t {
+				font-size: 10px;
+				font-weight: 500;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.stack-layer .label .a {
+				font-size: 8px;
+				color: var(--muted);
+			}
+			.stack-layer .top-label {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				padding: 8px;
+				display: flex;
+				justify-content: space-between;
+			}
+			.stack-layer .top-label .pct {
+				font-family: 'JetBrains Mono', monospace;
+				font-size: 9px;
+				font-weight: 700;
+				color: var(--accent);
+				background: rgba(10, 9, 8, 0.7);
+				padding: 2px 6px;
+				border-radius: 4px;
+				backdrop-filter: blur(4px);
+			}
+			.stack-layer .top-label .done {
+				color: #22c55e;
+			}
+			.shelf-section {
+				margin-top: 8px;
+			}
+			.shelf-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 12px;
+				padding: 0 2px;
+			}
+			.shelf-header h3 {
+				font-family: 'JetBrains Mono', monospace;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 2px;
+				color: var(--muted);
+				font-weight: 400;
+			}
+			.shelf-header h3 strong {
+				color: var(--text);
+			}
+			.shelf-header .nav-dots {
+				display: flex;
+				gap: 4px;
+			}
+			.shelf-header .nav-dots span {
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: var(--muted);
+			}
+			.shelf-header .nav-dots span.active {
+				background: var(--accent);
+			}
+			.shelf-row {
+				display: flex;
+				gap: 8px;
+				overflow-x: auto;
+				scrollbar-width: none;
+				padding-bottom: 4px;
+			}
+			.shelf-row::-webkit-scrollbar {
+				display: none;
+			}
+			.shelf-item {
+				flex: 0 0 90px;
+			}
+			.shelf-item img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				border-radius: 4px;
+				transition: transform 0.15s;
+			}
+			.shelf-item:active img {
+				transform: scale(0.92);
+			}
+			.shelf-item .t {
+				font-size: 9px;
+				margin-top: 4px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				color: var(--muted);
+			}
+			.shelf-item .bar {
+				margin-top: 4px;
+				height: 2px;
+				background: rgba(255, 255, 255, 0.03);
+				border-radius: 1px;
+				overflow: hidden;
+			}
+			.shelf-item .bar .fill {
+				height: 100%;
+				background: var(--accent);
+			}
+			.lamp {
+				position: fixed;
+				top: 0;
+				left: 50%;
+				transform: translateX(-50%);
+				width: 200px;
+				height: 200px;
+				background: radial-gradient(
+					ellipse at 50% 0%,
+					rgba(245, 158, 11, 0.04) 0%,
+					transparent 70%
+				);
+				pointer-events: none;
+				z-index: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="lamp"></div>
+
+		<div class="header">
+			<h1>Desk</h1>
+			<div class="actions">
+				<button>⌂</button>
+				<button>+</button>
+			</div>
+		</div>
+
+		<div class="desk" id="stack"></div>
+
+		<div class="shelf-section">
+			<div class="shelf-header">
+				<h3><strong>Shelved</strong> · 4 more</h3>
+				<div class="nav-dots"><span class="active"></span><span></span></div>
+			</div>
+			<div class="shelf-row" id="shelf-row"></div>
+		</div>
+
+		<script>
+			const books = [
+				{ title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', seed: 'gatsby', pct: 72 },
+				{ title: '1984', author: 'George Orwell', seed: '1984', pct: 34 },
+				{ title: 'Dune', author: 'Frank Herbert', seed: 'dune', pct: 58 },
+				{ title: 'Pride and Prejudice', author: 'Jane Austen', seed: 'pride', pct: 91 },
+				{ title: 'The Hobbit', author: 'J.R.R. Tolkien', seed: 'hobbit', pct: 15 },
+				{ title: 'Neuromancer', author: 'William Gibson', seed: 'neuromancer', pct: 7 },
+				{ title: 'Brave New World', author: 'Aldous Huxley', seed: 'brave', pct: 44 },
+				{ title: 'Fahrenheit 451', author: 'Ray Bradbury', seed: 'fahrenheit', pct: 100 },
+				{ title: 'The Catcher in the Rye', author: 'J.D. Salinger', seed: 'catcher', pct: 23 }
+			];
+
+			const stack = document.getElementById('stack');
+			const top5 = books.slice(0, 5);
+			stack.innerHTML = top5
+				.map(
+					(b, i) => `
+      <div class="stack-layer" style="z-index:${i + 1}">
+        <img src="https://picsum.photos/seed/${b.seed}/400/560" alt="${b.title}" loading="lazy">
+        <div class="top-label"><span class="pct ${b.pct >= 100 ? 'done' : ''}">${b.pct >= 100 ? '✓' : b.pct + '%'}</span></div>
+        <div class="label"><div class="t">${b.title}</div><div class="a">${b.author}</div></div>
+      </div>
+    `
+				)
+				.join('');
+
+			const shelf = document.getElementById('shelf-row');
+			const rest = books.slice(5);
+			shelf.innerHTML = rest
+				.map(
+					(b) => `
+      <div class="shelf-item">
+        <img src="https://picsum.photos/seed/${b.seed}/300/420" alt="${b.title}" loading="lazy">
+        <div class="t">${b.title}</div>
+        <div class="bar"><div class="fill" style="width:${b.pct}%"></div></div>
+      </div>
+    `
+				)
+				.join('');
+		</script>
+	</body>
+</html>

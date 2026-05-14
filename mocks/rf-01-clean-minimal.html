@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>01 — Clean Minimal</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			:root {
+				--bg: #0d0d0d;
+				--surface: #141414;
+				--card: #1a1a1a;
+				--text: #e8e8e8;
+				--muted: #666;
+				--accent: #888;
+				--accent-dim: rgba(255, 255, 255, 0.03);
+				--radius: 8px;
+			}
+			body {
+				font-family: 'Inter', sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+				background-image: radial-gradient(circle, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+				background-size: 24px 24px;
+			}
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 20px 20px 0;
+			}
+			.header h1 {
+				font-size: 18px;
+				font-weight: 600;
+				letter-spacing: -0.3px;
+				color: #f0f0f0;
+			}
+			.header button {
+				width: 36px;
+				height: 36px;
+				border-radius: var(--radius);
+				border: 1px solid #222;
+				background: var(--surface);
+				color: var(--muted);
+				font-size: 16px;
+				cursor: pointer;
+				transition: all 0.15s;
+			}
+			.header button:active {
+				background: #1f1f1f;
+			}
+			.focus-sec {
+				padding: 20px;
+				margin: 16px;
+				border-radius: 12px;
+				background: var(--surface);
+				border: 1px solid #1a1a1a;
+			}
+			.focus-label {
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 1.5px;
+				color: var(--muted);
+				margin-bottom: 14px;
+			}
+			.focus-row {
+				display: flex;
+				gap: 16px;
+			}
+			.focus-row .cover {
+				width: 90px;
+				height: 126px;
+				border-radius: 6px;
+				object-fit: cover;
+				flex-shrink: 0;
+			}
+			.focus-row .info {
+				flex: 1;
+				min-width: 0;
+			}
+			.focus-row .info .t {
+				font-size: 18px;
+				font-weight: 600;
+				letter-spacing: -0.3px;
+				line-height: 1.2;
+			}
+			.focus-row .info .a {
+				font-size: 12px;
+				color: var(--muted);
+				margin-top: 2px;
+			}
+			.focus-row .info .q {
+				font-size: 11px;
+				color: var(--muted);
+				margin-top: 6px;
+				font-style: italic;
+				line-height: 1.4;
+				padding-left: 8px;
+				border-left: 2px solid #222;
+			}
+			.focus-prog {
+				margin-top: 14px;
+			}
+			.focus-prog .row1 {
+				display: flex;
+				justify-content: space-between;
+				font-size: 11px;
+				color: var(--muted);
+			}
+			.focus-prog .row1 strong {
+				color: var(--text);
+			}
+			.focus-prog .track {
+				margin-top: 6px;
+				height: 3px;
+				background: rgba(255, 255, 255, 0.04);
+				border-radius: 2px;
+				overflow: hidden;
+			}
+			.focus-prog .track .fill {
+				height: 100%;
+				width: 72%;
+				background: var(--accent);
+				border-radius: 2px;
+			}
+			.focus-btn {
+				margin-top: 12px;
+				padding: 10px 0;
+				width: 100%;
+				border: 1px solid #222;
+				border-radius: var(--radius);
+				background: var(--card);
+				color: var(--text);
+				font-size: 12px;
+				font-weight: 500;
+				cursor: pointer;
+				font-family: inherit;
+				transition: all 0.15s;
+			}
+			.focus-btn:active {
+				background: #222;
+			}
+			.rest-hdr {
+				padding: 0 20px;
+				margin-bottom: 12px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.rest-hdr h2 {
+				font-size: 14px;
+				font-weight: 600;
+			}
+			.rest-hdr h2 span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			.rest-hdr .sort {
+				font-size: 11px;
+				color: var(--muted);
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 8px;
+				padding: 0 20px 40px;
+			}
+			.item {
+				text-align: center;
+			}
+			.item img {
+				width: 100%;
+				aspect-ratio: 3/4;
+				object-fit: cover;
+				border-radius: 4px;
+				transition: transform 0.15s;
+			}
+			.item:active img {
+				transform: scale(0.93);
+			}
+			.item .t {
+				font-size: 9px;
+				margin-top: 4px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				color: var(--muted);
+			}
+			.item .pct {
+				display: inline-flex;
+				margin-top: 3px;
+				width: 20px;
+				height: 20px;
+				border-radius: 50%;
+				background: var(--surface);
+				font-size: 8px;
+				align-items: center;
+				justify-content: center;
+				color: var(--muted);
+				border: 1px solid #222;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1>Library</h1>
+			<button>+</button>
+		</div>
+		<div class="focus-sec">
+			<div class="focus-label">Currently Reading</div>
+			<div class="focus-row">
+				<img class="cover" src="https://picsum.photos/seed/gatsby/300/420" alt="" loading="lazy" />
+				<div class="info">
+					<div class="t">The Great Gatsby</div>
+					<div class="a">F. Scott Fitzgerald</div>
+					<div class="q">"So we beat on, boats against the current..."</div>
+				</div>
+			</div>
+			<div class="focus-prog">
+				<div class="row1">
+					<span>Chapter 7 of 9</span><span><strong>72%</strong> done</span>
+				</div>
+				<div class="track"><div class="fill"></div></div>
+			</div>
+			<button class="focus-btn">Resume Reading</button>
+		</div>
+		<div class="rest-hdr">
+			<h2>All Books <span>· 8 more</span></h2>
+			<span class="sort">Sort</span>
+		</div>
+		<div class="grid" id="g"></div>
+		<script>
+			const b = [
+				{ t: '1984', a: 'George Orwell', s: '1984', p: 34 },
+				{ t: 'Pride & Prejudice', a: 'Jane Austen', s: 'pride', p: 91 },
+				{ t: 'The Hobbit', a: 'J.R.R. Tolkien', s: 'hobbit', p: 15 },
+				{ t: 'Dune', a: 'Frank Herbert', s: 'dune', p: 58 },
+				{ t: 'Neuromancer', a: 'W. Gibson', s: 'neuromancer', p: 7 },
+				{ t: 'Brave New World', a: 'A. Huxley', s: 'brave', p: 44 },
+				{ t: 'Fahrenheit 451', a: 'R. Bradbury', s: 'fahrenheit', p: 100 },
+				{ t: 'Catcher in the Rye', a: 'J.D. Salinger', s: 'catcher', p: 23 }
+			];
+			document.getElementById('g').innerHTML = b
+				.map(
+					(x) =>
+						`<div class="item"><img src="https://picsum.photos/seed/${x.s}/200/280" alt="${x.t}" loading="lazy"><div class="t">${x.t}</div><span class="pct">${x.p}%</span></div>`
+				)
+				.join('');
+		</script>
+	</body>
+</html>

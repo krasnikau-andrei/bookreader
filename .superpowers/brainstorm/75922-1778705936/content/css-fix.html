@@ -1,0 +1,102 @@
+<h2>CSS-фикс переполнения</h2>
+<p class="subtitle">
+	max-width: 100% считает ширину от колонки (100vw - 2rem), игнорируя padding на > *
+</p>
+
+<div class="mockup" style="max-width: 400px; margin: 0 auto">
+	<div class="mockup-header">Проблема</div>
+	<div class="mockup-body" style="position: relative; padding: 12px">
+		<div style="background: #f5f0e8; border-radius: 4px; padding: 8px; position: relative">
+			<div style="height: 4px; background: #ddd; margin-bottom: 6px; width: 60%"></div>
+			<div style="height: 4px; background: #ddd; margin-bottom: 6px; width: 80%"></div>
+			<div
+				style="
+					background: #ccc;
+					height: 60px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					margin: 0 -12px;
+					color: #888;
+					font-size: 10px;
+				"
+			>
+				🖼️ Картинка на всю ширину колонки, игнорируя паддинг
+			</div>
+			<div style="height: 4px; background: #ddd; margin-top: 6px; width: 70%"></div>
+		</div>
+		<div
+			style="
+				position: absolute;
+				top: 12px;
+				left: 12px;
+				bottom: 12px;
+				width: 4px;
+				background: #4a90d9;
+				border-radius: 2px;
+				opacity: 0.3;
+			"
+		></div>
+		<div
+			style="
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				bottom: 12px;
+				width: 4px;
+				background: #4a90d9;
+				border-radius: 2px;
+				opacity: 0.3;
+			"
+		></div>
+		<span
+			style="
+				position: absolute;
+				top: -10px;
+				left: 20px;
+				background: #4a90d9;
+				color: #fff;
+				font-size: 9px;
+				padding: 0 4px;
+				border-radius: 2px;
+			"
+			>читаемая область</span
+		>
+		<span
+			style="
+				position: absolute;
+				bottom: -10px;
+				right: 50%;
+				background: #e74c3c;
+				color: #fff;
+				font-size: 9px;
+				padding: 0 4px;
+				border-radius: 2px;
+			"
+			>💥 картинка вылезает</span
+		>
+	</div>
+</div>
+
+<h3>Фикс</h3>
+<pre
+	style="
+		background: #1e1e1e;
+		color: #d4d4d4;
+		padding: 12px;
+		border-radius: 8px;
+		text-align: left;
+		font-size: 13px;
+		overflow-x: auto;
+	"
+>
+.content :global(> *) {
+    padding: 0 var(--reader-gap-sides);
+    margin: 0;
+    <strong style="color:#4ec9b0">overflow-x: hidden;  /* ← добавить */</strong>
+}
+</pre>
+
+<p class="subtitle">
+	<code>overflow-x: hidden</code> — режет только горизонтальное переполнение, вертикаль не трогает.
+</p>
