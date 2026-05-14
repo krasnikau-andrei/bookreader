@@ -12,6 +12,10 @@ async function mockGetProgress(bookId: string): Promise<ReadingProgress | undefi
 	return mockProgressStore.get(bookId);
 }
 
+async function mockGetAllProgress(): Promise<ReadingProgress[]> {
+	return Array.from(mockProgressStore.values());
+}
+
 describe('Progress Storage', () => {
 	test('saves reading progress', async () => {
 		mockProgressStore.clear();
@@ -61,5 +65,33 @@ describe('Progress Storage', () => {
 
 		expect(saved?.chapterIndex).toBe(2);
 		expect(saved?.scrollPercent).toBe(0.7);
+	});
+
+	test('getAllProgress returns all saved progress', async () => {
+		mockProgressStore.clear();
+
+		const progress1: ReadingProgress = {
+			bookId: 'book-1',
+			chapterIndex: 0,
+			scrollPercent: 0.5,
+			lastReadAt: new Date('2024-01-01'),
+			chapterSizes: [100, 200]
+		};
+		const progress2: ReadingProgress = {
+			bookId: 'book-2',
+			chapterIndex: 1,
+			scrollPercent: 0.3,
+			lastReadAt: new Date('2024-01-02'),
+			chapterSizes: [150, 250, 100]
+		};
+
+		await mockSaveProgress(progress1);
+		await mockSaveProgress(progress2);
+
+		const all = await mockGetAllProgress();
+		expect(all).toHaveLength(2);
+		const map = new Map(all.map((p) => [p.bookId, p]));
+		expect(map.get('book-1')?.chapterSizes).toEqual([100, 200]);
+		expect(map.get('book-2')?.chapterSizes).toEqual([150, 250, 100]);
 	});
 });

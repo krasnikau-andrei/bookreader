@@ -1,17 +1,14 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
 	import { theme } from '$lib/theme.svelte';
 
 	let { children } = $props();
-
-	let themeColor = $derived($page.url.pathname.startsWith('/read/') ? '#000000' : '#0f0b0a');
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<link rel="manifest" href="/manifest.json" />
-	<meta name="theme-color" content={themeColor} />
+	<meta name="theme-color" content="#000000" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 	<meta name="apple-mobile-web-app-title" content="BookReader" />
@@ -39,6 +36,7 @@
 		--color-cardVignette: {theme.colors.cardVignette};
 		--color-error: {theme.colors.error};
 		--color-overlay: {theme.colors.overlay};
+		--color-progressTrack: {theme.colors.progressTrack};
 		--padding-xs: {theme.padding.xs};
 		--padding-sm: {theme.padding.sm};
 		--padding-md: {theme.padding.md};
