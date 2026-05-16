@@ -1,4 +1,4 @@
-const BASE64_DATA_RE = /src\s*=\s*"data:[^"]{100,}"/gi;
+const BASE64_DATA_RE = /<(?:img|image)\b[^>]*(?:src|href)\s*=\s*"data:[^"]*"[^>]*\/?>/gi;
 
 export function measureChapterContent(content: string): number {
 	return content.replace(BASE64_DATA_RE, '').length;
