@@ -53,11 +53,20 @@ describe('measureChapterContent', () => {
 		const content = `<p>Text</p><img src="data:image/jpeg;base64,${fakeImg}" />`;
 		const stripped = measureChapterContent(content);
 		expect(stripped).toBeLessThan(content.length);
-		expect(stripped).toBe('<p>Text</p><img  />'.length);
+		expect(stripped).toBe('<p>Text</p>'.length);
 	});
 
-	test('short data URIs are not stripped', () => {
+	test('strips short data URIs', () => {
 		const content = '<p>Hello</p><img src="data:image/svg+xml,<svg></svg>" />';
-		expect(measureChapterContent(content)).toBe(content.length);
+		const stripped = measureChapterContent(content);
+		expect(stripped).toBeLessThan(content.length);
+		expect(stripped).toBe('<p>Hello</p>'.length);
+	});
+
+	test('strips SVG image href data URIs', () => {
+		const content = '<p>Text</p><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAE" />';
+		const stripped = measureChapterContent(content);
+		expect(stripped).toBeLessThan(content.length);
+		expect(stripped).toBe('<p>Text</p>'.length);
 	});
 });
