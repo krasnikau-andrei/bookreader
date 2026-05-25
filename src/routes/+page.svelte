@@ -1,16 +1,18 @@
 <script lang="ts">
 	import '$lib/theme.svelte';
 	import { parseEpub } from '$lib/parsers/epub';
+	import { cache } from '$lib/library-cache.svelte';
 	import {
-		saveBook,
+		saveBookWithFile,
 		getAllBooks,
+		getBookFile,
 		deleteBook,
 		bookExists,
 		getMostRecentProgress,
 		getAllProgress,
 		saveProgress
 	} from '$lib/storage';
-	import type { Book } from '$lib/types';
+	import type { Book, ReadingProgress } from '$lib/types';
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -29,12 +31,34 @@
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
 
-	onMount(async () => {
-		books = await getAllBooks();
-		const recent = await getMostRecentProgress();
+	onMount(() => {
+		books = cache.books;
+		focusBook = cache.focusBook;
+		focusProgress = cache.focusProgress;
+		bookProgressMap = cache.bookProgressMap;
+		chapterSizesReady = cache.chapterSizesReady;
+
+		refresh();
+	});
+
+	async function refresh() {
+		const [allBooks, recent, allProgress] = await Promise.all([
+			getAllBooks(),
+			getMostRecentProgress(),
+			getAllProgress()
+		]);
+
+		const map: Record<string, number> = {};
+		for (const p of allProgress) {
+			if (p.chapterSizes && p.chapterSizes.length > 0) {
+				const pct = calculateBookProgress(p.chapterSizes, p.chapterIndex, p.scrollPercent);
+				map[p.bookId] = Math.round(pct * 100);
+			}
+		}
+
+		let focusPct = 0;
 		if (recent) {
-			focusBook = recent.book;
-			focusProgress = recent.progress.chapterSizes
+			focusPct = recent.progress.chapterSizes
 				? Math.round(
 						calculateBookProgress(
 							recent.progress.chapterSizes,
@@ -44,9 +68,14 @@
 					)
 				: Math.round((recent.progress.scrollPercent || 0) * 100);
 		}
-		await loadAllBookProgress();
-		computeMissingChapterSizes();
-	});
+
+		books = cache.books = allBooks;
+		bookProgressMap = cache.bookProgressMap = map;
+		focusBook = cache.focusBook = recent?.book ?? null;
+		focusProgress = cache.focusProgress = focusPct;
+
+		computeMissingChapterSizes(allBooks, allProgress);
+	}
 
 	async function loadAllBookProgress() {
 		const allProgress = await getAllProgress();
@@ -63,19 +92,20 @@
 		}
 	}
 
-	async function computeMissingChapterSizes() {
-		const allProgress = await getAllProgress();
+	async function computeMissingChapterSizes(allBooks: Book[], allProgress: ReadingProgress[]) {
 		const missing = allProgress.filter((p) => !p.chapterSizes || p.chapterSizes.length === 0);
 		if (missing.length === 0) {
-			chapterSizesReady = true;
+			chapterSizesReady = cache.chapterSizesReady = true;
 			return;
 		}
 		for (const progress of missing) {
-			const book = books.find((b) => b.id === progress.bookId);
+			const book = allBooks.find((b) => b.id === progress.bookId);
 			if (!book) continue;
 			try {
+				const fileData = await getBookFile(progress.bookId);
+				if (!fileData) continue;
 				const { parseEpubChapters } = await import('$lib/parsers/epub');
-				const result = await parseEpubChapters(book.fileData);
+				const result = await parseEpubChapters(fileData);
 				progress.chapterSizes = result.chapters.map((c) => measureChapterContent(c.content));
 				await saveProgress(progress);
 			} catch (e) {
@@ -83,7 +113,11 @@
 			}
 		}
 		await loadAllBookProgress();
-		chapterSizesReady = true;
+		cache.bookProgressMap = bookProgressMap;
+		if (focusBook && bookProgressMap[focusBook.id] !== undefined) {
+			cache.focusProgress = bookProgressMap[focusBook.id];
+		}
+		chapterSizesReady = cache.chapterSizesReady = true;
 	}
 
 	function clearError() {
@@ -99,12 +133,14 @@
 	async function handleDeleteBook() {
 		if (!confirmSheet) return;
 		await deleteBook(confirmSheet.bookId);
-		books = await getAllBooks();
+		cache.books = cache.books.filter((b) => b.id !== confirmSheet!.bookId);
+		books = cache.books;
 		if (focusBook?.id === confirmSheet.bookId) {
-			focusBook = null;
-			focusProgress = 0;
+			focusBook = cache.focusBook = null;
+			focusProgress = cache.focusProgress = 0;
 		}
 		confirmSheet = null;
+		refresh();
 	}
 
 	function handleBookClick(bookId: string) {
@@ -173,18 +209,18 @@
 				author: parsed.author,
 				cover: parsed.cover,
 				description: parsed.description,
-				fileData: buffer,
 				format: 'epub',
 				addedAt: new Date(),
 				filename: file.name,
 				language: parsed.language
 			};
-			await saveBook(book);
-			books = await getAllBooks();
+			await saveBookWithFile(book, buffer);
+			cache.books = [book, ...cache.books];
+			books = cache.books;
 			if (!focusBook) {
-				focusBook = book;
-				focusProgress = 0;
+				focusBook = cache.focusBook = book;
 			}
+			refresh();
 		} catch (error) {
 			console.error('Upload failed:', error);
 			errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

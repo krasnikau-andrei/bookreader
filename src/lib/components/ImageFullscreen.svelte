@@ -94,7 +94,16 @@
 	ontouchend={handleTouchEnd}
 	transition:fade={{ duration: 200 }}
 >
-	<button class="close-btn" onclick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close fullscreen image"> &times; </button>
+	<button
+		class="close-btn"
+		onclick={(e) => {
+			e.stopPropagation();
+			onClose();
+		}}
+		aria-label="Close fullscreen image"
+	>
+		&times;
+	</button>
 	<img
 		{src}
 		alt=""
