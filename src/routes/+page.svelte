@@ -374,21 +374,22 @@
 		letter-spacing: 0.5px;
 	}
 	.focus-row {
-		display: flex;
-		gap: 20px;
+		overflow: hidden;
 	}
 	.cover {
 		width: 110px;
 		height: 154px;
 		object-fit: cover;
-		flex-shrink: 0;
+		float: right;
+		margin: 0 0 8px 20px;
 		border: 1px solid var(--color-borderMuted);
 		filter: sepia(0.15) brightness(0.85);
 	}
 	.cover-placeholder {
 		width: 110px;
 		height: 154px;
-		flex-shrink: 0;
+		float: right;
+		margin: 0 0 8px 20px;
 		border: 1px solid var(--color-borderMuted);
 		background: var(--color-backgroundTertiary);
 		display: flex;
@@ -399,8 +400,7 @@
 		color: var(--color-accent);
 	}
 	.info {
-		flex: 1;
-		min-width: 0;
+		overflow-wrap: break-word;
 	}
 	.book-title {
 		font-family: 'Cormorant Garamond', serif;

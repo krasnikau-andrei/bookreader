@@ -120,13 +120,13 @@
 		font-size: 14px;
 		font-style: italic;
 		padding: 8px 8px 2px;
-		color: var(--color-text-secondary);
+		color: var(--color-text-primary);
 		letter-spacing: 0.3px;
 		word-break: break-word;
 	}
 	.book-author {
 		font-size: 11px;
-		color: var(--color-borderMuted);
+		color: var(--color-text-secondary);
 		padding: 0 8px 8px;
 		overflow: hidden;
 		text-overflow: ellipsis;
