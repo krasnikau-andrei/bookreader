@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getBook, getProgress, saveProgress } from '$lib/storage';
+	import { getBook, getBookFile, getProgress, saveProgress } from '$lib/storage';
 	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
 	import { measureChapterContent } from '$lib/reader/progress';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
@@ -47,8 +47,15 @@
 				return;
 			}
 
+			const fileData = await getBookFile(bookId);
+			if (!fileData) {
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto('/');
+				return;
+			}
+
 			const { parseEpubChapters } = await import('$lib/parsers/epub');
-			const result = await parseEpubChapters(book.fileData);
+			const result = await parseEpubChapters(fileData);
 			chapters = result.chapters;
 
 			// Fetch saved progress from storage
