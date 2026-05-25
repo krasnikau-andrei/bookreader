@@ -1,9 +1,10 @@
 import Dexie, { type Table } from 'dexie';
-import type { Book, ReadingProgress } from './types';
+import type { Book, BookFile, ReadingProgress } from './types';
 
 export class BookDatabase extends Dexie {
 	books!: Table<Book, string>;
 	readingProgress!: Table<ReadingProgress, string>;
+	bookFiles!: Table<BookFile, string>;
 
 	constructor() {
 		super('bookreader');
@@ -11,6 +12,21 @@ export class BookDatabase extends Dexie {
 			books: 'id, title, author, addedAt',
 			readingProgress: 'bookId, lastReadAt'
 		});
+		this.version(3)
+			.stores({
+				books: 'id, title, author, addedAt',
+				readingProgress: 'bookId, lastReadAt',
+				bookFiles: 'id'
+			})
+			.upgrade(async (tx) => {
+				const books = await tx.table('books').toArray();
+				const bookFiles = tx.table('bookFiles');
+				for (const book of books) {
+					if (book.fileData) {
+						await bookFiles.put({ id: book.id, fileData: book.fileData });
+					}
+				}
+			});
 	}
 }
 
@@ -30,7 +46,11 @@ export async function saveBook(book: Book): Promise<void> {
 }
 
 export async function getAllBooks(): Promise<Book[]> {
-	return await db.books.toArray();
+	const books = await db.books.toArray();
+	return books.map(({ fileData, ...rest }) => {
+		void fileData;
+		return rest as Book;
+	});
 }
 
 export async function getBook(id: string): Promise<Book | undefined> {
@@ -44,6 +64,17 @@ export async function bookExists(id: string): Promise<boolean> {
 
 export async function deleteBook(id: string): Promise<void> {
 	await db.books.delete(id);
+	await db.bookFiles.delete(id);
+}
+
+export async function saveBookWithFile(book: Book, fileData: ArrayBuffer): Promise<void> {
+	await saveBook(book);
+	await db.bookFiles.put({ id: book.id, fileData });
+}
+
+export async function getBookFile(id: string): Promise<ArrayBuffer | undefined> {
+	const entry = await db.bookFiles.get(id);
+	return entry?.fileData;
 }
 
 export async function saveProgress(progress: ReadingProgress): Promise<void> {
