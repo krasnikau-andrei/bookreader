@@ -32,6 +32,12 @@
 	let isLongPress = false;
 
 	onMount(() => {
+		console.log('[DIAG] onMount cache:', {
+			booksLen: cache.books.length,
+			focusBookId: cache.focusBook?.id,
+			focusProgress: cache.focusProgress,
+			progressMapKeys: Object.keys(cache.bookProgressMap)
+		});
 		books = cache.books;
 		focusBook = cache.focusBook;
 		focusProgress = cache.focusProgress;
@@ -69,6 +75,24 @@
 				: Math.round((recent.progress.scrollPercent || 0) * 100);
 		}
 
+		console.log('[DIAG] refresh result:', {
+			recentBookId: recent?.book?.id,
+			recentFocusPct: focusPct,
+			recentChapterIndex: recent?.progress?.chapterIndex,
+			recentScrollPercent: recent?.progress?.scrollPercent,
+			recentChapterSizes: recent?.progress?.chapterSizes?.length,
+			allBooksLen: allBooks.length,
+			allProgressLen: allProgress.length,
+			progressMapSample: Object.entries(map).slice(0, 3)
+		});
+		console.log('[DIAG] compare:', {
+			cachedProgress: focusProgress,
+			newProgress: focusPct,
+			cachedId: focusBook?.id,
+			newId: recent?.book?.id,
+			same: focusPct === focusProgress && focusBook?.id === recent?.book?.id
+		});
+
 		books = cache.books = allBooks;
 		bookProgressMap = cache.bookProgressMap = map;
 		focusBook = cache.focusBook = recent?.book ?? null;
@@ -88,6 +112,12 @@
 		}
 		bookProgressMap = map;
 		if (focusBook && map[focusBook.id] !== undefined) {
+			console.log('[DIAG] loadAllBookProgress changing focusProgress', {
+				from: focusProgress,
+				to: map[focusBook.id],
+				focusBookId: focusBook.id,
+				hasChapterSizes: map[focusBook.id] !== undefined
+			});
 			focusProgress = map[focusBook.id];
 		}
 	}
