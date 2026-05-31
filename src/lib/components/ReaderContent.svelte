@@ -110,26 +110,36 @@
 
 		const container = scrollContainer;
 
-		// Wait for DOM to update and content to render
-		tick().then(() => {
-			requestAnimationFrame(() => {
-				if (!container) return;
+		// Skip restore if fragment navigation will handle scrolling
+		// (isFragmentNavigation is set synchronously in the fragment effect body)
+		if (isFragmentNavigation) return;
 
-				// Skip restore if fragment navigation will handle scrolling
-				// (isFragmentNavigation is set synchronously in the fragment effect body)
-				if (isFragmentNavigation) return;
+		// Synchronous scroll restoration — sets scrollLeft before first paint,
+		// preventing a flash of content at scroll=0 before jumping to saved position
+		if (shouldRestoreScroll) {
+			const maxScroll = container.scrollWidth - container.clientWidth;
+			if (maxScroll > 0) {
+				container.scrollLeft = Math.round(maxScroll * _progress);
+			}
+		}
+		shouldRestoreScroll = true;
 
-				// Only apply scroll if we should restore it
-				// (not when handleLeftTap/handleRightTap just set it)
-				if (shouldRestoreScroll) {
+		// Async safety net: re-apply after paint in case layout shifts
+		// (e.g., images load, fonts swap) changed scrollWidth
+		if (!isChangingChapter) {
+			tick().then(() => {
+				requestAnimationFrame(() => {
+					if (!container || isChangingChapter) return;
 					const maxScroll = container.scrollWidth - container.clientWidth;
-					const targetScroll = Math.round(maxScroll * _progress);
-					jumpTo(container, targetScroll);
-				}
-				// Reset for next time
-				shouldRestoreScroll = true;
+					if (maxScroll > 0) {
+						const targetScroll = Math.round(maxScroll * _progress);
+						if (Math.abs(container.scrollLeft - targetScroll) > 1) {
+							jumpTo(container, targetScroll);
+						}
+					}
+				});
 			});
-		});
+		}
 	});
 
 	function handleLeftTap(baseScrollLeft?: number) {

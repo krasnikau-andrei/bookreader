@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getBook, getBookFile, getProgress, saveProgress } from '$lib/storage';
+	import {
+		getBook,
+		getBookFile,
+		getProgress,
+		saveProgress,
+		getChapterCache,
+		saveChapterCache
+	} from '$lib/storage';
 	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { cache } from '$lib/library-cache.svelte';
@@ -18,7 +26,7 @@
 	let currentChapter = $state(0);
 	let showOverlay = $state(false);
 	let showToc = $state(false);
-	let loading = $state(true);
+	let showLoadingFallback = $state(false);
 	let bookId = $derived($page.params.bookId);
 
 	// Link handling
@@ -32,9 +40,17 @@
 	let progressChapterSizes: number[] | undefined = $state();
 	let currentScrollPercent = $state(0);
 
+	// Show "Loading..." fallback if content takes more than 500ms
+	$effect(() => {
+		if (chapters.length > 0) return;
+		const timer = setTimeout(() => {
+			showLoadingFallback = true;
+		}, 500);
+		return () => clearTimeout(timer);
+	});
+
 	onMount(async () => {
 		try {
-			console.log('[DEBUG] Reader page onMount started');
 			if (!bookId) {
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto('/');
@@ -48,16 +64,27 @@
 				return;
 			}
 
-			const fileData = await getBookFile(bookId);
-			if (!fileData) {
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto('/');
-				return;
-			}
+			// Try cache first — skips expensive ZIP + DOM parse on repeat opens
+			const cachedChapters = await getChapterCache(bookId);
+			if (cachedChapters) {
+				chapters = cachedChapters;
+			} else {
+				const fileData = await getBookFile(bookId);
+				if (!fileData) {
+					// eslint-disable-next-line svelte/no-navigation-without-resolve
+					goto('/');
+					return;
+				}
 
-			const { parseEpubChapters } = await import('$lib/parsers/epub');
-			const result = await parseEpubChapters(fileData);
-			chapters = result.chapters;
+				const { parseEpubChapters } = await import('$lib/parsers/epub');
+				const result = await parseEpubChapters(fileData);
+				chapters = result.chapters;
+
+				// Cache parsed chapters for instant open next time
+				saveChapterCache(bookId, chapters).catch((e) =>
+					console.warn('[STORAGE] Failed to cache chapters:', e)
+				);
+			}
 
 			// Fetch saved progress from storage
 			const progress = await getProgress(bookId);
@@ -98,13 +125,11 @@
 				currentChapter = Math.min(savedProgress.chapterIndex, chapters.length - 1);
 			}
 
-			await new Promise((resolve) => setTimeout(resolve, 200));
-
 			if (!hasChapterParam && !hasProgressParam) {
 				updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
 			}
 		} finally {
-			loading = false;
+			// No explicit loading state — content appears via chapters reactivity
 		}
 	});
 
@@ -180,18 +205,16 @@
 </script>
 
 <div class="reader">
-	{#if loading}
-		<div class="loading" data-testid="reader-loading">Loading...</div>
-	{:else if book}
-		<div class="reader-container">
-			{#if chapters.length > 0}
+	<div class="reader-container">
+		{#if chapters.length > 0}
+			<div transition:fade={{ duration: 300 }}>
 				<ReaderContent
 					{bookId}
 					{chapters}
 					{currentChapter}
 					content={chapters[currentChapter]?.content}
 					initialProgress={savedProgress?.scrollPercent ?? 0}
-					language={book.language}
+					language={book?.language}
 					fragment={pendingFragment}
 					{showOverlay}
 					{showToc}
@@ -201,50 +224,52 @@
 					onCloseMenus={handleCloseMenus}
 					onFragmentNavigate={handleFragmentNavigate}
 				/>
-			{/if}
+			</div>
+		{:else if showLoadingFallback}
+			<div class="loading" data-testid="reader-loading">Loading...</div>
+		{/if}
 
-			<ReaderOverlay
-				show={showOverlay}
-				onBack={() => {
-					if (book && progressChapterSizes) {
-						const pct = calculateBookProgress(
-							progressChapterSizes,
-							currentChapter,
-							currentScrollPercent
-						);
-						cache.focusBook = book;
-						cache.focusProgress = Math.round(pct * 100);
-					}
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto('/');
-				}}
-				onShowToc={() => (showToc = true)}
-			/>
-			<TableOfContents
-				show={showToc}
-				{chapters}
+		<ReaderOverlay
+			show={showOverlay}
+			onBack={() => {
+				if (book && progressChapterSizes) {
+					const pct = calculateBookProgress(
+						progressChapterSizes,
+						currentChapter,
+						currentScrollPercent
+					);
+					cache.focusBook = book;
+					cache.focusProgress = Math.round(pct * 100);
+				}
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto('/');
+			}}
+			onShowToc={() => (showToc = true)}
+		/>
+		<TableOfContents
+			show={showToc}
+			{chapters}
+			{currentChapter}
+			onChapterSelect={handleChapterSelect}
+			onClose={() => (showToc = false)}
+		/>
+
+		<LinkErrorPopup
+			show={showLinkError}
+			originalHref={linkErrorInfo?.originalHref || ''}
+			message={linkErrorInfo?.message || ''}
+			onClose={() => (showLinkError = false)}
+		/>
+	</div>
+
+	{#if progressChapterSizes}
+		<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
+			<BookProgressBar
+				chapterSizes={progressChapterSizes}
 				{currentChapter}
-				onChapterSelect={handleChapterSelect}
-				onClose={() => (showToc = false)}
-			/>
-
-			<LinkErrorPopup
-				show={showLinkError}
-				originalHref={linkErrorInfo?.originalHref || ''}
-				message={linkErrorInfo?.message || ''}
-				onClose={() => (showLinkError = false)}
+				scrollPercent={currentScrollPercent}
 			/>
 		</div>
-
-		{#if progressChapterSizes}
-			<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
-				<BookProgressBar
-					chapterSizes={progressChapterSizes}
-					{currentChapter}
-					scrollPercent={currentScrollPercent}
-				/>
-			</div>
-		{/if}
 	{/if}
 </div>
 

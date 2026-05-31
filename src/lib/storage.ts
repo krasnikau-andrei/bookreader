@@ -1,10 +1,17 @@
 import Dexie, { type Table } from 'dexie';
-import type { Book, BookFile, ReadingProgress } from './types';
+import type { Book, BookFile, Chapter, ReadingProgress } from './types';
+
+export interface ChapterCache {
+	bookId: string;
+	chapters: Chapter[];
+	cachedAt: Date;
+}
 
 export class BookDatabase extends Dexie {
 	books!: Table<Book, string>;
 	readingProgress!: Table<ReadingProgress, string>;
 	bookFiles!: Table<BookFile, string>;
+	chapterCache!: Table<ChapterCache, string>;
 
 	constructor() {
 		super('bookreader');
@@ -27,6 +34,12 @@ export class BookDatabase extends Dexie {
 					}
 				}
 			});
+		this.version(4).stores({
+			books: 'id, title, author, addedAt',
+			readingProgress: 'bookId, lastReadAt',
+			bookFiles: 'id',
+			chapterCache: 'bookId'
+		});
 	}
 }
 
@@ -62,9 +75,23 @@ export async function bookExists(id: string): Promise<boolean> {
 	return count > 0;
 }
 
+export async function saveChapterCache(bookId: string, chapters: Chapter[]): Promise<void> {
+	await db.chapterCache.put({ bookId, chapters, cachedAt: new Date() });
+}
+
+export async function getChapterCache(bookId: string): Promise<Chapter[] | undefined> {
+	const entry = await db.chapterCache.get(bookId);
+	return entry?.chapters;
+}
+
+export async function deleteChapterCache(bookId: string): Promise<void> {
+	await db.chapterCache.delete(bookId);
+}
+
 export async function deleteBook(id: string): Promise<void> {
 	await db.books.delete(id);
 	await db.bookFiles.delete(id);
+	await deleteChapterCache(id);
 }
 
 export async function saveBookWithFile(book: Book, fileData: ArrayBuffer): Promise<void> {
