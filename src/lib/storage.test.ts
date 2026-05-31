@@ -95,3 +95,49 @@ describe('Progress Storage', () => {
 		expect(map.get('book-2')?.chapterSizes).toEqual([150, 250, 100]);
 	});
 });
+
+describe('Book File Storage', () => {
+	const mockBookFileStore: Map<string, ArrayBuffer> = new Map();
+
+	async function mockSaveBookWithFile(bookId: string, fileData: ArrayBuffer): Promise<void> {
+		mockBookFileStore.set(bookId, fileData);
+	}
+
+	async function mockGetBookFile(bookId: string): Promise<ArrayBuffer | undefined> {
+		return mockBookFileStore.get(bookId);
+	}
+
+	async function mockDeleteBook(bookId: string): Promise<void> {
+		mockBookFileStore.delete(bookId);
+	}
+
+	test('saves and retrieves book file data', async () => {
+		mockBookFileStore.clear();
+		const data = new ArrayBuffer(10);
+		const view = new Uint8Array(data);
+		view[0] = 42;
+
+		await mockSaveBookWithFile('book-1', data);
+		const retrieved = await mockGetBookFile('book-1');
+
+		expect(retrieved).toBeTruthy();
+		expect(retrieved!.byteLength).toBe(10);
+		const retrievedView = new Uint8Array(retrieved!);
+		expect(retrievedView[0]).toBe(42);
+	});
+
+	test('returns undefined for non-existent book file', async () => {
+		mockBookFileStore.clear();
+		const result = await mockGetBookFile('non-existent');
+		expect(result).toBeUndefined();
+	});
+
+	test('delete removes book file', async () => {
+		mockBookFileStore.clear();
+		const data = new ArrayBuffer(5);
+		await mockSaveBookWithFile('book-1', data);
+		expect(await mockGetBookFile('book-1')).toBeTruthy();
+		await mockDeleteBook('book-1');
+		expect(await mockGetBookFile('book-1')).toBeUndefined();
+	});
+});
