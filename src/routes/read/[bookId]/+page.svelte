@@ -4,7 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { getBook, getBookFile, getProgress, saveProgress } from '$lib/storage';
 	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
-	import { measureChapterContent } from '$lib/reader/progress';
+	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
+	import { cache } from '$lib/library-cache.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
 	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
@@ -205,6 +206,15 @@
 			<ReaderOverlay
 				show={showOverlay}
 				onBack={() => {
+					if (book && progressChapterSizes) {
+						const pct = calculateBookProgress(
+							progressChapterSizes,
+							currentChapter,
+							currentScrollPercent
+						);
+						cache.focusBook = book;
+						cache.focusProgress = Math.round(pct * 100);
+					}
 					// eslint-disable-next-line svelte/no-navigation-without-resolve
 					goto('/');
 				}}
