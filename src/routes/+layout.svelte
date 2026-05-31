@@ -13,7 +13,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 	<meta name="apple-mobile-web-app-title" content="BookReader" />
 	<link
-		href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,200..900;1,200..900&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,200..900;1,200..900&display=optional"
 		rel="stylesheet"
 	/>
 </svelte:head>
