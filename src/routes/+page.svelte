@@ -31,19 +31,18 @@
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
 
-	let diagLogs = $state<string[]>([]);
-	let showDiag = $state(false);
-
-	function diag(...args: unknown[]) {
-		const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-		diagLogs = [...diagLogs, `[${new Date().toISOString().slice(11, 23)}] ${msg}`];
-	}
+	// let diagLogs = $state<string[]>([]);
+	// let showDiag = $state(false);
+	// function diag(...args: unknown[]) {
+	// 	const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+	// 	diagLogs = [...diagLogs, `[${new Date().toISOString().slice(11, 23)}] ${msg}`];
+	// }
 
 	onMount(() => {
-		diag('onMount cache', {
-			focusBookId: cache.focusBook?.id,
-			focusProgress: cache.focusProgress
-		});
+		// diag('onMount cache', {
+		// 	focusBookId: cache.focusBook?.id,
+		// 	focusProgress: cache.focusProgress
+		// });
 		books = cache.books;
 		focusBook = cache.focusBook;
 		focusProgress = cache.focusProgress;
@@ -81,19 +80,19 @@
 				: Math.round((recent.progress.scrollPercent || 0) * 100);
 		}
 
-		diag('refresh done', {
-			recentId: recent?.book?.id,
-			recentPct: focusPct,
-			chSizes: recent?.progress?.chapterSizes?.length ?? 'none',
-			booksCount: allBooks.length
-		});
-		diag('compare', {
-			cachePct: focusProgress,
-			newPct: focusPct,
-			cacheId: focusBook?.id,
-			newId: recent?.book?.id,
-			match: focusPct === focusProgress && focusBook?.id === recent?.book?.id
-		});
+		// diag('refresh done', {
+		// 	recentId: recent?.book?.id,
+		// 	recentPct: focusPct,
+		// 	chSizes: recent?.progress?.chapterSizes?.length ?? 'none',
+		// 	booksCount: allBooks.length
+		// });
+		// diag('compare', {
+		// 	cachePct: focusProgress,
+		// 	newPct: focusPct,
+		// 	cacheId: focusBook?.id,
+		// 	newId: recent?.book?.id,
+		// 	match: focusPct === focusProgress && focusBook?.id === recent?.book?.id
+		// });
 
 		books = cache.books = allBooks;
 		bookProgressMap = cache.bookProgressMap = map;
@@ -114,10 +113,10 @@
 		}
 		bookProgressMap = map;
 		if (focusBook && map[focusBook.id] !== undefined) {
-			diag('loadAllBookProgress changes focusProgress', {
-				from: focusProgress,
-				to: map[focusBook.id]
-			});
+			// diag('loadAllBookProgress changes focusProgress', {
+			// 	from: focusProgress,
+			// 	to: map[focusBook.id]
+			// });
 			focusProgress = map[focusBook.id];
 		}
 	}
@@ -128,7 +127,7 @@
 			chapterSizesReady = cache.chapterSizesReady = true;
 			return;
 		}
-		diag('computeMissingSizes: found', missing.length, 'books without chapterSizes');
+		// diag('computeMissingSizes: found', missing.length, 'books without chapterSizes');
 		for (const progress of missing) {
 			const book = allBooks.find((b) => b.id === progress.bookId);
 			if (!book) continue;
@@ -354,7 +353,8 @@
 		/>
 	{/if}
 
-	<button
+	<!-- DEBUG PANEL: uncomment to enable diagnostics -->
+	<!-- <button
 		class="diag-toggle"
 		onclick={() => (showDiag = !showDiag)}
 		type="button"
@@ -365,7 +365,7 @@
 		<pre style="position:fixed;bottom:36px;left:8px;right:8px;z-index:999;max-height:40vh;overflow:auto;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all">
 			{diagLogs.join('\n')}
 		</pre>
-	{/if}
+	{/if} -->
 </div>
 
 <style>
