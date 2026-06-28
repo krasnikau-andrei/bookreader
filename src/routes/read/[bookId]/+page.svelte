@@ -24,6 +24,7 @@
 	let book: Book | undefined = $state();
 	let chapters: Chapter[] = $state([]);
 	let currentChapter = $state(0);
+	let detectedLanguage: string | undefined = $state();
 	let showOverlay = $state(false);
 	let showToc = $state(false);
 	let showLoadingFallback = $state(false);
@@ -68,6 +69,8 @@
 			const cachedChapters = await getChapterCache(bookId);
 			if (cachedChapters) {
 				chapters = cachedChapters;
+				const { detectLanguage: dl } = await import('$lib/parsers/epub');
+				detectedLanguage = chapters.length > 0 ? dl(chapters[0].content) : undefined;
 			} else {
 				const fileData = await getBookFile(bookId);
 				if (!fileData) {
@@ -79,6 +82,7 @@
 				const { parseEpubChapters } = await import('$lib/parsers/epub');
 				const result = await parseEpubChapters(fileData);
 				chapters = result.chapters;
+				detectedLanguage = result.language;
 
 				// Cache parsed chapters for instant open next time
 				saveChapterCache(bookId, chapters).catch((e) =>
@@ -214,7 +218,7 @@
 					{currentChapter}
 					content={chapters[currentChapter]?.content}
 					initialProgress={savedProgress?.scrollPercent ?? 0}
-					language={book?.language}
+					language={detectedLanguage ?? book?.language ?? 'en'}
 					fragment={pendingFragment}
 					{showOverlay}
 					{showToc}
