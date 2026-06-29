@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { parseEpub, detectLanguage } from './epub';
+import { parseEpub } from './epub';
 
 describe('EPUB Parser', () => {
 	test('extracts title, author, and cover from valid EPUB', async () => {
@@ -41,47 +41,6 @@ describe('EPUB Parser', () => {
 		const pdfBuffer = createFakePdfBuffer();
 
 		await expect(parseEpub(pdfBuffer)).rejects.toThrow(/Invalid EPUB format/);
-	});
-});
-
-describe('detectLanguage', () => {
-	test('detects Cyrillic text as ru', () => {
-		const text = 'Это русский текст с кириллическими символами для проверки определения языка';
-		expect(detectLanguage(text)).toBe('ru');
-	});
-
-	test('detects CJK text as zh', () => {
-		const text = '这是一段中文文本，用于测试语言检测功能';
-		expect(detectLanguage(text)).toBe('zh');
-	});
-
-	test('falls back to metadata language for Latin text', () => {
-		const text = 'This is an English text sample for testing purposes';
-		expect(detectLanguage(text, 'en')).toBe('en');
-		expect(detectLanguage(text, 'fr')).toBe('fr');
-	});
-
-	test('defaults to en for Latin text without metadata language', () => {
-		const text = 'This is an English text sample';
-		expect(detectLanguage(text)).toBe('en');
-	});
-
-	test('strips HTML tags before detection', () => {
-		const text = '<html><body><p>Это русский текст в HTML</p></body></html>';
-		expect(detectLanguage(text)).toBe('ru');
-	});
-
-	test('returns metadata fallback for empty text', () => {
-		expect(detectLanguage('', 'de')).toBe('de');
-	});
-
-	test('returns en for empty text without metadata language', () => {
-		expect(detectLanguage('')).toBe('en');
-	});
-
-	test('detects cyrillic in mixed paragraphs', () => {
-		const text = 'Hello. Это русский текст. More English. Ещё русский.';
-		expect(detectLanguage(text)).toBe('ru');
 	});
 });
 

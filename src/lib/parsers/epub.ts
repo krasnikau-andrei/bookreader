@@ -212,42 +212,9 @@ function arrayBufferToBase64(buffer: Uint8Array): string {
 
 import type { Chapter, ChapterNavigationMap } from '$lib/types';
 
-export function detectLanguage(text: string, metadataLang?: string): string {
-	const plain = text.replace(/<[^>]*>/g, '');
-	const sample = plain.slice(0, 5000);
-
-	let cyrillic = 0;
-	let cjk = 0;
-	let total = 0;
-
-	for (const ch of sample) {
-		const code = ch.charCodeAt(0);
-		if (code >= 0x0400 && code <= 0x052f) {
-			cyrillic++;
-			total++;
-		} else if (code >= 0x4e00 && code <= 0x9fff) {
-			cjk++;
-			total++;
-		} else if (
-			(code >= 0x0600 && code <= 0x06ff) ||
-			(code >= 0x0590 && code <= 0x05ff) ||
-			(code >= 0x0041 && code <= 0x005a) ||
-			(code >= 0x0061 && code <= 0x007a)
-		) {
-			total++;
-		}
-	}
-
-	if (total === 0) return metadataLang || 'en';
-	if (cyrillic / total > 0.1) return 'ru';
-	if (cjk / total > 0.1) return 'zh';
-	return metadataLang || 'en';
-}
-
 export interface ParsedChapters {
 	chapters: Chapter[];
 	navigationMap: ChapterNavigationMap;
-	language?: string;
 }
 
 interface TocEntry {
@@ -572,6 +539,10 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const serializer = new XMLSerializer();
 		let processedContent = serializer.serializeToString(chapterDoc);
 
+		// Strip lang/xml:lang — EPUB-internal lang overrides our .content lang
+		// and breaks CSS hyphens which depend on the attribute.
+		processedContent = processedContent.replace(/\s+(?:lang|xml:lang)="[^"]*"/gi, '');
+
 		// Transform internal links for navigation
 		// Now filePathToChapterIndex contains ALL chapters
 		processedContent = transformLinks(processedContent, filePath, filePathToChapterIndex);
@@ -588,14 +559,11 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		});
 	}
 
-	const lang = chapters.length > 0 ? detectLanguage(chapters[0].content) : undefined;
-
 	return {
 		chapters,
 		navigationMap: {
 			filePathToChapterIndex
-		},
-		language: lang
+		}
 	};
 }
 
