@@ -539,6 +539,10 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const serializer = new XMLSerializer();
 		let processedContent = serializer.serializeToString(chapterDoc);
 
+		// Strip lang/xml:lang — EPUB-internal lang overrides our .content lang
+		// and breaks CSS hyphens which depend on the attribute.
+		processedContent = processedContent.replace(/\s+(?:lang|xml:lang)="[^"]*"/gi, '');
+
 		// Transform internal links for navigation
 		// Now filePathToChapterIndex contains ALL chapters
 		processedContent = transformLinks(processedContent, filePath, filePathToChapterIndex);

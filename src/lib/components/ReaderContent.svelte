@@ -400,15 +400,14 @@
 		background: transparent !important;
 	}
 
-	.content :global(p) {
+	.content :global(p),
+	.content :global(div) {
 		text-indent: 1.5em;
-		text-align: justify;
-		hyphens: auto;
+		text-align: justify !important;
+		hyphens: auto !important;
 		overflow-wrap: break-word;
 		padding-top: 0;
 		padding-bottom: 0;
-		padding-left: 0;
-		padding-right: 0;
 		margin-top: 0;
 		margin-bottom: 0;
 	}
