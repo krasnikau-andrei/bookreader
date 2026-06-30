@@ -12,15 +12,11 @@ export function transformLinks(
 	for (const link of links) {
 		const href = link.getAttribute('href') || '';
 
-		// Skip already processed links
-		if (link.hasAttribute('data-transformed')) continue;
-
 		// External links
 		if (href.startsWith('http://') || href.startsWith('https://')) {
 			link.setAttribute('target', '_blank');
 			link.setAttribute('rel', 'noopener');
 			link.classList.add('external-link');
-			link.setAttribute('data-transformed', 'true');
 			continue;
 		}
 
@@ -30,9 +26,6 @@ export function transformLinks(
 		// Resolve file path relative to current file
 		const currentDir = currentFilePath.substring(0, currentFilePath.lastIndexOf('/') + 1);
 		const targetFilePath = fileName ? normalizePath(currentDir + fileName) : currentFilePath;
-
-		// Store debug info
-		link.setAttribute('data-resolved-path', targetFilePath);
 
 		// Look up chapter index
 		const chapterIndex = filePathToChapterIndex.get(targetFilePath);
@@ -55,8 +48,6 @@ export function transformLinks(
 			link.classList.add('missing-link');
 			link.setAttribute('href', 'javascript:void(0)');
 		}
-
-		link.setAttribute('data-transformed', 'true');
 	}
 
 	// Serialize back to string - get innerHTML of body to avoid extra body/html tags

@@ -33,7 +33,6 @@
 			requestAnimationFrame(scrollToCurrentChapter);
 		}
 	});
-
 </script>
 
 {#if show}

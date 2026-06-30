@@ -250,7 +250,9 @@ function isBookTitleEntry(label: string, bookTitle: string, isFirstEntry: boolea
 		return true;
 	}
 
-	return /^(cover|title page|table of contents|contents|toc|front matter|copyright|dedication|acknowledgments|about the author)$/i.test(label);
+	return /^(cover|title page|table of contents|contents|toc|front matter|copyright|dedication|acknowledgments|about the author)$/i.test(
+		label
+	);
 }
 
 async function extractTocHierarchy(

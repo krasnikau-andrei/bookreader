@@ -32,5 +32,3 @@ export interface Chapter {
 	level?: number; // 0 = root, 1 = nested, etc. for tree structure
 	language?: string;
 }
-
-
