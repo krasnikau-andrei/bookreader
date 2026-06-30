@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createSwipeHandler, type SwipeConfig } from './swipe';
+import { createSwipeHandler } from './swipe';
 
 describe('Swipe Detection', () => {
 	let element: HTMLElement;
@@ -214,11 +214,7 @@ describe('Swipe Detection', () => {
 		});
 
 		test('accepts custom config', () => {
-			const customConfig: SwipeConfig = {
-				velocityThreshold: 1.0,
-				progressThreshold: 0.5
-			};
-			const handler = createSwipeHandler(element, callbacks, customConfig);
+			const handler = createSwipeHandler(element, callbacks, { velocityThreshold: 1.0, progressThreshold: 0.5 });
 			expect(handler).toBeDefined();
 		});
 	});
