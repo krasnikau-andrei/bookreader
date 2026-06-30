@@ -16,7 +16,7 @@
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { BookCard, ConfirmSheet, ErrorBanner, InfoBanner, EmptyState } from '$lib/components';
+	import { BookCard, ConfirmSheet, Banner, EmptyState } from '$lib/components';
 	import { generateFileHash } from '$lib/hash';
 
 	let books: Book[] = $state([]);
@@ -233,10 +233,10 @@
 
 <div class="library" data-testid="library-container">
 	{#if errorMessage}
-		<ErrorBanner message={errorMessage} onDismiss={clearError} />
+		<Banner message={errorMessage} onDismiss={clearError} variant="error" />
 	{/if}
 	{#if infoMessage}
-		<InfoBanner message={infoMessage} onDismiss={clearInfo} />
+		<Banner message={infoMessage} onDismiss={clearInfo} variant="info" />
 	{/if}
 
 	<div class="header">
