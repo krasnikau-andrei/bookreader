@@ -15,6 +15,11 @@
 
 	let tocContentEl: HTMLDivElement | undefined = $state();
 
+	function handleChapterSelect(index: number) {
+		onChapterSelect(index);
+		onClose();
+	}
+
 	function scrollToCurrentChapter() {
 		if (!tocContentEl) return;
 		const button = tocContentEl.querySelector(
@@ -29,10 +34,6 @@
 		}
 	});
 
-	function handleChapterSelect(index: number) {
-		onChapterSelect(index);
-		onClose();
-	}
 </script>
 
 {#if show}

@@ -168,14 +168,6 @@
 		}
 	}
 
-	function handleDeleteConfirm() {
-		if (!confirmSheet) return;
-		handleDeleteBook();
-	}
-	function handleDeleteCancel() {
-		confirmSheet = null;
-	}
-
 	/* eslint-disable svelte/no-navigation-without-resolve */
 	function navigateToFocus() {
 		if (focusBook) goto(`/read/${focusBook.id}`);
@@ -317,8 +309,8 @@
 	{#if confirmSheet}
 		<ConfirmSheet
 			bookTitle={confirmSheet.bookTitle}
-			onConfirm={handleDeleteConfirm}
-			onCancel={handleDeleteCancel}
+			onConfirm={handleDeleteBook}
+			onCancel={() => (confirmSheet = null)}
 		/>
 	{/if}
 </div>
