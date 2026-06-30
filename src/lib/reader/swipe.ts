@@ -189,9 +189,5 @@ export function createSwipeHandler(
 		return result;
 	}
 
-	function resetSwipe() {
-		state.didSwipe = false;
-	}
-
-	return { attach, detach, hasSwiped, resetSwipe };
+	return { attach, detach, hasSwiped };
 }
