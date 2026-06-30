@@ -1,3 +1,5 @@
+import { normalizePath } from './normalize-path';
+
 export function transformLinks(
 	html: string,
 	currentFilePath: string,
@@ -78,23 +80,4 @@ function parseHref(href: string): { fileName: string | null; fragment: string | 
 		fileName: href.substring(0, hashIndex),
 		fragment: href.substring(hashIndex + 1)
 	};
-}
-
-function normalizePath(path: string): string {
-	const parts = path.split('/');
-	const result: string[] = [];
-
-	for (const part of parts) {
-		if (part === '..') {
-			if (result.length > 0 && result[result.length - 1] !== '..') {
-				result.pop();
-			} else {
-				result.push(part);
-			}
-		} else if (part !== '.' && part !== '') {
-			result.push(part);
-		}
-	}
-
-	return result.join('/');
 }

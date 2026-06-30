@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { transformLinks } from './link-transformer';
+import { normalizePath } from './normalize-path';
 
 function parseXml(xml: string, mimeType: DOMParserSupportedType): Document {
 	if (xml.charCodeAt(0) === 0xfeff) {
@@ -146,32 +147,6 @@ function extractCoverPath(opfDoc: Document, opfPath: string): string | null {
 function resolvePath(opfPath: string, href: string): string {
 	const basePath = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
 	return normalizePath(basePath + href);
-}
-
-function normalizePath(path: string): string {
-	// Split path into components
-	const parts = path.split('/');
-	const result: string[] = [];
-
-	for (const part of parts) {
-		if (part === '..') {
-			// Go up one directory level
-			if (result.length > 0 && result[result.length - 1] !== '..') {
-				result.pop();
-			} else {
-				// Cannot go above root, keep as is
-				result.push(part);
-			}
-		} else if (part !== '.' && part !== '') {
-			// Skip current directory (.) and empty parts
-			result.push(part);
-		} else if (part === '' && result.length === 0 && path.startsWith('/')) {
-			// Preserve leading slash for absolute paths
-			continue;
-		}
-	}
-
-	return result.join('/');
 }
 
 async function extractCoverImage(zip: JSZip, coverPath: string): Promise<string | null> {

@@ -181,24 +181,6 @@
 		updateUrl(chapterIndex, 0, true);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	function handleLinkClick(event: MouseEvent) {
-		const target = event.target as HTMLElement;
-		const link = target.closest('a');
-
-		if (link?.classList.contains('missing-link')) {
-			event.preventDefault();
-			event.stopPropagation();
-
-			const originalHref = link.getAttribute('data-original-href') || 'unknown';
-			linkErrorInfo = {
-				originalHref,
-				message: `This link points to "${originalHref}" which is not available in this book.`
-			};
-			showLinkError = true;
-		}
-	}
-
 	function handleFragmentNavigate(fragmentId: string) {
 		pendingFragment = fragmentId;
 	}
