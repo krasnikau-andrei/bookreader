@@ -250,18 +250,7 @@ function isBookTitleEntry(label: string, bookTitle: string, isFirstEntry: boolea
 		return true;
 	}
 
-	// Skip common cover/title page indicators
-	const skipPatterns = [
-		/^(cover|title page|table of contents|contents|toc|front matter)$/i,
-		/^(copyright|dedication|acknowledgments|about the author)$/i
-	];
-	for (const pattern of skipPatterns) {
-		if (pattern.test(label)) {
-			return true;
-		}
-	}
-
-	return false;
+	return /^(cover|title page|table of contents|contents|toc|front matter|copyright|dedication|acknowledgments|about the author)$/i.test(label);
 }
 
 async function extractTocHierarchy(

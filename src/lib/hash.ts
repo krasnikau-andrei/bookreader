@@ -19,8 +19,6 @@ export async function generateFileHash(buffer: ArrayBuffer): Promise<string> {
 			.join('');
 	}
 
-	// Fallback for non-secure contexts (HTTP on mobile devices)
-	// Combines multiple hash approaches to reduce collision probability
 	const hash1 = djb2Hash(buffer);
 	const hash2 = djb2Hash(buffer.slice(0, Math.min(buffer.byteLength, 1024)));
 	const hash3 = djb2Hash(buffer.slice(Math.max(0, buffer.byteLength - 1024)));
