@@ -185,11 +185,11 @@ function arrayBufferToBase64(buffer: Uint8Array): string {
 	return btoa(binary);
 }
 
-import type { Chapter, ChapterNavigationMap } from '$lib/types';
+import type { Chapter } from '$lib/types';
 
 export interface ParsedChapters {
 	chapters: Chapter[];
-	navigationMap: ChapterNavigationMap;
+	navigationMap: { filePathToChapterIndex: Map<string, number> };
 }
 
 interface TocEntry {

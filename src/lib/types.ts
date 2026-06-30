@@ -33,6 +33,4 @@ export interface Chapter {
 	language?: string;
 }
 
-export interface ChapterNavigationMap {
-	filePathToChapterIndex: Map<string, number>;
-}
+
