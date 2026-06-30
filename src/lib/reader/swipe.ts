@@ -2,27 +2,6 @@
  * Swipe detection and completion for book reader
  * Tracks touch gestures to ensure pages always snap properly
  */
-export interface SwipeConfig {
-	velocityThreshold: number; // viewports per second
-	progressThreshold: number; // fraction of viewport
-}
-
-export const DEFAULT_SWIPE_CONFIG: SwipeConfig = {
-	velocityThreshold: 0.5,
-	progressThreshold: 0.3
-};
-
-interface SwipeState {
-	isActive: boolean;
-	startX: number;
-	startY: number;
-	startTime: number;
-	startScrollLeft: number;
-	lastX: number;
-	lastTime: number;
-	didSwipe: boolean; // Track if a swipe occurred to prevent click
-}
-
 export interface SwipeCallbacks {
 	onSwipeLeft: () => void;
 	onSwipeRight: () => void;
@@ -33,9 +12,18 @@ export interface SwipeCallbacks {
 export function createSwipeHandler(
 	element: HTMLElement,
 	callbacks: SwipeCallbacks,
-	config: SwipeConfig = DEFAULT_SWIPE_CONFIG
+	config: { velocityThreshold: number; progressThreshold: number } = { velocityThreshold: 0.5, progressThreshold: 0.3 }
 ) {
-	const state: SwipeState = {
+	const state: {
+		isActive: boolean;
+		startX: number;
+		startY: number;
+		startTime: number;
+		startScrollLeft: number;
+		lastX: number;
+		lastTime: number;
+		didSwipe: boolean;
+	} = {
 		isActive: false,
 		startX: 0,
 		startY: 0,
