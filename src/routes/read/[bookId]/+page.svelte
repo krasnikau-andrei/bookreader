@@ -16,7 +16,6 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
-	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
 	import TableOfContents from '$lib/components/TableOfContents.svelte';
 	import type { Book, Chapter } from '$lib/types';
 
@@ -29,9 +28,6 @@
 	let showLoadingFallback = $state(false);
 	let bookId = $derived($page.params.bookId);
 
-	// Link handling
-	let showLinkError = $state(false);
-	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
 	let pendingFragment: string | null = $state(null);
 
 	// Progress tracking
@@ -234,13 +230,6 @@
 			{currentChapter}
 			onChapterSelect={handleChapterSelect}
 			onClose={() => (showToc = false)}
-		/>
-
-		<LinkErrorPopup
-			show={showLinkError}
-			originalHref={linkErrorInfo?.originalHref || ''}
-			message={linkErrorInfo?.message || ''}
-			onClose={() => (showLinkError = false)}
 		/>
 	</div>
 
