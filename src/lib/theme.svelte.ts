@@ -1,6 +1,6 @@
 // All theme fields are always initialized with values.
 // CSS custom properties derived from this object always exist — never use fallback values like var(--x, default).
-export interface Theme {
+interface Theme {
 	colors: {
 		background: string;
 		backgroundSecondary: string;
