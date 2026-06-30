@@ -321,7 +321,6 @@
 			onCancel={handleDeleteCancel}
 		/>
 	{/if}
-
 </div>
 
 <style>

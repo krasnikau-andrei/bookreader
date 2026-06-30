@@ -214,7 +214,10 @@ describe('Swipe Detection', () => {
 		});
 
 		test('accepts custom config', () => {
-			const handler = createSwipeHandler(element, callbacks, { velocityThreshold: 1.0, progressThreshold: 0.5 });
+			const handler = createSwipeHandler(element, callbacks, {
+				velocityThreshold: 1.0,
+				progressThreshold: 0.5
+			});
 			expect(handler).toBeDefined();
 		});
 	});

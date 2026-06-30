@@ -12,7 +12,10 @@ export interface SwipeCallbacks {
 export function createSwipeHandler(
 	element: HTMLElement,
 	callbacks: SwipeCallbacks,
-	config: { velocityThreshold: number; progressThreshold: number } = { velocityThreshold: 0.5, progressThreshold: 0.3 }
+	config: { velocityThreshold: number; progressThreshold: number } = {
+		velocityThreshold: 0.5,
+		progressThreshold: 0.3
+	}
 ) {
 	const state: {
 		isActive: boolean;
