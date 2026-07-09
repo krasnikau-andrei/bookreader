@@ -36,3 +36,4 @@ broken_books/*.epub
 
 # Storybook
 storybook-static/
+.server.log

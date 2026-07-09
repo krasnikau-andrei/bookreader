@@ -39,9 +39,10 @@
 		{/if}
 	</div>
 	{#if progressPercent > 0}
-		<div class="progress-track">
+		<div class="progress-track" data-testid="progress-bar">
 			<div class="progress-fill" style="width: {progressPercent}%"></div>
 		</div>
+		<span class="progress-pct" data-testid="progress-percentage">{progressPercent}%</span>
 	{/if}
 	<div class="book-title" data-testid="book-title">{book.title}</div>
 	<div class="book-author" data-testid="book-author">{book.author}</div>
@@ -113,6 +114,16 @@
 		height: 100%;
 		background: var(--color-accent);
 		transition: width 0.3s ease;
+	}
+	.progress-pct {
+		position: absolute;
+		right: 4px;
+		top: 4px;
+		font-size: 10px;
+		color: var(--color-accent);
+		background: var(--color-cardBackground);
+		padding: 0 3px;
+		line-height: 1.4;
 	}
 
 	.book-title {
