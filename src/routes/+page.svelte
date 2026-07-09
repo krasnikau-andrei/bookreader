@@ -59,6 +59,9 @@
 			getAllProgress()
 		]);
 
+		const lastRead = new Map(allProgress.map((p) => [p.bookId, p.lastReadAt]));
+		allBooks.sort((a, b) => (lastRead.get(b.id) ?? 0) - (lastRead.get(a.id) ?? 0));
+
 		const map: Record<string, number> = {};
 		for (const p of allProgress) {
 			if (p.chapterSizes && p.chapterSizes.length > 0) {

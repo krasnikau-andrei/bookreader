@@ -21,6 +21,11 @@ When('I tap the center of the page', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
+	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await page.waitForTimeout(300);
 });
@@ -385,16 +390,14 @@ Then('the URL should have valid chapter and progress parameters', async ({ page 
 
 When('I navigate forward through the content', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
-	expect(box).toBeTruthy();
-	if (!box) return;
-	const initialContent = await content.evaluate((el) => el.innerHTML);
-	for (let i = 0; i < 10; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+	const contentBox = await content.boundingBox();
+	expect(contentBox).toBeTruthy();
+	if (!contentBox) return;
+	// Click through cover/title chapters until reaching real content,
+	// then keep clicking to advance within the real chapter
+	for (let i = 0; i < 12; i++) {
+		await content.click({ position: { x: contentBox.width * 0.85, y: contentBox.height * 0.5 } });
 		await page.waitForTimeout(500);
-		const currentContent = await content.evaluate((el) => el.innerHTML);
-		if (currentContent !== initialContent) break;
 	}
 });
 
@@ -540,6 +543,11 @@ When('I tap the center to show the overlay', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
+	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await page.waitForTimeout(300);
 });
@@ -560,7 +568,9 @@ Then('the TOC overlay should be visible', async ({ page }) => {
 });
 
 Then('the TOC title should be shown', async ({ page }) => {
-	await expect(page.getByRole('heading', { name: 'Table of Contents' })).toBeVisible();
+	await expect(
+		page.locator('[data-testid="toc-overlay"]').getByRole('heading', { name: 'Table of Contents' })
+	).toBeVisible();
 });
 
 When('I click on the second chapter in the TOC', async ({ page }) => {
@@ -608,8 +618,8 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 3; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+	for (let i = 0; i < 7; i++) {
+		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
 		await page.waitForTimeout(400);
 	}
 	await page.waitForTimeout(1500);
@@ -652,11 +662,16 @@ When('I scroll to the beginning of the current chapter', async ({ page }) => {
 });
 
 When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: number) => {
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
+	const content = page.locator('[data-testid="reader-content"]');
+	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	await reader.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
+	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await page.waitForTimeout(500);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
@@ -762,6 +777,11 @@ When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: n
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
+	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
 	await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
 	await page.waitForTimeout(300);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
@@ -873,6 +893,11 @@ Given('the overlay is open', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
+	// Navigate past cover/title chapters first, so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await page.waitForTimeout(300);
 	const backButton = page.getByRole('button', { name: 'Go back' });
@@ -914,6 +939,11 @@ Given('the TOC is open', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
+	// Navigate past cover/title chapters first, so center tap isn't intercepted by cover image
+	for (let i = 0; i < 3; i++) {
+		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
+		await page.waitForTimeout(400);
+	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await page.waitForTimeout(300);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
