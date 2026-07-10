@@ -36,6 +36,7 @@
 
 	// Progress tracking
 	let savedProgress: { chapterIndex: number; scrollPercent: number } | null = $state(null);
+	let urlScrollPercent: number | undefined = $state();
 	let isUpdatingUrl = false;
 	let progressChapterSizes: number[] | undefined = $state();
 	let currentScrollPercent = $state(0);
@@ -118,6 +119,10 @@
 			const hasChapterParam = urlSearchParams.has('chapter');
 			const hasProgressParam = urlSearchParams.has('progress');
 
+			if (hasProgressParam) {
+				urlScrollPercent = parseInt(urlSearchParams.get('progress') || '0', 10) / 10000;
+			}
+
 			if (hasChapterParam || hasProgressParam) {
 				const targetChapter = parseInt(urlSearchParams.get('chapter') || '0', 10);
 				currentChapter = Math.min(targetChapter, chapters.length - 1);
@@ -178,7 +183,7 @@
 		// Close all menus when selecting a chapter
 		showOverlay = false;
 		showToc = false;
-		updateUrl(chapterIndex, 0, true);
+		updateUrl(chapterIndex, 0);
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -213,7 +218,7 @@
 					{chapters}
 					{currentChapter}
 					content={chapters[currentChapter]?.content}
-					initialProgress={savedProgress?.scrollPercent ?? 0}
+					initialProgress={urlScrollPercent ?? savedProgress?.scrollPercent ?? 0}
 					language={book?.language}
 					fragment={pendingFragment}
 					{showOverlay}
