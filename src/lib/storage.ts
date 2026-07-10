@@ -106,13 +106,15 @@ export async function getBookFile(id: string): Promise<ArrayBuffer | undefined> 
 
 export async function saveProgress(progress: ReadingProgress): Promise<void> {
 	try {
-		if (!progress.chapterSizes) {
-			const existing = await db.readingProgress.get(progress.bookId);
-			if (existing?.chapterSizes) {
-				progress.chapterSizes = existing.chapterSizes;
+		await db.transaction('rw', db.readingProgress, async () => {
+			if (!progress.chapterSizes) {
+				const existing = await db.readingProgress.get(progress.bookId);
+				if (existing?.chapterSizes) {
+					progress.chapterSizes = existing.chapterSizes;
+				}
 			}
-		}
-		await db.readingProgress.put(progress);
+			await db.readingProgress.put(progress);
+		});
 	} catch (e) {
 		console.error('[STORAGE] saveProgress error:', e);
 		throw e;

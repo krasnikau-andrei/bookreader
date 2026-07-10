@@ -44,6 +44,7 @@
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
 	let isChangingChapter = $state(false);
+	let isAnimatingScroll = $state(false);
 	let isFragmentNavigation = $state(false);
 	/* eslint-disable @typescript-eslint/no-unused-vars */
 	let chapterRaf: number | null = null;
@@ -54,6 +55,7 @@
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let scrollRestoreGuard: ReturnType<typeof setTimeout> | undefined;
 	let fullscreenSrc: string | null = $state(null);
 
 	$effect(() => {
@@ -124,6 +126,14 @@
 		}
 		shouldRestoreScroll = true;
 
+		// Block scroll events for 600ms after programmatic scroll restoration
+		// to prevent iOS Safari's auto-scroll-restore from corrupting the
+		// correct progress position with a stale cached scrollLeft
+		clearTimeout(scrollRestoreGuard);
+		scrollRestoreGuard = setTimeout(() => {
+			scrollRestoreGuard = undefined;
+		}, 600);
+
 		// Async safety net: re-apply after paint in case layout shifts
 		// (e.g., images load, fonts swap) changed scrollWidth
 		if (!isChangingChapter) {
@@ -185,7 +195,24 @@
 		}
 
 		const newScroll = currentScroll - scrollContainer.clientWidth;
-		animateScroll(scrollContainer, Math.max(0, newScroll), 250);
+		const targetScroll = Math.max(0, newScroll);
+		const targetPercent = calculateScrollPercent(
+			targetScroll,
+			scrollContainer.scrollWidth,
+			scrollContainer.clientWidth
+		);
+		onUrlUpdate(currentChapter, targetPercent);
+		isAnimatingScroll = true;
+		animateScroll(scrollContainer, targetScroll, 250);
+		setTimeout(() => {
+			isAnimatingScroll = false;
+			saveProgress({
+				bookId,
+				chapterIndex: currentChapter,
+				scrollPercent: targetPercent,
+				lastReadAt: new Date()
+			});
+		}, 250);
 	}
 
 	function handleRightTap(baseScrollLeft?: number) {
@@ -230,7 +257,24 @@
 		}
 
 		const newScroll = currentScroll + scrollContainer.clientWidth;
-		animateScroll(scrollContainer, Math.min(maxScroll, newScroll), 250);
+		const targetScroll = Math.min(maxScroll, newScroll);
+		const targetPercent = calculateScrollPercent(
+			targetScroll,
+			scrollContainer.scrollWidth,
+			scrollContainer.clientWidth
+		);
+		onUrlUpdate(currentChapter, targetPercent);
+		isAnimatingScroll = true;
+		animateScroll(scrollContainer, targetScroll, 250);
+		setTimeout(() => {
+			isAnimatingScroll = false;
+			saveProgress({
+				bookId,
+				chapterIndex: currentChapter,
+				scrollPercent: targetPercent,
+				lastReadAt: new Date()
+			});
+		}, 250);
 	}
 
 	function handleContentClick(event: MouseEvent) {
@@ -295,7 +339,21 @@
 	}
 
 	function handleScroll() {
-		if (!scrollContainer || isUpdatingUrl || isChangingChapter) return;
+		if (!scrollContainer || isUpdatingUrl || isChangingChapter || isAnimatingScroll) return;
+
+		// iOS Safari restores cached scrollLeft after JS sets it — if we detect
+		// a non-user scroll during the restore guard period, re-apply the correct
+		// position and suppress the save/URL-update.
+		if (scrollRestoreGuard) {
+			const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+			if (maxScroll > 0) {
+				const targetScroll = Math.round(maxScroll * initialProgress);
+				if (Math.abs(scrollContainer.scrollLeft - targetScroll) > 1) {
+					jumpTo(scrollContainer, targetScroll);
+				}
+			}
+			return;
+		}
 
 		const percent = calculateScrollPercent(
 			scrollContainer.scrollLeft,
@@ -318,6 +376,31 @@
 			saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
 		}, 300);
 	}
+
+	$effect(() => {
+		const handler = () => {
+			if (document.visibilityState !== 'hidden') return;
+			if (!scrollContainer || isChangingChapter) return;
+			clearTimeout(debounceTimer);
+			const percent = calculateScrollPercent(
+				scrollContainer.scrollLeft,
+				scrollContainer.scrollWidth,
+				scrollContainer.clientWidth
+			);
+			saveProgress({
+				bookId,
+				chapterIndex: currentChapter,
+				scrollPercent: percent,
+				lastReadAt: new Date()
+			});
+		};
+		document.addEventListener('visibilitychange', handler);
+		document.addEventListener('pagehide', handler);
+		return () => {
+			document.removeEventListener('visibilitychange', handler);
+			document.removeEventListener('pagehide', handler);
+		};
+	});
 
 	$effect(() => {
 		const frag = fragment;
