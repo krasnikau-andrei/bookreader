@@ -139,6 +139,7 @@
 	});
 
 	function updateUrl(chapterIndex: number, progressValue: number) {
+		urlScrollPercent = undefined;
 		currentScrollPercent = progressValue;
 		if (isUpdatingUrl) return;
 
@@ -157,10 +158,8 @@
 	}
 
 	function handleChapterChange(newChapter: number, progress?: number) {
+		urlScrollPercent = undefined;
 		currentChapter = newChapter;
-		// Update savedProgress when chapter changes with a specific progress
-		// This ensures navigation to previous chapter opens at the end (progress=1)
-		// and navigation to next chapter opens at the beginning (progress=0)
 		if (progress !== undefined) {
 			savedProgress = { chapterIndex: newChapter, scrollPercent: progress };
 		}
@@ -176,6 +175,7 @@
 	}
 
 	function handleChapterSelect(chapterIndex: number) {
+		urlScrollPercent = undefined;
 		currentChapter = chapterIndex;
 		// Reset saved progress when switching chapters via TOC
 		// so the new chapter starts at the beginning (progress = 0)

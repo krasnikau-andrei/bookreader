@@ -21,6 +21,7 @@
 - Don't write trivial tests.
 - Test should provide some debug info in case of failure.
 - During development run only tests that related to task. Then run all the test one time before finishing the work.
+- **Any changes or deletions to tests must be explicitly approved by the user first.** Show a snippet of what you propose to change and wait for explicit approval before making changes.
 
 ### Unit Tests (Vitest)
 
