@@ -16,7 +16,14 @@
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { BookCard, ConfirmSheet, ErrorBanner, InfoBanner, EmptyState } from '$lib/components';
+	import {
+		BookCard,
+		ConfirmSheet,
+		ErrorBanner,
+		InfoBanner,
+		EmptyState,
+		LibraryHeader
+	} from '$lib/components';
 	import { generateFileHash } from '$lib/hash';
 
 	let books: Book[] = $state([]);
@@ -24,7 +31,7 @@
 	let focusProgress: number = $state(0);
 	let bookProgressMap = $state<Record<string, number>>({});
 	let chapterSizesReady = $state(false);
-	let fileInput: HTMLInputElement | undefined = $state();
+
 	let errorMessage: string | null = $state(null);
 	let infoMessage: string | null = $state(null);
 	let confirmSheet: { bookId: string; bookTitle: string } | null = $state(null);
@@ -159,10 +166,6 @@
 	function clearInfo() {
 		infoMessage = null;
 	}
-	function handleUploadClick() {
-		fileInput?.click();
-	}
-
 	async function handleDeleteBook() {
 		if (!confirmSheet) return;
 		await deleteBook(confirmSheet.bookId);
@@ -224,10 +227,7 @@
 		if (e.key === 'Enter') navigateToFocus();
 	}
 
-	async function handleFileChange(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
+	async function handleFileChange(file: File) {
 		try {
 			const buffer = await file.arrayBuffer();
 			const id = await generateFileHash(buffer);
@@ -257,8 +257,6 @@
 		} catch (error) {
 			console.error('Upload failed:', error);
 			errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-		} finally {
-			input.value = '';
 		}
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -273,23 +271,7 @@
 		<InfoBanner message={infoMessage} onDismiss={clearInfo} />
 	{/if}
 
-	<div class="header">
-		<h1 class="title">Bibliotheca</h1>
-		<button
-			class="header-add"
-			onclick={handleUploadClick}
-			type="button"
-			aria-label="Add book"
-			data-testid="upload-button">+</button
-		>
-		<input
-			type="file"
-			accept=".epub"
-			bind:this={fileInput}
-			onchange={handleFileChange}
-			style="display: none;"
-		/>
-	</div>
+	<LibraryHeader onfilechange={handleFileChange} />
 
 	{#if books.length === 0}
 		<EmptyState />
@@ -384,50 +366,6 @@
 		background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
 		pointer-events: none;
 		z-index: 0;
-	}
-
-	.header {
-		position: relative;
-		z-index: 1;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 28px 24px 16px;
-		border-bottom: 1px solid var(--color-borderMuted);
-		margin: 0 24px;
-	}
-	.title {
-		font-family: 'Cormorant Garamond', serif;
-		font-size: 24px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 6px;
-		color: var(--color-accent);
-		margin: 0;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.header-add {
-		flex-shrink: 0;
-		width: 40px;
-		height: 40px;
-		border: 1px solid var(--color-cardBorder);
-		background: transparent;
-		color: var(--color-accent);
-		font-size: 22px;
-		cursor: pointer;
-		font-family: inherit;
-		transition: all 0.2s;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-left: 12px;
-	}
-	.header-add:active {
-		background: var(--color-background);
-		border-color: var(--color-accent);
 	}
 
 	.focus-section {
