@@ -9,14 +9,6 @@
 
 	let { chapters, currentChapter, onChapterSelect }: Props = $props();
 
-	function handleChapterClick(index: number) {
-		onChapterSelect(index);
-	}
-
-	function isCurrentChapter(index: number): boolean {
-		return index === currentChapter;
-	}
-
 	function getIndentation(level: number | undefined): string {
 		const basePadding = 1.5; // rem
 		const indentPerLevel = 1.5; // rem
@@ -30,12 +22,12 @@
 			<li class="chapter-item" role="treeitem" aria-level={(chapter.level || 0) + 1}>
 				<button
 					class="chapter-button"
-					class:current={isCurrentChapter(index)}
+					class:current={index === currentChapter}
 					class:nested={(chapter.level || 0) > 0}
 					style="padding-left: {getIndentation(chapter.level)}"
-					onclick={() => handleChapterClick(index)}
-					aria-current={isCurrentChapter(index) ? 'page' : undefined}
-					aria-selected={isCurrentChapter(index) ? 'true' : 'false'}
+					onclick={() => onChapterSelect(index)}
+					aria-current={index === currentChapter ? 'page' : undefined}
+					aria-selected={index === currentChapter ? 'true' : 'false'}
 					data-testid="chapter-item"
 					data-chapter-index={index}
 					data-level={chapter.level || 0}

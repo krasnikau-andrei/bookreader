@@ -1,20 +1,20 @@
 <script lang="ts">
 	interface Props {
 		message: string;
+		variant?: 'error' | 'info';
 		onDismiss?: () => void;
 	}
 
-	let { message, onDismiss }: Props = $props();
+	let { message, variant = 'error', onDismiss }: Props = $props();
 </script>
 
-<div class="error-banner" data-testid="error-message">
+<div class="banner {variant}" data-testid="{variant}-message">
 	<p>{message}</p>
 	<button onclick={onDismiss} type="button">Dismiss</button>
 </div>
 
 <style>
-	.error-banner {
-		background-color: var(--color-error);
+	.banner {
 		color: var(--color-text-primary);
 		padding: var(--padding-md);
 		margin-bottom: var(--padding-md);
@@ -24,11 +24,19 @@
 		align-items: center;
 	}
 
-	.error-banner p {
+	.banner.error {
+		background-color: var(--color-error);
+	}
+
+	.banner.info {
+		background-color: var(--color-accent);
+	}
+
+	.banner p {
 		margin: 0;
 	}
 
-	.error-banner button {
+	.banner button {
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		color: var(--color-text-primary);

@@ -37,10 +37,6 @@
 - Compiled to Playwright tests in `.features-gen/` (auto-generated, don't edit)
 - Run `npx bddgen` manually to regenerate compiled tests
 
-## Debug Panel
-
-`src/routes/+page.svelte` has a commented-out visual debug panel (DBG button + log overlay) for tracing data loading on mobile. To enable: uncomment `diagLogs`/`showDiag`/`diag` in the script block, `diag()` calls in onMount/refresh/loadAllBookProgress, and the DBG button template at the bottom. See `docs/lessons/visual-debug-panel.md`.
-
 ## Known Bugs / Lessons
 
 - **`docs/lessons/chaptersizes-overwrite-by-debounced-save.md`** — ReaderContent.svelte's debounced saves strip `chapterSizes` from IndexedDB records. Fix: `saveProgress` merges existing data.

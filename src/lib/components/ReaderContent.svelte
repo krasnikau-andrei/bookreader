@@ -46,9 +46,6 @@
 	let isChangingChapter = $state(false);
 	let isAnimatingScroll = $state(false);
 	let isFragmentNavigation = $state(false);
-	/* eslint-disable @typescript-eslint/no-unused-vars */
-	let chapterRaf: number | null = null;
-	/* eslint-enable @typescript-eslint/no-unused-vars */
 	let isUserSwiping = false;
 	let swipeStartScrollLeft = 0;
 	let isUpdatingUrl = false;
@@ -174,13 +171,12 @@
 				onChapterChange(prevChapter, 1);
 				onUrlUpdate(prevChapter, 1);
 
-				chapterRaf = requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
 					if (scrollContainer) {
 						jumpTo(scrollContainer, scrollContainer.scrollWidth);
 					}
 					setTimeout(() => {
 						isChangingChapter = false;
-						chapterRaf = null;
 						// Save progress for the new chapter after transition completes
 						saveProgress({
 							bookId,
@@ -236,13 +232,12 @@
 				onChapterChange(nextChapter, 0);
 				onUrlUpdate(nextChapter, 0);
 
-				chapterRaf = requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
 					if (scrollContainer) {
 						jumpTo(scrollContainer, 0);
 					}
 					setTimeout(() => {
 						isChangingChapter = false;
-						chapterRaf = null;
 						// Save progress for the new chapter after transition completes
 						saveProgress({
 							bookId,
@@ -332,10 +327,6 @@
 		} else {
 			handleRightTap();
 		}
-	}
-
-	function handleContentMouseDown() {
-		swipeHandler?.resetSwipe();
 	}
 
 	function handleScroll() {
@@ -437,7 +428,6 @@
 	bind:this={scrollContainer}
 	onscroll={handleScroll}
 	onclick={handleContentClick}
-	onmousedown={handleContentMouseDown}
 	data-testid="reader-content"
 >
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->

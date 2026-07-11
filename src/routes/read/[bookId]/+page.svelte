@@ -16,7 +16,6 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
-	import LinkErrorPopup from '$lib/components/LinkErrorPopup.svelte';
 	import TableOfContents from '$lib/components/TableOfContents.svelte';
 	import type { Book, Chapter } from '$lib/types';
 
@@ -29,9 +28,6 @@
 	let showLoadingFallback = $state(false);
 	let bookId = $derived($page.params.bookId);
 
-	// Link handling
-	let showLinkError = $state(false);
-	let linkErrorInfo: { originalHref: string; message: string } | null = $state(null);
 	let pendingFragment: string | null = $state(null);
 
 	// Progress tracking
@@ -186,24 +182,6 @@
 		updateUrl(chapterIndex, 0);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	function handleLinkClick(event: MouseEvent) {
-		const target = event.target as HTMLElement;
-		const link = target.closest('a');
-
-		if (link?.classList.contains('missing-link')) {
-			event.preventDefault();
-			event.stopPropagation();
-
-			const originalHref = link.getAttribute('data-original-href') || 'unknown';
-			linkErrorInfo = {
-				originalHref,
-				message: `This link points to "${originalHref}" which is not available in this book.`
-			};
-			showLinkError = true;
-		}
-	}
-
 	function handleFragmentNavigate(fragmentId: string) {
 		pendingFragment = fragmentId;
 	}
@@ -257,13 +235,6 @@
 			{currentChapter}
 			onChapterSelect={handleChapterSelect}
 			onClose={() => (showToc = false)}
-		/>
-
-		<LinkErrorPopup
-			show={showLinkError}
-			originalHref={linkErrorInfo?.originalHref || ''}
-			message={linkErrorInfo?.message || ''}
-			onClose={() => (showLinkError = false)}
 		/>
 	</div>
 

@@ -9,15 +9,6 @@ function easeOutCubic(t: number): number {
 const activeAnimations = new WeakMap<HTMLElement, () => void>();
 
 /**
- * Calculate the exact page boundary position for scroll-snap compatibility
- */
-function calculatePagePosition(element: HTMLElement, targetScroll: number): number {
-	const clientWidth = element.clientWidth;
-	const pageIndex = Math.round(targetScroll / clientWidth);
-	return pageIndex * clientWidth;
-}
-
-/**
  * Cancel any active animation on element
  */
 function cancelAnimation(element: HTMLElement): void {
@@ -41,9 +32,7 @@ export function animateScroll(
 	// Cancel existing animation first
 	cancelAnimation(element);
 
-	// Round to exact page boundary for scroll-snap compatibility
-	const snapTarget = calculatePagePosition(element, targetScroll);
-
+	const snapTarget = Math.round(targetScroll / element.clientWidth) * element.clientWidth;
 	const startScroll = element.scrollLeft;
 	const distance = snapTarget - startScroll;
 
@@ -89,7 +78,5 @@ export function animateScroll(
  */
 export function jumpTo(element: HTMLElement, targetScroll: number): void {
 	cancelAnimation(element);
-	// Also round to page boundary
-	const snapTarget = calculatePagePosition(element, targetScroll);
-	element.scrollLeft = snapTarget;
+	element.scrollLeft = Math.round(targetScroll / element.clientWidth) * element.clientWidth;
 }
