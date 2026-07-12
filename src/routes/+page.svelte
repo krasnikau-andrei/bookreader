@@ -259,6 +259,7 @@
 					onClick={() => handleBookClick(book.id)}
 					onTouchStart={() => handleTouchStart(book.id)}
 					onTouchEnd={handleTouchEnd}
+					onTouchCancel={handleTouchEnd}
 					onContextMenu={(e) => {
 						e.preventDefault();
 						handleTouchStart(book.id);
