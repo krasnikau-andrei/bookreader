@@ -21,6 +21,7 @@
 - Don't write trivial tests.
 - Test should provide some debug info in case of failure.
 - During development run only tests that related to task. Then run all the test one time before finishing the work.
+- **Any changes or deletions to tests must be explicitly approved by the user first.** Show a snippet of what you propose to change and wait for explicit approval before making changes.
 
 ### Unit Tests (Vitest)
 
@@ -35,10 +36,6 @@
 - Step definitions in `steps/*.ts`
 - Compiled to Playwright tests in `.features-gen/` (auto-generated, don't edit)
 - Run `npx bddgen` manually to regenerate compiled tests
-
-## Debug Panel
-
-`src/routes/+page.svelte` has a commented-out visual debug panel (DBG button + log overlay) for tracing data loading on mobile. To enable: uncomment `diagLogs`/`showDiag`/`diag` in the script block, `diag()` calls in onMount/refresh/loadAllBookProgress, and the DBG button template at the bottom. See `docs/lessons/visual-debug-panel.md`.
 
 ## Known Bugs / Lessons
 

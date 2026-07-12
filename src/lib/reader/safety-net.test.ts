@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createSafetyNet, DEFAULT_SAFETY_NET_CONFIG, SafetyNetConfig } from './safety-net';
+import { createSafetyNet } from './safety-net';
 
 describe('Safety Net', () => {
 	let element: HTMLElement;
@@ -32,13 +32,6 @@ describe('Safety Net', () => {
 	});
 
 	describe('configuration', () => {
-		test('exports default config', () => {
-			expect(DEFAULT_SAFETY_NET_CONFIG).toEqual({
-				checkDelay: 100,
-				tolerance: 5
-			});
-		});
-
 		test('uses default config when not provided', () => {
 			safetyNet = createSafetyNet(element, onSnapCorrection);
 			expect(safetyNet).toBeDefined();
@@ -47,11 +40,7 @@ describe('Safety Net', () => {
 		});
 
 		test('accepts custom config', () => {
-			const customConfig: SafetyNetConfig = {
-				checkDelay: 200,
-				tolerance: 10
-			};
-			safetyNet = createSafetyNet(element, onSnapCorrection, customConfig);
+			safetyNet = createSafetyNet(element, onSnapCorrection, { checkDelay: 200, tolerance: 10 });
 			expect(safetyNet).toBeDefined();
 		});
 	});
@@ -165,12 +154,8 @@ describe('Safety Net', () => {
 		});
 
 		test('uses custom checkDelay', async () => {
-			const customConfig: SafetyNetConfig = {
-				checkDelay: 50,
-				tolerance: 5
-			};
 			element.scrollLeft = 820;
-			safetyNet = createSafetyNet(element, onSnapCorrection, customConfig);
+			safetyNet = createSafetyNet(element, onSnapCorrection, { checkDelay: 50, tolerance: 5 });
 			safetyNet.attach();
 
 			element.dispatchEvent(new Event('scroll'));

@@ -12,10 +12,9 @@
 	let bookProgressPct = $derived(
 		Math.round(calculateBookProgress(chapterSizes, currentChapter, scrollPercent) * 100)
 	);
-	let hasSizes = $derived(chapterSizes && chapterSizes.length > 0);
 </script>
 
-{#if hasSizes}
+{#if chapterSizes?.length}
 	<div class="book-progress-bar" data-testid="progress-bar">
 		<div class="progress-track">
 			{#each chapterSizes as size, i (i)}

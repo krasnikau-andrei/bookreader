@@ -1,11 +1,3 @@
-export function calculateCurrentPage(scrollLeft: number, clientWidth: number): number {
-	return Math.round(scrollLeft / clientWidth);
-}
-
-export function calculateTotalPages(scrollWidth: number, clientWidth: number): number {
-	return Math.ceil(scrollWidth / clientWidth);
-}
-
 export function calculateScrollPercent(
 	scrollLeft: number,
 	scrollWidth: number,

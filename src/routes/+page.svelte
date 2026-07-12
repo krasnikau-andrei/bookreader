@@ -16,14 +16,7 @@
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import {
-		BookCard,
-		ConfirmSheet,
-		ErrorBanner,
-		InfoBanner,
-		EmptyState,
-		LibraryHeader
-	} from '$lib/components';
+	import { BookCard, ConfirmSheet, Banner, EmptyState, LibraryHeader } from '$lib/components';
 	import { generateFileHash } from '$lib/hash';
 
 	let books: Book[] = $state([]);
@@ -38,18 +31,7 @@
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
 
-	// let diagLogs = $state<string[]>([]);
-	// let showDiag = $state(false);
-	// function diag(...args: unknown[]) {
-	// 	const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-	// 	diagLogs = [...diagLogs, `[${new Date().toISOString().slice(11, 23)}] ${msg}`];
-	// }
-
 	onMount(() => {
-		// diag('onMount cache', {
-		// 	focusBookId: cache.focusBook?.id,
-		// 	focusProgress: cache.focusProgress
-		// });
 		books = cache.books;
 		focusBook = cache.focusBook;
 		focusProgress = cache.focusProgress;
@@ -90,20 +72,6 @@
 				: Math.round((recent.progress.scrollPercent || 0) * 100);
 		}
 
-		// diag('refresh done', {
-		// 	recentId: recent?.book?.id,
-		// 	recentPct: focusPct,
-		// 	chSizes: recent?.progress?.chapterSizes?.length ?? 'none',
-		// 	booksCount: allBooks.length
-		// });
-		// diag('compare', {
-		// 	cachePct: focusProgress,
-		// 	newPct: focusPct,
-		// 	cacheId: focusBook?.id,
-		// 	newId: recent?.book?.id,
-		// 	match: focusPct === focusProgress && focusBook?.id === recent?.book?.id
-		// });
-
 		books = cache.books = allBooks;
 		bookProgressMap = cache.bookProgressMap = map;
 		focusBook = cache.focusBook = recent?.book ?? null;
@@ -123,10 +91,6 @@
 		}
 		bookProgressMap = map;
 		if (focusBook && map[focusBook.id] !== undefined) {
-			// diag('loadAllBookProgress changes focusProgress', {
-			// 	from: focusProgress,
-			// 	to: map[focusBook.id]
-			// });
 			focusProgress = map[focusBook.id];
 		}
 	}
@@ -137,7 +101,6 @@
 			chapterSizesReady = cache.chapterSizesReady = true;
 			return;
 		}
-		// diag('computeMissingSizes: found', missing.length, 'books without chapterSizes');
 		for (const progress of missing) {
 			const book = allBooks.find((b) => b.id === progress.bookId);
 			if (!book) continue;
@@ -204,14 +167,6 @@
 		}
 	}
 
-	function handleDeleteConfirm() {
-		if (!confirmSheet) return;
-		handleDeleteBook();
-	}
-	function handleDeleteCancel() {
-		confirmSheet = null;
-	}
-
 	/* eslint-disable svelte/no-navigation-without-resolve */
 	function navigateToFocus() {
 		if (focusBook) goto(`/read/${focusBook.id}`);
@@ -259,16 +214,15 @@
 			errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 		}
 	}
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	void chapterSizesReady;
 </script>
 
 <div class="library" data-testid="library-container">
 	{#if errorMessage}
-		<ErrorBanner message={errorMessage} onDismiss={clearError} />
+		<Banner message={errorMessage} onDismiss={clearError} variant="error" />
 	{/if}
 	{#if infoMessage}
-		<InfoBanner message={infoMessage} onDismiss={clearInfo} />
+		<Banner message={infoMessage} onDismiss={clearInfo} variant="info" />
 	{/if}
 
 	<LibraryHeader onfilechange={handleFileChange} />
@@ -333,24 +287,10 @@
 	{#if confirmSheet}
 		<ConfirmSheet
 			bookTitle={confirmSheet.bookTitle}
-			onConfirm={handleDeleteConfirm}
-			onCancel={handleDeleteCancel}
+			onConfirm={handleDeleteBook}
+			onCancel={() => (confirmSheet = null)}
 		/>
 	{/if}
-
-	<!-- DEBUG PANEL: uncomment to enable diagnostics -->
-	<!-- <button
-		class="diag-toggle"
-		onclick={() => (showDiag = !showDiag)}
-		type="button"
-		style="position:fixed;bottom:8px;right:8px;z-index:999;font-size:10px;padding:4px 8px;background:#333;color:#fff;border:none;border-radius:4px;opacity:0.6"
-	>DBG</button>
-
-	{#if showDiag && diagLogs.length > 0}
-		<pre style="position:fixed;bottom:36px;left:8px;right:8px;z-index:999;max-height:40vh;overflow:auto;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all">
-			{diagLogs.join('\n')}
-		</pre>
-	{/if} -->
 </div>
 
 <style>

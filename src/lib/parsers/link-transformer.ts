@@ -1,3 +1,5 @@
+import { normalizePath } from './normalize-path';
+
 export function transformLinks(
 	html: string,
 	currentFilePath: string,
@@ -10,15 +12,11 @@ export function transformLinks(
 	for (const link of links) {
 		const href = link.getAttribute('href') || '';
 
-		// Skip already processed links
-		if (link.hasAttribute('data-transformed')) continue;
-
 		// External links
 		if (href.startsWith('http://') || href.startsWith('https://')) {
 			link.setAttribute('target', '_blank');
 			link.setAttribute('rel', 'noopener');
 			link.classList.add('external-link');
-			link.setAttribute('data-transformed', 'true');
 			continue;
 		}
 
@@ -28,9 +26,6 @@ export function transformLinks(
 		// Resolve file path relative to current file
 		const currentDir = currentFilePath.substring(0, currentFilePath.lastIndexOf('/') + 1);
 		const targetFilePath = fileName ? normalizePath(currentDir + fileName) : currentFilePath;
-
-		// Store debug info
-		link.setAttribute('data-resolved-path', targetFilePath);
 
 		// Look up chapter index
 		const chapterIndex = filePathToChapterIndex.get(targetFilePath);
@@ -53,8 +48,6 @@ export function transformLinks(
 			link.classList.add('missing-link');
 			link.setAttribute('href', 'javascript:void(0)');
 		}
-
-		link.setAttribute('data-transformed', 'true');
 	}
 
 	// Serialize back to string - get innerHTML of body to avoid extra body/html tags
@@ -78,23 +71,4 @@ function parseHref(href: string): { fileName: string | null; fragment: string | 
 		fileName: href.substring(0, hashIndex),
 		fragment: href.substring(hashIndex + 1)
 	};
-}
-
-function normalizePath(path: string): string {
-	const parts = path.split('/');
-	const result: string[] = [];
-
-	for (const part of parts) {
-		if (part === '..') {
-			if (result.length > 0 && result[result.length - 1] !== '..') {
-				result.pop();
-			} else {
-				result.push(part);
-			}
-		} else if (part !== '.' && part !== '') {
-			result.push(part);
-		}
-	}
-
-	return result.join('/');
 }
