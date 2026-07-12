@@ -16,7 +16,14 @@
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { BookCard, ConfirmSheet, Banner, EmptyState, LibraryHeader, CurrentBook } from '$lib/components';
+	import {
+		BookCard,
+		ConfirmSheet,
+		Banner,
+		EmptyState,
+		LibraryHeader,
+		CurrentBook
+	} from '$lib/components';
 	import { generateFileHash } from '$lib/hash';
 
 	let books: Book[] = $state([]);
