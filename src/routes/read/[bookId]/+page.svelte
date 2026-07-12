@@ -11,7 +11,7 @@
 		getChapterCache,
 		saveChapterCache
 	} from '$lib/storage';
-	import BookProgressBar from '$lib/components/BookProgressBar.svelte';
+	import BottomProgressBar from '$lib/components/BottomProgressBar.svelte';
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { cache } from '$lib/library-cache.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
@@ -238,15 +238,11 @@
 		/>
 	</div>
 
-	{#if progressChapterSizes}
-		<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
-			<BookProgressBar
-				chapterSizes={progressChapterSizes}
-				{currentChapter}
-				scrollPercent={currentScrollPercent}
-			/>
-		</div>
-	{/if}
+	<BottomProgressBar
+		chapterSizes={progressChapterSizes}
+		{currentChapter}
+		scrollPercent={currentScrollPercent}
+	/>
 </div>
 
 <style>
@@ -269,23 +265,5 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-	}
-
-	.progress-bottom-bar {
-		position: fixed;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		z-index: 10;
-		padding: 4px 20px 8px;
-		background: var(--color-readerBackground);
-	}
-
-	.progress-bottom-bar :global(.progress-track) {
-		height: 3px !important;
-	}
-
-	.progress-bottom-bar :global(.progress-percentage) {
-		font-size: 10px !important;
 	}
 </style>
