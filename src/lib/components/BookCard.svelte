@@ -7,7 +7,6 @@
 		onClick?: () => void;
 		onTouchStart?: (e: TouchEvent | MouseEvent) => void;
 		onTouchEnd?: () => void;
-		onTouchCancel?: () => void;
 		onContextMenu?: (e: MouseEvent) => void;
 	}
 
@@ -17,7 +16,6 @@
 		onClick,
 		onTouchStart,
 		onTouchEnd,
-		onTouchCancel,
 		onContextMenu
 	}: Props = $props();
 </script>
@@ -28,7 +26,6 @@
 	oncontextmenu={onContextMenu}
 	ontouchstart={onTouchStart}
 	ontouchend={onTouchEnd}
-	ontouchcancel={onTouchCancel}
 	onmousedown={onTouchStart}
 	onmouseup={onTouchEnd}
 	type="button"

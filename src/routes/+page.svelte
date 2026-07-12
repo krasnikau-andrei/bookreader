@@ -46,6 +46,12 @@
 		chapterSizesReady = cache.chapterSizesReady;
 
 		refresh();
+
+		function onCancel() {
+			handleTouchEnd();
+		}
+		document.addEventListener('touchcancel', onCancel, { passive: true });
+		return () => document.removeEventListener('touchcancel', onCancel);
 	});
 
 	async function refresh() {
@@ -263,7 +269,6 @@
 					onClick={() => handleBookClick(book.id)}
 					onTouchStart={() => handleTouchStart(book.id)}
 					onTouchEnd={handleTouchEnd}
-					onTouchCancel={handleTouchEnd}
 					onContextMenu={(e) => {
 						e.preventDefault();
 						handleTouchStart(book.id);
