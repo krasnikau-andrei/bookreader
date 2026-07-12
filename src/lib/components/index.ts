@@ -4,3 +4,4 @@ export { default as EmptyState } from './EmptyState.svelte';
 export { default as ChapterTree } from './ChapterTree.svelte';
 export { default as ConfirmSheet } from './ConfirmSheet.svelte';
 export { default as TableOfContents } from './TableOfContents.svelte';
+export { default as LibraryHeader } from './LibraryHeader.svelte';
