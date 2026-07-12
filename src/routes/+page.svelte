@@ -149,13 +149,19 @@
 		refresh();
 	}
 
+	function navigateToRead(path: string) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(path).catch(() => {
+			window.location.href = path;
+		});
+	}
+
 	function handleBookClick(bookId: string) {
 		if (isLongPress) {
 			isLongPress = false;
 			return;
 		}
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`/read/${bookId}`);
+		navigateToRead(`/read/${bookId}`);
 	}
 
 	function handleTouchStart(bookId: string) {
@@ -174,16 +180,14 @@
 		}
 	}
 
-	/* eslint-disable svelte/no-navigation-without-resolve */
 	function navigateToFocus() {
-		if (focusBook) goto(`/read/${focusBook.id}`);
+		if (focusBook) navigateToRead(`/read/${focusBook.id}`);
 	}
 
 	function navigateToFocusNoPropagate(e: Event) {
 		e.stopPropagation();
-		if (focusBook) goto(`/read/${focusBook.id}`);
+		if (focusBook) navigateToRead(`/read/${focusBook.id}`);
 	}
-	/* eslint-enable svelte/no-navigation-without-resolve */
 
 	function handleFocusKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') navigateToFocus();
