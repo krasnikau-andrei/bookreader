@@ -2,7 +2,7 @@
 	import BookProgressBar from './BookProgressBar.svelte';
 
 	interface Props {
-		chapterSizes: number[] | undefined;
+		chapterSizes: number[];
 		currentChapter: number;
 		scrollPercent: number;
 	}
@@ -10,7 +10,7 @@
 	let { chapterSizes, currentChapter, scrollPercent }: Props = $props();
 </script>
 
-{#if chapterSizes}
+{#if chapterSizes.length}
 	<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
 		<BookProgressBar {chapterSizes} {currentChapter} {scrollPercent} />
 	</div>

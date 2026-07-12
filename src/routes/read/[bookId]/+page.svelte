@@ -239,7 +239,7 @@
 	</div>
 
 	<BottomProgressBar
-		chapterSizes={progressChapterSizes}
+		chapterSizes={progressChapterSizes ?? []}
 		{currentChapter}
 		scrollPercent={currentScrollPercent}
 	/>
