@@ -229,6 +229,10 @@ Then('there should be {int} book card', async ({ page }, count: number) => {
 	await expect(page.locator('[data-testid="book-card"]')).toHaveCount(count);
 });
 
+When('I touch-tap the book card', async ({ page }) => {
+	await page.locator('[data-testid="book-card"]').first().click();
+});
+
 Then('the reader should show the book content', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	await expect(content).toBeVisible();
