@@ -8,6 +8,17 @@ export const fixturesDir = path.join(__dirname, '..', 'tests', 'fixtures');
 
 export const { Given, When, Then } = createBdd();
 
+export async function tap(page: import('@playwright/test').Page, selector: string) {
+	await page.waitForSelector(selector);
+	await page.evaluate((sel: string) => {
+		const el = document.querySelector(sel);
+		if (el) {
+			el.dispatchEvent(new Event('touchstart', { bubbles: true }));
+			el.dispatchEvent(new Event('touchend', { bubbles: true }));
+		}
+	}, selector);
+}
+
 Given('the library page is open', async ({ page }) => {
 	await page.goto('/');
 	await page.waitForLoadState('networkidle');

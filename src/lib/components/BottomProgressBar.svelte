@@ -23,7 +23,7 @@
 		left: 0;
 		right: 0;
 		z-index: 10;
-		padding: 4px 20px 8px;
+		padding: 4px 20px max(8px, env(safe-area-inset-bottom));
 		background: var(--color-readerBackground);
 	}
 

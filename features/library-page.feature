@@ -73,3 +73,17 @@ Feature: Library Page
     And it should show a filename placeholder containing ".epub"
     And the book should be titled "The Great Gatsby"
     And the book should be authored by "F. Scott Fitzgerald"
+
+  Scenario: Clicking a book opens the reader and shows book content
+    When I upload "crime-punishment.epub" via file input
+    Then I should see 1 book card
+    When I open the book from the library
+    Then the reader should be visible
+    And the reader should show the book content
+
+  Scenario: Tapping a book card opens the reader via touch events
+    When I upload "crime-punishment.epub" via file input
+    Then I should see 1 book card
+    When I touch-tap the book card
+    Then the reader should be visible
+    And the reader should show the book content
