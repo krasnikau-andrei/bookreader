@@ -88,7 +88,7 @@
 	.toc-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.8);
+		background: var(--color-overlay);
 		z-index: 100;
 		display: flex;
 		align-items: center;
@@ -97,7 +97,7 @@
 	}
 
 	.toc-panel {
-		background: #1a1a2e;
+		background: var(--color-cardBackground);
 		border-radius: 12px;
 		width: 100%;
 		max-width: 500px;
@@ -112,14 +112,14 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 1.5rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid var(--color-cardBorder);
 	}
 
 	.toc-title {
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #ffffff;
+		color: var(--color-text-primary);
 	}
 
 	.close-button {
@@ -131,12 +131,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #ffffff;
+		color: var(--color-text-primary);
 		transition: background-color 0.15s ease;
 	}
 
 	.close-button:hover {
-		background-color: rgba(255, 255, 255, 0.1);
+		background-color: var(--color-backgroundTertiary);
 	}
 
 	.toc-content {
