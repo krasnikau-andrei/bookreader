@@ -515,4 +515,10 @@
 	.content :global(.subchapter-start) {
 		break-before: column;
 	}
+
+	.content :global(sup) {
+		font-size: 0.6em;
+		opacity: 0.45;
+		text-decoration: none;
+	}
 </style>
