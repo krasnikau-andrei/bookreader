@@ -516,9 +516,13 @@
 		break-before: column;
 	}
 
+	.content :global(a:has(sup)) {
+		color: inherit;
+		text-decoration: none;
+	}
+
 	.content :global(sup) {
 		font-size: 0.6em;
 		opacity: 0.45;
-		text-decoration: none;
 	}
 </style>
