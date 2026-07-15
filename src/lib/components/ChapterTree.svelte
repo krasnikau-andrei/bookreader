@@ -52,7 +52,7 @@
 	}
 
 	.chapter-item {
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid var(--color-borderMuted);
 	}
 
 	.chapter-item:last-child {
@@ -67,24 +67,25 @@
 		text-align: left;
 		cursor: pointer;
 		font-size: 1rem;
-		color: #ffffff;
+		color: var(--color-text-primary);
 		transition: background-color 0.15s ease;
 		display: flex;
 		align-items: center;
 	}
 
 	.chapter-button:hover {
-		background-color: rgba(255, 255, 255, 0.1);
+		background-color: var(--color-backgroundTertiary);
 	}
 
 	.chapter-button.current {
-		background-color: rgba(74, 158, 255, 0.2);
+		background-color: var(--color-backgroundTertiary);
+		border-left: 3px solid var(--color-accent);
 		font-weight: 600;
 	}
 
 	.chapter-button.nested {
 		font-size: 0.9375rem;
-		color: rgba(255, 255, 255, 0.85);
+		color: var(--color-text-secondary);
 	}
 
 	.chapter-title {
