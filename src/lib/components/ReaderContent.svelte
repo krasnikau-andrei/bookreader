@@ -430,8 +430,10 @@
 	onclick={handleContentClick}
 	data-testid="reader-content"
 >
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-	{@html content}
+	<div class="content-inner">
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html content}
+	</div>
 </div>
 
 {#if fullscreenSrc}
@@ -457,13 +459,10 @@
 		scroll-behavior: auto;
 	}
 
-	/* Side gap on children, not on .content — putting it on .content would shift
-	   scrollLeft by padding-left, breaking scrollContainer.scrollLeft <= 0
-	   as the chapter-boundary check in handleLeftTap/handleRightTap */
-	.content :global(> *) {
+	.content-inner {
 		padding: 0 var(--reader-gap-sides);
-		margin: 0;
-		overflow-x: clip;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
 	}
 
 	.content :global(p),
