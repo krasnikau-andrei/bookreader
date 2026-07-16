@@ -185,6 +185,16 @@
 	function handleFragmentNavigate(fragmentId: string) {
 		pendingFragment = fragmentId;
 	}
+
+	async function handleUploadBook() {
+		if (!bookId) throw new Error('No book ID');
+		const fileData = await getBookFile(bookId);
+		if (!fileData) throw new Error('No file data');
+		const formData = new FormData();
+		formData.append('file', new File([fileData], book?.filename ?? 'book.epub'));
+		const response = await fetch('/api/upload-broken-book', { method: 'POST', body: formData });
+		if (!response.ok) throw new Error('Upload failed');
+	}
 </script>
 
 <div class="reader">
@@ -228,6 +238,7 @@
 				goto('/');
 			}}
 			onShowToc={() => (showToc = true)}
+			onUploadBook={handleUploadBook}
 		/>
 		<TableOfContents
 			show={showToc}
