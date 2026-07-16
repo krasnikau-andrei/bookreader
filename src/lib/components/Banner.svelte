@@ -1,16 +1,22 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
+
 	interface Props {
 		message: string;
 		variant?: 'error' | 'info';
 		onDismiss?: () => void;
+		children?: Snippet;
 	}
 
-	let { message, variant = 'error', onDismiss }: Props = $props();
+	let { message, variant = 'error', onDismiss, children }: Props = $props();
 </script>
 
 <div class="banner {variant}" data-testid="{variant}-message">
 	<p>{message}</p>
-	<button onclick={onDismiss} type="button">Dismiss</button>
+	<div class="banner-actions">
+		{@render children?.()}
+		<button onclick={onDismiss} type="button">Dismiss</button>
+	</div>
 </div>
 
 <style>
@@ -36,7 +42,13 @@
 		margin: 0;
 	}
 
-	.banner button {
+	.banner-actions {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+	}
+
+	.banner-actions :global(*) {
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		color: var(--color-text-primary);

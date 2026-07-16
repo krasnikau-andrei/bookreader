@@ -34,6 +34,7 @@
 
 	let errorMessage: string | null = $state(null);
 	let infoMessage: string | null = $state(null);
+	let failedBookFile: File | null = $state(null);
 	let confirmSheet: { bookId: string; bookTitle: string } | null = $state(null);
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let isLongPress = false;
@@ -132,6 +133,7 @@
 
 	function clearError() {
 		errorMessage = null;
+		failedBookFile = null;
 	}
 	function clearInfo() {
 		infoMessage = null;
@@ -219,6 +221,27 @@
 		} catch (error) {
 			console.error('Upload failed:', error);
 			errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+			failedBookFile = file;
+		}
+	}
+	async function uploadForDebug() {
+		if (!failedBookFile) return;
+		try {
+			const formData = new FormData();
+			formData.append('file', failedBookFile);
+			const response = await fetch('/api/upload-broken-book', {
+				method: 'POST',
+				body: formData
+			});
+			if (response.ok) {
+				infoMessage = `Uploaded "${failedBookFile.name}" for debug`;
+				failedBookFile = null;
+				errorMessage = null;
+			} else {
+				console.error('Upload failed:', await response.text());
+			}
+		} catch (e) {
+			console.error('Upload failed:', e);
 		}
 	}
 	void chapterSizesReady;
@@ -226,7 +249,11 @@
 
 <div class="library" data-testid="library-container">
 	{#if errorMessage}
-		<Banner message={errorMessage} onDismiss={clearError} variant="error" />
+		<Banner message={errorMessage} onDismiss={clearError} variant="error">
+			{#if failedBookFile}
+				<button onclick={uploadForDebug} type="button">Upload for Debug</button>
+			{/if}
+		</Banner>
 	{/if}
 	{#if infoMessage}
 		<Banner message={infoMessage} onDismiss={clearInfo} variant="info" />
