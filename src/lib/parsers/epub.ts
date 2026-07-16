@@ -376,8 +376,23 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 			tocLevels.set(shortPath, entry.level);
 		}
 
-		// Track subchapter fragments (level > 0 with fragment identifiers)
+		// Store label keyed by file path without fragment (first entry wins)
+		// so chapter title lookup by filePath works even when TOC uses fragment links
 		const hashIndex = entry.href.indexOf('#');
+		if (hashIndex !== -1) {
+			const baseHref = entry.href.substring(0, hashIndex);
+			if (!tocLabels.has(baseHref)) {
+				tocLabels.set(baseHref, entry.label);
+				tocLevels.set(baseHref, entry.level);
+			}
+			const shortBaseHref = baseHref.replace(/^EPUB\//, '');
+			if (shortBaseHref !== baseHref && !tocLabels.has(shortBaseHref)) {
+				tocLabels.set(shortBaseHref, entry.label);
+				tocLevels.set(shortBaseHref, entry.level);
+			}
+		}
+
+		// Track subchapter fragments (level > 0 with fragment identifiers)
 		if (hashIndex !== -1 && entry.level > 0) {
 			const filePart = entry.href.substring(0, hashIndex);
 			const fragmentId = entry.href.substring(hashIndex + 1);
@@ -449,11 +464,13 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const chapterDoc = parseXml(content, 'application/xhtml+xml');
 		const shortPath = filePath.replace(/^EPUB\//, '');
 
-		// Extract chapter title from HTML headers (H1 first, then H2, then title tag)
+		// Extract chapter title from HTML headers (H1 first, then H2, then title tag),
+		// fall back to TOC label if the book doesn't use heading elements
 		const htmlH1 = chapterDoc.querySelector('h1')?.textContent?.trim();
 		const htmlH2 = chapterDoc.querySelector('h2')?.textContent?.trim();
 		const htmlTitle = chapterDoc.querySelector('title')?.textContent?.trim();
-		const title = htmlH1 || htmlH2 || htmlTitle || 'Untitled';
+		const tocLabel = tocLabels.get(filePath) || tocLabels.get(shortPath);
+		const title = htmlH1 || htmlH2 || htmlTitle || tocLabel || 'Untitled';
 
 		// Process images in chapter content - convert to data URIs
 		const chapterDir = filePath.substring(0, filePath.lastIndexOf('/') + 1);
