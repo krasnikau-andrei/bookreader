@@ -486,7 +486,7 @@
 
 	.content :global(p img) {
 		display: block;
-		margin: 0;
+		margin: 0 auto;
 	}
 
 	.content :global(h1),
@@ -499,10 +499,18 @@
 	}
 
 	.content :global(img) {
+		display: block;
+		margin: 0 auto;
 		filter: var(--image-filter);
 		max-width: 100% !important;
 		height: auto !important;
 		-webkit-user-drag: none;
+	}
+
+	.content :global(svg) {
+		display: block;
+		margin: 0 auto;
+		text-indent: 0;
 	}
 
 	.content :global(figure),
