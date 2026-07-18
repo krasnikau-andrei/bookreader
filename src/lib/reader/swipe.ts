@@ -19,6 +19,7 @@ export function createSwipeHandler(
 ) {
 	const state: {
 		isActive: boolean;
+		isCancelled: boolean;
 		startX: number;
 		startY: number;
 		startTime: number;
@@ -28,6 +29,7 @@ export function createSwipeHandler(
 		didSwipe: boolean;
 	} = {
 		isActive: false,
+		isCancelled: false,
 		startX: 0,
 		startY: 0,
 		startTime: 0,
@@ -54,9 +56,10 @@ export function createSwipeHandler(
 		const deltaX = clientX - state.startX;
 		const deltaY = clientY - state.startY;
 
-		// If moving more vertically than horizontally, ignore
+		// If moving more vertically than horizontally, mark as cancelled (text selection)
+		// Don't set isActive=false — endSwipe needs to run to reset state
 		if (Math.abs(deltaY) > Math.abs(deltaX)) {
-			state.isActive = false;
+			state.isCancelled = true;
 			return;
 		}
 
@@ -73,6 +76,22 @@ export function createSwipeHandler(
 	function endSwipe() {
 		if (!state.isActive) return;
 		state.isActive = false;
+
+		// If cancelled due to vertical movement, clean up without swipe logic
+		if (state.isCancelled) {
+			state.isCancelled = false;
+			state.didSwipe = false;
+			callbacks.onSwipeCancel();
+			return;
+		}
+
+		// Don't process as swipe if user has selected text (horizontal drag across text)
+		const sel = window.getSelection();
+		if (sel && !sel.isCollapsed) {
+			state.didSwipe = false;
+			callbacks.onSwipeCancel();
+			return;
+		}
 
 		const endTime = performance.now();
 		const deltaX = state.lastX - state.startX;
