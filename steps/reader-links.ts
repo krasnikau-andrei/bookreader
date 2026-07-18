@@ -45,7 +45,8 @@ Then('there should be internal links with proper chapter attributes', async ({ p
 		const baseUrl = page.url().replace(/\?.*/, '');
 		for (let ch = 0; ch <= 5; ch++) {
 			await page.goto(baseUrl + `?chapter=${ch}`);
-			await page.waitForTimeout(500);
+			await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+			await page.waitForTimeout(200);
 			linkInfo = await page.evaluate(() => {
 				const internalLinks = document.querySelectorAll('a.internal-link');
 				return {
@@ -166,30 +167,25 @@ When('I navigate to a chapter with external links', async ({ page }) => {
 });
 
 Then('external links should have target {string}', async ({ page }, target: string) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { target: link.getAttribute('target') };
-	});
-	if (info) expect(info.target).toBe(target);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	expect(await link.getAttribute('target')).toBe(target);
 });
 
 Then('external links should have rel {string}', async ({ page }, rel: string) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { rel: link.getAttribute('rel') };
-	});
-	if (info) expect(info.rel).toBe(rel);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	expect(await link.getAttribute('rel')).toBe(rel);
 });
 
 Then('external links should point to http URLs', async ({ page }) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { href: (link as HTMLAnchorElement).getAttribute('href') };
-	});
-	if (info) expect(info.href).toMatch(/^https?:\/\//);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	const href = await link.getAttribute('href');
+	expect(href).toMatch(/^https?:\/\//);
 });
 
 When('I click an internal link with a fragment to another chapter', async ({ page }) => {

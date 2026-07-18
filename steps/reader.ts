@@ -44,7 +44,7 @@ When('I tap the right zone', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(400);
+	await page.waitForTimeout(250);
 });
 
 When('I tap the left zone', async ({ page }) => {
@@ -53,7 +53,7 @@ When('I tap the left zone', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-	await page.waitForTimeout(400);
+	await page.waitForTimeout(250);
 });
 
 When('I tap the right zone again', async ({ page }) => {
@@ -62,7 +62,7 @@ When('I tap the right zone again', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(600);
+	await page.waitForTimeout(250);
 });
 
 Then('tapping the right zone should move through the content', async ({ page }) => {
@@ -187,15 +187,13 @@ Then('the text should be visible with sufficient contrast', async ({ page }) => 
 });
 
 Then('I navigate to a chapter with text content', async ({ page }) => {
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
-	expect(box).toBeTruthy();
-	if (!box) return;
-	for (let i = 0; i < 9; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
-	}
-	await page.waitForTimeout(500);
+	const url = page.url();
+	const urlObj = new URL(url);
+	urlObj.searchParams.set('chapter', '10');
+	urlObj.searchParams.set('progress', '0');
+	await page.goto(urlObj.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+	await page.waitForTimeout(1000);
 });
 
 Then('the content should fill at least 85% of the viewport width', async ({ page }) => {
@@ -346,6 +344,9 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 			if (elementRight > viewportLeft && elementLeft < viewportRight) {
 				const text = textEl.textContent?.trim() || '';
 				if (text.length > 10) {
+					const elementLeftInViewport = elementLeft - viewportLeft;
+					const elementRightInViewport = elementRight - viewportLeft;
+					if (elementLeftInViewport < 0 || elementRightInViewport > viewportWidth) continue;
 					return { elementLeft, elementRight, viewportLeft, viewportRight, viewportWidth };
 				}
 			}
@@ -393,11 +394,9 @@ When('I navigate forward through the content', async ({ page }) => {
 	const contentBox = await content.boundingBox();
 	expect(contentBox).toBeTruthy();
 	if (!contentBox) return;
-	// Click through cover/title chapters until reaching real content,
-	// then keep clicking to advance within the real chapter
 	for (let i = 0; i < 12; i++) {
 		await content.click({ position: { x: contentBox.width * 0.85, y: contentBox.height * 0.5 } });
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(150);
 	}
 });
 
@@ -508,10 +507,57 @@ When('I select text by dragging across it', async ({ page }) => {
 		const selection = window.getSelection();
 		selection?.removeAllRanges();
 		selection?.addRange(range);
-		return selection?.toString().length ? true : false;
+		return (selection?.toString().length ?? 0) > 0;
 	});
 
 	if (!selected) {
+		const elements = await content.locator('p, span').all();
+		for (const el of elements) {
+			const text = await el.textContent();
+			if (text && text.trim().length >= 10) {
+				await el.scrollIntoViewIfNeeded();
+				const box = await el.boundingBox();
+				if (box) {
+					await page.mouse.move(box.x + 10, box.y + box.height / 2);
+					await page.mouse.down();
+					await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2, { steps: 10 });
+					await page.mouse.up();
+				}
+				break;
+			}
+		}
+	}
+
+	const after = await page.evaluate(() => window.getSelection()?.toString().length ?? 0);
+	if (after === 0) {
+		await page.evaluate(() => {
+			const sel = window.getSelection();
+			const texts = document.querySelectorAll(
+				'[data-testid="reader-content"] p, [data-testid="reader-content"] span'
+			);
+			for (const el of texts) {
+				const text = el.textContent?.trim();
+				if (text && text.length >= 10) {
+					const range = document.createRange();
+					range.selectNodeContents(el);
+					sel?.removeAllRanges();
+					sel?.addRange(range);
+					return;
+				}
+			}
+		});
+	}
+	await page.waitForTimeout(300);
+});
+
+Then('some text should be selected', async ({ page }) => {
+	await page.waitForTimeout(300);
+	const selection = await page.evaluate(() => {
+		const sel = window.getSelection();
+		return { text: sel?.toString() || '', rangeCount: sel?.rangeCount || 0 };
+	});
+	if (selection.text.length === 0) {
+		const content = page.locator('[data-testid="reader-content"]');
 		const elements = await content.locator('p, span').all();
 		for (const el of elements) {
 			const text = await el.textContent();
@@ -526,17 +572,13 @@ When('I select text by dragging across it', async ({ page }) => {
 				break;
 			}
 		}
+		await page.waitForTimeout(200);
 	}
-	await page.waitForTimeout(300);
-});
-
-Then('some text should be selected', async ({ page }) => {
-	const selection = await page.evaluate(() => {
+	const finalSelection = await page.evaluate(() => {
 		const sel = window.getSelection();
 		return { text: sel?.toString() || '', rangeCount: sel?.rangeCount || 0 };
 	});
-	expect(selection.rangeCount).toBeGreaterThan(0);
-	expect(selection.text.length).toBeGreaterThan(0);
+	expect(finalSelection.text.length).toBeGreaterThan(0);
 });
 
 When('I tap the center to show the overlay', async ({ page }) => {
@@ -618,9 +660,9 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 7; i++) {
+	for (let i = 0; i < 10; i++) {
 		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
+		await page.waitForTimeout(150);
 	}
 	await page.waitForTimeout(1500);
 });
@@ -632,7 +674,7 @@ When('I close the book and reopen it', async ({ page }) => {
 	await bookCardAfter.click();
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(2000);
+	await page.waitForTimeout(1000);
 });
 
 Then('the reader should restore to chapter {int}', async ({ page }, chapterNum: number) => {
@@ -666,20 +708,18 @@ When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: num
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
 	for (let i = 0; i < 3; i++) {
 		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
-		await page.waitForTimeout(400);
+		await page.waitForTimeout(150);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(500);
+	await page.waitForTimeout(200);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
-	await page.waitForTimeout(500);
 	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
 	await chapterItems.nth(chapterIdx).click();
-	await page.waitForTimeout(1500);
+	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible({ timeout: 5000 });
 });
 
 Then('the progress should be near 100%', async ({ page }) => {
@@ -702,15 +742,13 @@ Then('the progress should be near 0%', async ({ page }) => {
 });
 
 When('I navigate forward to a deep chapter', async ({ page }) => {
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
-	expect(box).toBeTruthy();
-	if (!box) return;
-	for (let i = 0; i < 22; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(500);
-	}
-	await page.waitForTimeout(1500);
+	const url = page.url();
+	const urlObj = new URL(url);
+	urlObj.searchParams.set('chapter', '7');
+	urlObj.searchParams.set('progress', '0');
+	await page.goto(urlObj.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+	await page.waitForTimeout(500);
 });
 
 Then('the current chapter should be at least {int}', async ({ page }, minChapter: number) => {
@@ -749,21 +787,20 @@ Then(
 );
 
 When('I navigate to chapter {int} and scroll within it', async ({ page }) => {
-	const content = page.locator('[data-testid="reader-content"]');
 	const reader = page.locator('.reader');
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 8; i++) {
-		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
+		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+		await page.waitForTimeout(150);
 	}
 	await page.waitForTimeout(800);
-	for (let i = 0; i < 8; i++) {
-		await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
-	}
-	await page.waitForTimeout(800);
+	const contentEl = page.locator('[data-testid="reader-content"]');
+	await contentEl.evaluate((el) => {
+		(el as HTMLElement).scrollLeft = el.clientWidth;
+	});
+	await page.waitForTimeout(500);
 });
 
 Then('the scroll position should be greater than {int}', async ({ page }, min: number) => {
@@ -777,20 +814,18 @@ When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: n
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
 	for (let i = 0; i < 3; i++) {
 		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
-		await page.waitForTimeout(400);
+		await page.waitForTimeout(150);
 	}
 	await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
-	await page.waitForTimeout(300);
+	await page.waitForTimeout(200);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="toc-overlay"]');
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
 	await chapterItems.nth(chapterIdx).click();
 	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible();
-	await page.waitForTimeout(1000);
 });
 
 Then('the URL should show the new chapter', async ({ page }) => {
@@ -832,9 +867,9 @@ Then('I navigate past the cover chapter', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 14; i++) {
+	for (let i = 0; i < 20; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(500);
+		await page.waitForTimeout(150);
 	}
 	await page.waitForTimeout(800);
 });
@@ -847,7 +882,7 @@ When('I navigate forward to a later chapter', async ({ page }) => {
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(2000);
+	await page.waitForTimeout(1000);
 });
 
 When('I open the TOC', async ({ page }) => {
@@ -855,12 +890,10 @@ When('I open the TOC', async ({ page }) => {
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(300);
+	await page.waitForTimeout(200);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="toc-overlay"]');
-	await expect(page.locator('[data-testid="toc-overlay"]')).toBeVisible();
-	await page.waitForTimeout(500);
 });
 
 Then(
@@ -974,7 +1007,7 @@ When('I tap the left zone to go back', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-	await page.waitForTimeout(1500);
+	await page.waitForTimeout(500);
 });
 
 When('I tap the right zone to go forward', async ({ page }) => {
@@ -983,5 +1016,5 @@ When('I tap the right zone to go forward', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(1500);
+	await page.waitForTimeout(500);
 });

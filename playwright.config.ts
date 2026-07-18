@@ -15,8 +15,8 @@ export default defineConfig({
 	},
 	testMatch: '**/*.{spec,e2e}.{ts,js}',
 	use: {
-		video: 'on',
-		trace: 'on'
+		video: 'retain-on-failure',
+		trace: 'retain-on-failure'
 	},
 	outputDir: 'test-results'
 });

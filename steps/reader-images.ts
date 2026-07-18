@@ -188,15 +188,11 @@ Then('the image should be contained within the readable area', async ({ page }) 
 When('I click on the image in the reader', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	await content.waitFor({ state: 'visible', timeout: 10000 });
-	await page.waitForTimeout(1000);
 
 	const img = content.locator('img');
 	await expect(img).toBeVisible({ timeout: 5000 });
-
-	// Try dispatching a trusted click using Playwright's dispatchEvent
-	// This creates a synthetic but trusted event
-	await img.first().dispatchEvent('click');
-	await page.waitForTimeout(500);
+	await img.first().click();
+	await page.waitForTimeout(300);
 });
 
 Then('the image fullscreen should be visible', async ({ page }) => {
@@ -219,13 +215,15 @@ Then('the fullscreen image should have the same source as the inline image', asy
 When('I tap on the fullscreen overlay', async ({ page }) => {
 	const fullscreen = page.locator('[data-testid="image-fullscreen"]');
 	await fullscreen.dispatchEvent('touchstart', {
-		touches: [{ clientX: 100, clientY: 100, identifier: 0 }]
+		touches: [{ clientX: 100, clientY: 100, identifier: 0 }],
+		cancelable: true
 	});
 	await page.waitForTimeout(50);
 	await fullscreen.dispatchEvent('touchend', {
-		changedTouches: [{ clientX: 100, clientY: 100, identifier: 0 }]
+		changedTouches: [{ clientX: 100, clientY: 100, identifier: 0 }],
+		cancelable: true
 	});
-	await page.waitForTimeout(300);
+	await page.waitForTimeout(200);
 });
 
 Then('the image fullscreen should be closed', async ({ page }) => {
