@@ -43,10 +43,9 @@ Then('there should be internal links with proper chapter attributes', async ({ p
 
 	if (linkInfo.internalCount === 0) {
 		const baseUrl = page.url().replace(/\?.*/, '');
-		for (let ch = 0; ch <= 5; ch++) {
+		for (let ch = 1; ch <= 5; ch++) {
 			await page.goto(baseUrl + `?chapter=${ch}`);
-			await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-			await page.waitForTimeout(200);
+			await page.waitForSelector('[data-testid="reader-content"]', { timeout: 5000 });
 			linkInfo = await page.evaluate(() => {
 				const internalLinks = document.querySelectorAll('a.internal-link');
 				return {
