@@ -120,7 +120,7 @@ When('I click an internal link to a different chapter', async ({ page }) => {
 		}
 	}, linkInfo!.targetChapter);
 
-	await page.waitForTimeout(500);
+	await page.waitForURL(/chapter=\d+/);
 });
 
 Then('the chapter should have changed', async ({ page }) => {
@@ -139,7 +139,7 @@ When('I click a missing link', async ({ page }) => {
 			const link = document.querySelector('a.missing-link');
 			if (link) (link as HTMLAnchorElement).click();
 		});
-		await page.waitForTimeout(500);
+		await page.waitForSelector('[data-testid="link-error-popup"]', { timeout: 5000 });
 	}
 });
 
@@ -162,7 +162,7 @@ Then('the popup should reference the original link', async ({ page }) => {
 
 When('I navigate to a chapter with external links', async ({ page }) => {
 	await page.goto(page.url().replace(/\?.*/, '') + '?chapter=1');
-	await page.waitForTimeout(500);
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 });
 
 Then('external links should have target {string}', async ({ page }, target: string) => {
@@ -222,7 +222,7 @@ When('I click an internal link with a fragment to another chapter', async ({ pag
 		{ targetCh: linkInfo.chapter, targetFragment: linkInfo.fragment }
 	);
 
-	await page.waitForTimeout(1500);
+	await page.waitForURL(/chapter=\d+/);
 });
 
 Then('the fragment element should exist in the new chapter', async ({ page }) => {

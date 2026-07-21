@@ -192,7 +192,7 @@ When('I click on the image in the reader', async ({ page }) => {
 	const img = content.locator('img');
 	await expect(img).toBeVisible({ timeout: 5000 });
 	await img.first().click();
-	await page.waitForTimeout(300);
+	await expect(page.locator('[data-testid="image-fullscreen"]')).toBeVisible({ timeout: 5000 });
 });
 
 Then('the image fullscreen should be visible', async ({ page }) => {
