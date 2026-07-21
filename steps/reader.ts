@@ -890,8 +890,8 @@ When('I open the TOC', async ({ page }) => {
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(200);
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+	await expect(tocButton).toBeVisible({ timeout: 3000 });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="toc-overlay"]');
 });

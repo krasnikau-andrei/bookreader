@@ -14,6 +14,8 @@ export default defineConfig({
 		reuseExistingServer: true
 	},
 	testMatch: '**/*.{spec,e2e}.{ts,js}',
+	timeout: 30000,
+	globalTimeout: 250000,
 	use: {
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure'
