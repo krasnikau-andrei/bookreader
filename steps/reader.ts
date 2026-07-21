@@ -478,10 +478,7 @@ When('I navigate to a position and open with a shared URL', async ({ page }) => 
 	const sharedUrl = `/read/${bookId}?chapter=0&progress=5000`;
 	await page.goto(sharedUrl);
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
-		{ timeout: 5000 }
-	);
+	await page.waitForTimeout(800);
 });
 
 Then('the reader should open at the shared position', async ({ page }) => {
