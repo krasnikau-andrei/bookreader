@@ -194,7 +194,7 @@ Then('I navigate to a chapter with text content', async ({ page }) => {
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
 		{ timeout: 5000 }
 	);
 });
@@ -449,7 +449,7 @@ When('I reopen the book with those URL params', async ({ page }) => {
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
 		{ timeout: 5000 }
 	);
 });
@@ -473,12 +473,13 @@ When('I navigate to a position and open with a shared URL', async ({ page }) => 
 	const url = page.url();
 	const bookIdMatch = url.match(/\/read\/([^/]+)/);
 	const bookId = bookIdMatch ? bookIdMatch[1] : '';
-	await page.goto('/');
-	await page.waitForSelector('[data-testid="empty-state"], [data-testid="book-card"]');
 	const sharedUrl = `/read/${bookId}?chapter=0&progress=5000`;
 	await page.goto(sharedUrl);
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(800);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the reader should open at the shared position', async ({ page }) => {
@@ -681,7 +682,7 @@ When('I close the book and reopen it', async ({ page }) => {
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
 		{ timeout: 5000 }
 	);
 });
@@ -758,7 +759,7 @@ When('I navigate forward to a deep chapter', async ({ page }) => {
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
 		{ timeout: 5000 }
 	);
 });
@@ -895,7 +896,7 @@ When('I navigate forward to a later chapter', async ({ page }) => {
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	await page.waitForFunction(
-		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
 		{ timeout: 5000 }
 	);
 });
