@@ -97,9 +97,9 @@ When('I swipe left a short distance', async ({ page }) => {
 	if (!box) return;
 
 	await dispatchTouch(page, box.x + box.width * 0.55, box.y + box.height * 0.5, 'touchstart');
-	await page.waitForTimeout(800);
+	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.4, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(800);
+	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.4, box.y + box.height * 0.5, 'touchend');
 	await page.waitForTimeout(800);
 });
@@ -111,9 +111,9 @@ When('I swipe right a short distance', async ({ page }) => {
 	if (!box) return;
 
 	await dispatchTouch(page, box.x + box.width * 0.45, box.y + box.height * 0.5, 'touchstart');
-	await page.waitForTimeout(800);
+	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.6, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(800);
+	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.6, box.y + box.height * 0.5, 'touchend');
 	await page.waitForTimeout(800);
 });
