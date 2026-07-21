@@ -193,7 +193,10 @@ Then('I navigate to a chapter with text content', async ({ page }) => {
 	urlObj.searchParams.set('progress', '0');
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(1000);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the content should fill at least 85% of the viewport width', async ({ page }) => {
@@ -445,7 +448,10 @@ When('I reopen the book with those URL params', async ({ page }) => {
 	await bookCard.click();
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(1500);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the reader should restore to the saved chapter and progress', async ({ page }) => {
@@ -472,7 +478,10 @@ When('I navigate to a position and open with a shared URL', async ({ page }) => 
 	const sharedUrl = `/read/${bookId}?chapter=0&progress=5000`;
 	await page.goto(sharedUrl);
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(800);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the reader should open at the shared position', async ({ page }) => {
@@ -674,7 +683,10 @@ When('I close the book and reopen it', async ({ page }) => {
 	await bookCardAfter.click();
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(1000);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the reader should restore to chapter {int}', async ({ page }, chapterNum: number) => {
@@ -748,7 +760,10 @@ When('I navigate forward to a deep chapter', async ({ page }) => {
 	urlObj.searchParams.set('progress', '0');
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(500);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 Then('the current chapter should be at least {int}', async ({ page }, minChapter: number) => {
@@ -882,7 +897,10 @@ When('I navigate forward to a later chapter', async ({ page }) => {
 	await page.goto(urlObj.toString());
 	await page.waitForSelector('.reader');
 	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
-	await page.waitForTimeout(1000);
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.textContent?.length ?? 0) > 50,
+		{ timeout: 5000 }
+	);
 });
 
 When('I open the TOC', async ({ page }) => {
