@@ -16,6 +16,7 @@ export default defineConfig({
 	testMatch: '**/*.{spec,e2e}.{ts,js}',
 	timeout: 30000,
 	globalTimeout: 300000,
+	fullyParallel: true,
 	use: {
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure'
