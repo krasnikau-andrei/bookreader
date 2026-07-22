@@ -112,8 +112,7 @@ Then('tapping the left zone should navigate back', async ({ page }) => {
 
 	if (box) {
 		for (let i = 0; i < 5; i++) {
-			await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-			await page.waitForTimeout(400);
+			await clickNav(page, reader, box.width * 0.2, box.height * 0.5);
 		}
 	}
 
@@ -129,10 +128,8 @@ Then('the text should be visible with sufficient contrast', async ({ page }) => 
 	expect(box).toBeTruthy();
 	if (box) {
 		for (let i = 0; i < 9; i++) {
-			await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-			await page.waitForTimeout(400);
+			await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
 		}
-		await page.waitForTimeout(500);
 	}
 
 	const visibilityInfo = await content.evaluate((el) => {
@@ -363,7 +360,6 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 });
 
 Then('the URL should include chapter and progress parameters', async ({ page }) => {
-	await page.waitForTimeout(500);
 	const url = page.url();
 	expect(url).toContain('?');
 	expect(url).toContain('chapter=');
@@ -371,7 +367,6 @@ Then('the URL should include chapter and progress parameters', async ({ page }) 
 });
 
 Then('the URL should have valid chapter and progress parameters', async ({ page }) => {
-	await page.waitForTimeout(800);
 	const url = page.url();
 	expect(url).toContain('chapter=');
 	expect(url).toContain('progress=');
