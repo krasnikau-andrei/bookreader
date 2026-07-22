@@ -60,6 +60,7 @@
 	.progress-segment {
 		position: relative;
 		height: 100%;
+		min-width: 1px;
 	}
 
 	.progress-segment + .progress-segment {
