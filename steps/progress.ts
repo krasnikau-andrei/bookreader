@@ -4,8 +4,35 @@ import { createBdd } from 'playwright-bdd';
 export const { Given, When, Then } = createBdd();
 
 When('I go back to the library', async ({ page }) => {
+	const lastBookId = page.url().match(/\/read\/([^/?]+)/)?.[1];
+	if (lastBookId) {
+		await page.waitForFunction(
+			(bookId: string) => {
+				return new Promise<boolean>((resolve) => {
+					const req = indexedDB.open('bookreader');
+					req.onsuccess = () => {
+						try {
+							const db = req.result;
+							const tx = db.transaction('readingProgress', 'readonly');
+							const store = tx.objectStore('readingProgress');
+							const get = store.get(bookId);
+							get.onsuccess = () => {
+								resolve(!!get.result?.chapterSizes?.length);
+							};
+							get.onerror = () => resolve(false);
+						} catch {
+							resolve(false);
+						}
+					};
+					req.onerror = () => resolve(false);
+				});
+			},
+			lastBookId,
+			{ timeout: 5000 }
+		);
+	}
 	await page.goto('/');
-	await page.waitForSelector('[data-testid="book-card"]');
+	await page.waitForSelector('[data-testid="book-card"], [data-testid="empty-state"]');
 });
 
 Then('the book card should not show a progress bar', async ({ page }) => {

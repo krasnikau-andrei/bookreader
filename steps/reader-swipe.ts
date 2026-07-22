@@ -38,26 +38,12 @@ async function dispatchTouch(
 	clientY: number,
 	type: 'touchstart' | 'touchmove' | 'touchend'
 ) {
-	await page.evaluate(
-		({ x, y, t }) => {
-			const el = document.querySelector('[data-testid="reader-content"]');
-			if (!el) return;
-			const touch = new Touch({
-				identifier: 0,
-				target: el,
-				clientX: x,
-				clientY: y
-			});
-			const event = new TouchEvent(t, {
-				touches: t === 'touchend' ? [] : [touch],
-				changedTouches: [touch],
-				bubbles: true,
-				cancelable: true
-			});
-			el.dispatchEvent(event);
-		},
-		{ x: clientX, y: clientY, t: type }
-	);
+	const content = page.locator('[data-testid="reader-content"]');
+	const touch = { identifier: 0, clientX, clientY };
+	await content.dispatchEvent(type, {
+		touches: type === 'touchend' ? [] : [touch],
+		changedTouches: [touch]
+	});
 }
 
 When('I swipe left from right to left', async ({ page }) => {
