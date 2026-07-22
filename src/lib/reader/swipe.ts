@@ -106,10 +106,6 @@ export function createSwipeHandler(
 		} else {
 			callbacks.onSwipeRight();
 		}
-
-		// Reset didSwipe after swipe callbacks complete
-		// This is necessary because hasSwiped() might be called after endSwipe finishes
-		state.didSwipe = false;
 	}
 
 	// Touch event handlers
