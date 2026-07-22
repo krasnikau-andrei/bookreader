@@ -90,7 +90,6 @@ Then('tapping the right zone should move through the content', async ({ page }) 
 
 	for (let i = 0; i < 10; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
 		const currentContent = await content.evaluate((el) => el.innerHTML);
 		const currentScrollLeft = await content.evaluate((el) => el.scrollLeft);
 		if (currentContent !== lastContent) contentChanged = true;
