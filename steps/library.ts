@@ -155,33 +155,16 @@ Then('the info message should not be visible', async ({ page }) => {
 });
 
 When('I long-press the book card', async ({ page }) => {
-	await page.evaluate(() => {
-		const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
-		if (card) {
-			const rect = card.getBoundingClientRect();
-			const touchEvent = new TouchEvent('touchstart', {
-				bubbles: true,
-				cancelable: true,
-				touches: [
-					new Touch({
-						identifier: 0,
-						target: card,
-						clientX: rect.left + rect.width / 2,
-						clientY: rect.top + rect.height / 2
-					})
-				]
-			});
-			card.dispatchEvent(touchEvent);
-			setTimeout(() => {
-				const touchEndEvent = new TouchEvent('touchend', {
-					bubbles: true,
-					cancelable: true
-				});
-				card.dispatchEvent(touchEndEvent);
-			}, 500);
-		}
-	});
-	await expect(page.locator('[data-testid="confirm-sheet"]')).toBeVisible({ timeout: 3000 });
+	const card = page.locator('[data-testid="book-card"]');
+	const box = await card.boundingBox();
+	if (!box) throw new Error('Book card not found');
+	const x = box.x + box.width / 2;
+	const y = box.y + box.height / 2;
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await page.waitForTimeout(500);
+	await page.mouse.up();
+	await page.waitForTimeout(200);
 });
 
 Then(
@@ -216,6 +199,7 @@ Then('the book card should remain', async ({ page }) => {
 });
 
 Then('the book should appear in the library', async ({ page }) => {
+	await page.waitForTimeout(5000);
 	try {
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 	} catch {

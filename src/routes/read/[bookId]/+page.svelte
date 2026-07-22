@@ -117,6 +117,7 @@
 
 			if (hasProgressParam) {
 				urlScrollPercent = parseInt(urlSearchParams.get('progress') || '0', 10) / 10000;
+				currentScrollPercent = urlScrollPercent;
 			}
 
 			if (hasChapterParam || hasProgressParam) {
@@ -248,13 +249,13 @@
 			onClose={() => (showToc = false)}
 		/>
 	</div>
-
-	<BottomProgressBar
-		chapterSizes={progressChapterSizes}
-		{currentChapter}
-		scrollPercent={currentScrollPercent}
-	/>
 </div>
+
+<BottomProgressBar
+	chapterSizes={progressChapterSizes}
+	{currentChapter}
+	scrollPercent={currentScrollPercent}
+/>
 
 <style>
 	.reader {

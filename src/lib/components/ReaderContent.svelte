@@ -456,7 +456,7 @@
 
 <style>
 	.content {
-		height: 100vh;
+		height: 100dvh;
 		column-width: calc(100vw - 2rem);
 		column-gap: 0;
 		overflow-x: scroll;
@@ -477,6 +477,7 @@
 
 	.content-inner {
 		padding: 0 var(--reader-gap-sides);
+		overflow-x: clip;
 		-webkit-box-decoration-break: clone;
 		box-decoration-break: clone;
 	}

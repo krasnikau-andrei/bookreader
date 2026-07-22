@@ -20,6 +20,7 @@ export default defineConfig({
 	maxFailures: 0,
 	workers: 4,
 	use: {
+		browserName: 'webkit',
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure'
 	},

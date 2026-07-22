@@ -1,5 +1,8 @@
 node_modules
 
+# Playwright MCP artifacts
+.playwright-mcp/
+
 # IDE
 .idea/
 .vscode/

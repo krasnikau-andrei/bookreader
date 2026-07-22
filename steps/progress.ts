@@ -4,7 +4,18 @@ import { createBdd } from 'playwright-bdd';
 export const { Given, When, Then } = createBdd();
 
 When('I go back to the library', async ({ page }) => {
-	await page.goto('/');
+	const content = page.locator('[data-testid="reader-content"]');
+	const box = await content.boundingBox();
+	if (box) {
+		await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
+		await page.waitForTimeout(300);
+	}
+	const backBtn = page.getByRole('button', { name: 'Go back' });
+	if (await backBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+		await backBtn.click();
+	} else {
+		await page.goto('/');
+	}
 	await page.waitForSelector('[data-testid="book-card"]');
 });
 
