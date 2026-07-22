@@ -17,7 +17,7 @@ export default defineConfig({
 	timeout: 30000,
 	globalTimeout: 300000,
 	fullyParallel: true,
-	workers: 6,
+	workers: 8,
 	use: {
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure'
