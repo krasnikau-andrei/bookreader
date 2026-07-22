@@ -916,7 +916,6 @@ When('I navigate forward one page', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(800);
 });
 
 Given('the overlay is open', async ({ page }) => {

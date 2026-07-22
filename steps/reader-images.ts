@@ -218,12 +218,11 @@ When('I tap on the fullscreen overlay', async ({ page }) => {
 		touches: [{ clientX: 100, clientY: 100, identifier: 0 }],
 		cancelable: true
 	});
-	await page.waitForTimeout(50);
 	await fullscreen.dispatchEvent('touchend', {
 		changedTouches: [{ clientX: 100, clientY: 100, identifier: 0 }],
 		cancelable: true
 	});
-	await page.waitForTimeout(200);
+	await expect(fullscreen).not.toBeVisible({ timeout: 2000 });
 });
 
 Then('the image fullscreen should be closed', async ({ page }) => {
@@ -261,8 +260,6 @@ When('I pinch to zoom on the image', async ({ page }) => {
 		{ cx, cy, d: startDist }
 	);
 
-	await page.waitForTimeout(50);
-
 	await page.evaluate(
 		({ cx, cy, d }: { cx: number; cy: number; d: number }) => {
 			const el = document.querySelector('[data-testid="image-fullscreen"]');
@@ -281,8 +278,6 @@ When('I pinch to zoom on the image', async ({ page }) => {
 		{ cx, cy, d: endDist }
 	);
 
-	await page.waitForTimeout(50);
-
 	await page.evaluate(
 		({ cx, cy, d }: { cx: number; cy: number; d: number }) => {
 			const el = document.querySelector('[data-testid="image-fullscreen"]');
@@ -300,8 +295,6 @@ When('I pinch to zoom on the image', async ({ page }) => {
 		},
 		{ cx, cy, d: endDist }
 	);
-
-	await page.waitForTimeout(200);
 });
 
 Then('the image should be zoomed in', async ({ page }) => {
