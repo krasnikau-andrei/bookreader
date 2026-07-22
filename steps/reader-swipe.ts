@@ -4,14 +4,16 @@ import { createBdd } from 'playwright-bdd';
 async function waitForScrollSnap(page: Page) {
 	const initialScroll = await page.evaluate(() => {
 		const el = document.querySelector('[data-testid="reader-content"]');
-		return el ? el.scrollLeft : 0;
+		if (!el) return -1;
+		return { scrollLeft: el.scrollLeft, clientWidth: (el as HTMLElement).clientWidth };
 	});
+	if (initialScroll === -1) return;
 	await page.waitForFunction(
-		(initScroll: number) => {
+		(init: { scrollLeft: number; clientWidth: number }) => {
 			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
 			if (!el) return false;
 			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
-			return Math.abs(el.scrollLeft - snap) < 1 && el.scrollLeft !== initScroll;
+			return Math.abs(el.scrollLeft - snap) < 1 && Math.abs(el.scrollLeft - init.scrollLeft) > init.clientWidth * 0.2;
 		},
 		initialScroll,
 		{ timeout: 5000 }
