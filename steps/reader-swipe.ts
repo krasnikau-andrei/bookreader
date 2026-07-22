@@ -13,7 +13,10 @@ async function waitForScrollSnap(page: Page) {
 			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
 			if (!el) return false;
 			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
-			return Math.abs(el.scrollLeft - snap) < 1 && Math.abs(el.scrollLeft - init.scrollLeft) > init.clientWidth * 0.2;
+			return (
+				Math.abs(el.scrollLeft - snap) < 1 &&
+				Math.abs(el.scrollLeft - init.scrollLeft) > init.clientWidth * 0.2
+			);
 		},
 		initialScroll,
 		{ timeout: 5000 }
@@ -181,7 +184,7 @@ When('I start tracking the scroll position', async ({ page }) => {
 	const clientWidth = await content.evaluate((el) => (el as HTMLElement).clientWidth);
 	const pageIndex = Math.round(scrollLeft / clientWidth);
 	await page.evaluate(
-		({ scroll, page: p }: { scroll: number; page: number }) => {
+		({ scroll, page: p }) => {
 			window.__trackedScrollLeft = scroll;
 			window.__trackedPageIndex = p;
 		},

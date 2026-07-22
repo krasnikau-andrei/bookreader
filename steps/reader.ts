@@ -3,7 +3,12 @@ import { createBdd } from 'playwright-bdd';
 
 const { Given, When, Then } = createBdd();
 
-async function clickNav(page: import('@playwright/test').Page, locator: ReturnType<typeof page.locator>, x: number, y: number) {
+async function clickNav(
+	page: import('@playwright/test').Page,
+	locator: ReturnType<typeof page.locator>,
+	x: number,
+	y: number
+) {
 	const before = page.url().match(/chapter=(\d+)/)?.[1];
 	await locator.click({ position: { x, y } });
 	const after = page.url().match(/chapter=(\d+)/)?.[1];
@@ -41,7 +46,9 @@ When('I tap the center of the page', async ({ page }) => {
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
+		timeout: 3000
+	});
 });
 
 When('I tap the center of the page again', async ({ page }) => {
@@ -280,15 +287,20 @@ When('I rapidly tap the right zone {int} times', async ({ page }, times: number)
 });
 
 Then('the scroll position should be at a valid page boundary', async ({ page }) => {
-	await page.waitForFunction(() => {
-		const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
-		if (!e) return false;
-		const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
-		const expectedScroll = expectedPage * e.clientWidth;
-		const positionError = Math.abs(e.scrollLeft - expectedScroll);
-		const maxScroll = e.scrollWidth - e.clientWidth;
-		return positionError < e.clientWidth * 0.02 || e.scrollLeft >= maxScroll - 10 || e.scrollLeft <= 10;
-	}, { timeout: 5000 });
+	await page.waitForFunction(
+		() => {
+			const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			if (!e) return false;
+			const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
+			const expectedScroll = expectedPage * e.clientWidth;
+			const positionError = Math.abs(e.scrollLeft - expectedScroll);
+			const maxScroll = e.scrollWidth - e.clientWidth;
+			return (
+				positionError < e.clientWidth * 0.02 || e.scrollLeft >= maxScroll - 10 || e.scrollLeft <= 10
+			);
+		},
+		{ timeout: 5000 }
+	);
 });
 
 Then('the scroll position should not be stuck mid-scroll', async ({ page }) => {
@@ -312,13 +324,16 @@ Then('the scroll position should not be stuck mid-scroll', async ({ page }) => {
 });
 
 Then('the final scroll position should be at a valid page boundary', async ({ page }) => {
-	await page.waitForFunction(() => {
-		const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
-		if (!e) return false;
-		const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
-		const expectedScroll = expectedPage * e.clientWidth;
-		return Math.abs(e.scrollLeft - expectedScroll) < e.clientWidth * 0.02;
-	}, { timeout: 5000 });
+	await page.waitForFunction(
+		() => {
+			const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			if (!e) return false;
+			const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
+			const expectedScroll = expectedPage * e.clientWidth;
+			return Math.abs(e.scrollLeft - expectedScroll) < e.clientWidth * 0.02;
+		},
+		{ timeout: 5000 }
+	);
 });
 
 Then('the visible text should be properly centered in the viewport', async ({ page }) => {
@@ -340,7 +355,12 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 				if (text.length > 10) {
 					const elementLeftInViewport = elementLeft - viewportLeft;
 					const elementRightInViewport = elementRight - viewportLeft;
-					if (elementRightInViewport <= 0 || elementLeftInViewport >= viewportWidth || elementLeftInViewport < -viewportWidth) continue;
+					if (
+						elementRightInViewport <= 0 ||
+						elementLeftInViewport >= viewportWidth ||
+						elementLeftInViewport < -viewportWidth
+					)
+						continue;
 					return { elementLeft, elementRight, viewportLeft, viewportRight, viewportWidth };
 				}
 			}
@@ -352,7 +372,9 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 	if (viewportInfo) {
 		const elementLeftInViewport = viewportInfo.elementLeft - viewportInfo.viewportLeft;
 		const elementRightInViewport = viewportInfo.elementRight - viewportInfo.viewportLeft;
-		const inViewportWidth = Math.min(viewportInfo.viewportWidth, elementRightInViewport) - Math.max(0, elementLeftInViewport);
+		const inViewportWidth =
+			Math.min(viewportInfo.viewportWidth, elementRightInViewport) -
+			Math.max(0, elementLeftInViewport);
 		expect(inViewportWidth).toBeGreaterThan(viewportInfo.viewportWidth * 0.3);
 	}
 });
@@ -533,7 +555,9 @@ When('I select text by dragging across it', async ({ page }) => {
 			}
 		});
 	}
-	await page.waitForFunction(() => (window.getSelection()?.toString().length ?? 0) > 0, { timeout: 3000 });
+	await page.waitForFunction(() => (window.getSelection()?.toString().length ?? 0) > 0, {
+		timeout: 3000
+	});
 });
 
 Then('some text should be selected', async ({ page }) => {
@@ -573,7 +597,9 @@ When('I tap the center to show the overlay', async ({ page }) => {
 		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
+		timeout: 3000
+	});
 });
 
 Then('the TOC button should be visible', async ({ page }) => {
@@ -684,10 +710,13 @@ When('I scroll to the beginning of the current chapter', async ({ page }) => {
 	await content.evaluate((el) => {
 		(el as HTMLElement).scrollLeft = 0;
 	});
-	await page.waitForFunction(() => {
-		const el = document.querySelector('[data-testid="reader-content"]');
-		return el && (el as HTMLElement).scrollLeft === 0;
-	}, { timeout: 3000 });
+	await page.waitForFunction(
+		() => {
+			const el = document.querySelector('[data-testid="reader-content"]');
+			return el && (el as HTMLElement).scrollLeft === 0;
+		},
+		{ timeout: 3000 }
+	);
 });
 
 When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: number) => {
@@ -699,7 +728,9 @@ When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: num
 		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
+		timeout: 3000
+	});
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
@@ -804,7 +835,9 @@ When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: n
 		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
+		timeout: 3000
+	});
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="toc-overlay"]');
@@ -914,6 +947,15 @@ When('I navigate forward one page', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
+	await page.waitForFunction(
+		() => {
+			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			if (!el) return false;
+			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
+			return Math.abs(el.scrollLeft - snap) < 1;
+		},
+		{ timeout: 5000 }
+	);
 });
 
 Given('the overlay is open', async ({ page }) => {
@@ -965,7 +1007,9 @@ Given('the TOC is open', async ({ page }) => {
 		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
+		timeout: 3000
+	});
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="toc-overlay"]');
