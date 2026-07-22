@@ -1,7 +1,9 @@
-const BASE64_DATA_RE = /<(?:img|image)\b[^>]*(?:src|href)\s*=\s*"data:[^"]*"[^>]*\/?>/gi;
+const IMG_DATA_RE = /<(?:img|image)\b[^>]*(?:src|href)\s*=\s*"data:[^"]*"[^>]*\/?>/gi;
 
 export function measureChapterContent(content: string): number {
-	return content.replace(BASE64_DATA_RE, '').length;
+	// Strip base64 image tags, but ensure non-zero for image-only chapters
+	const stripped = content.replace(IMG_DATA_RE, '');
+	return stripped.length || content.length;
 }
 
 export function calculateBookProgress(
