@@ -57,7 +57,6 @@ When('I tap the right zone', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(250);
 });
 
 When('I tap the left zone', async ({ page }) => {
@@ -66,7 +65,6 @@ When('I tap the left zone', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-	await page.waitForTimeout(250);
 });
 
 When('I tap the right zone again', async ({ page }) => {
@@ -75,7 +73,6 @@ When('I tap the right zone again', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(250);
 });
 
 Then('tapping the right zone should move through the content', async ({ page }) => {
@@ -296,25 +293,6 @@ Then('the scroll position should be at a valid page boundary', async ({ page }) 
 		const maxScroll = e.scrollWidth - e.clientWidth;
 		return positionError < e.clientWidth * 0.02 || e.scrollLeft >= maxScroll - 10 || e.scrollLeft <= 10;
 	}, { timeout: 5000 });
-	const content = page.locator('[data-testid="reader-content"]');
-	const state = await content.evaluate((el) => {
-		const e = el as HTMLElement;
-		return {
-			scrollLeft: e.scrollLeft,
-			clientWidth: e.clientWidth,
-			maxScroll: e.scrollWidth - e.clientWidth
-		};
-	});
-	const expectedPage = Math.round(state.scrollLeft / state.clientWidth);
-	const expectedScroll = expectedPage * state.clientWidth;
-	const positionError = Math.abs(state.scrollLeft - expectedScroll);
-	const isAtValidPosition =
-		positionError < state.clientWidth * 0.02 ||
-		state.scrollLeft >= state.maxScroll - 10 ||
-		state.scrollLeft <= 10;
-	expect(isAtValidPosition).toBe(true);
-	expect(state.scrollLeft).toBeGreaterThanOrEqual(0);
-	expect(state.scrollLeft).toBeLessThanOrEqual(state.maxScroll + 10);
 });
 
 Then('the scroll position should not be stuck mid-scroll', async ({ page }) => {
@@ -345,15 +323,6 @@ Then('the final scroll position should be at a valid page boundary', async ({ pa
 		const expectedScroll = expectedPage * e.clientWidth;
 		return Math.abs(e.scrollLeft - expectedScroll) < e.clientWidth * 0.02;
 	}, { timeout: 5000 });
-	const content = page.locator('[data-testid="reader-content"]');
-	const state = await content.evaluate((el) => {
-		const e = el as HTMLElement;
-		return { scrollLeft: e.scrollLeft, clientWidth: e.clientWidth };
-	});
-	const expectedPage = Math.round(state.scrollLeft / state.clientWidth);
-	const expectedScroll = expectedPage * state.clientWidth;
-	const scrollDiff = Math.abs(state.scrollLeft - expectedScroll);
-	expect(scrollDiff).toBeLessThan(state.clientWidth * 0.02);
 });
 
 Then('the visible text should be properly centered in the viewport', async ({ page }) => {
