@@ -125,10 +125,6 @@ export function createSwipeHandler(
 		} else {
 			callbacks.onSwipeRight();
 		}
-
-		// Reset didSwipe after swipe callbacks complete
-		// This is necessary because hasSwiped() might be called after endSwipe finishes
-		state.didSwipe = false;
 	}
 
 	// Touch event handlers
@@ -141,6 +137,10 @@ export function createSwipeHandler(
 	function handleTouchMove(event: TouchEvent) {
 		if (!state.isActive || event.touches.length !== 1) return;
 		const touch = event.touches[0];
+		const deltaX = touch.clientX - state.startX;
+		if (Math.abs(deltaX) > 20) {
+			event.preventDefault();
+		}
 		moveSwipe(touch.clientX, touch.clientY);
 	}
 
@@ -150,12 +150,8 @@ export function createSwipeHandler(
 
 	// Mouse event handlers (for desktop testing)
 	function handleMouseDown(event: MouseEvent) {
-		if (event.button !== 0) return; // Only left mouse button
-
-		// End any previous swipe first
-		if (state.isActive) {
-			endSwipe();
-		}
+		if (event.button !== 0) return;
+		if (state.isActive) return;
 
 		startSwipe(event.clientX, event.clientY);
 	}
@@ -177,7 +173,7 @@ export function createSwipeHandler(
 	function attach() {
 		// Touch events
 		element.addEventListener('touchstart', handleTouchStart, { passive: true });
-		element.addEventListener('touchmove', handleTouchMove, { passive: true });
+		element.addEventListener('touchmove', handleTouchMove, { passive: false });
 		element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
 		// Mouse events (for desktop/testing)

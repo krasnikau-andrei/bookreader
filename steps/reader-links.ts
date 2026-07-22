@@ -43,9 +43,9 @@ Then('there should be internal links with proper chapter attributes', async ({ p
 
 	if (linkInfo.internalCount === 0) {
 		const baseUrl = page.url().replace(/\?.*/, '');
-		for (let ch = 0; ch <= 5; ch++) {
+		for (let ch = 1; ch <= 5; ch++) {
 			await page.goto(baseUrl + `?chapter=${ch}`);
-			await page.waitForTimeout(500);
+			await page.waitForSelector('[data-testid="reader-content"]', { timeout: 5000 });
 			linkInfo = await page.evaluate(() => {
 				const internalLinks = document.querySelectorAll('a.internal-link');
 				return {
@@ -120,7 +120,7 @@ When('I click an internal link to a different chapter', async ({ page }) => {
 		}
 	}, linkInfo!.targetChapter);
 
-	await page.waitForTimeout(500);
+	await page.waitForURL(/chapter=\d+/);
 });
 
 Then('the chapter should have changed', async ({ page }) => {
@@ -139,7 +139,7 @@ When('I click a missing link', async ({ page }) => {
 			const link = document.querySelector('a.missing-link');
 			if (link) (link as HTMLAnchorElement).click();
 		});
-		await page.waitForTimeout(500);
+		await page.waitForSelector('[data-testid="link-error-popup"]', { timeout: 5000 });
 	}
 });
 
@@ -162,34 +162,29 @@ Then('the popup should reference the original link', async ({ page }) => {
 
 When('I navigate to a chapter with external links', async ({ page }) => {
 	await page.goto(page.url().replace(/\?.*/, '') + '?chapter=1');
-	await page.waitForTimeout(500);
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 });
 
 Then('external links should have target {string}', async ({ page }, target: string) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { target: link.getAttribute('target') };
-	});
-	if (info) expect(info.target).toBe(target);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	expect(await link.getAttribute('target')).toBe(target);
 });
 
 Then('external links should have rel {string}', async ({ page }, rel: string) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { rel: link.getAttribute('rel') };
-	});
-	if (info) expect(info.rel).toBe(rel);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	expect(await link.getAttribute('rel')).toBe(rel);
 });
 
 Then('external links should point to http URLs', async ({ page }) => {
-	const info = await page.evaluate(() => {
-		const link = document.querySelector('a.external-link');
-		if (!link) return null;
-		return { href: (link as HTMLAnchorElement).getAttribute('href') };
-	});
-	if (info) expect(info.href).toMatch(/^https?:\/\//);
+	const link = page.locator('a.external-link');
+	const count = await link.count();
+	if (count === 0) return;
+	const href = await link.getAttribute('href');
+	expect(href).toMatch(/^https?:\/\//);
 });
 
 When('I click an internal link with a fragment to another chapter', async ({ page }) => {
@@ -227,7 +222,7 @@ When('I click an internal link with a fragment to another chapter', async ({ pag
 		{ targetCh: linkInfo.chapter, targetFragment: linkInfo.fragment }
 	);
 
-	await page.waitForTimeout(1500);
+	await page.waitForURL(/chapter=\d+/);
 });
 
 Then('the fragment element should exist in the new chapter', async ({ page }) => {

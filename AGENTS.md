@@ -2,11 +2,12 @@
 
 - Always use relative paths. You are already in the working folder.
 - Don't create big commits. Create small commits instead.
-- Never use `--no-verify` or any flag that skips pre-commit hooks. If pre-commit fails, fix the root cause.
+- Never use `--no-verify`, `-c core.hooksPath=/dev/null`, `HUSKY=0`, or any other method that disables pre-commit hooks. If pre-commit fails or times out, fix the root cause — do not bypass.
 
 ## Pre-commit hooks
 
-- Pre-commit checks must pass. If e2e tests fail, investigate whether the failure is caused by your changes. If the failures are pre-existing and unrelated, commit the change on the current branch anyway (hooks will fail, but that's expected if the failures are on master too). Never skip hooks.
+- Pre-commit checks must pass. If they fail or timeout, fix the root cause. Do not bypass hooks under any circumstances.
+- If e2e tests in pre-commit timeout, the test suite is too slow — optimize it, don't skip the check.
 
 ## Development
 

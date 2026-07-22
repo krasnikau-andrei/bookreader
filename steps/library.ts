@@ -181,7 +181,7 @@ When('I long-press the book card', async ({ page }) => {
 			}, 500);
 		}
 	});
-	await page.waitForTimeout(700);
+	await expect(page.locator('[data-testid="confirm-sheet"]')).toBeVisible({ timeout: 3000 });
 });
 
 Then(
@@ -216,7 +216,6 @@ Then('the book card should remain', async ({ page }) => {
 });
 
 Then('the book should appear in the library', async ({ page }) => {
-	await page.waitForTimeout(5000);
 	try {
 		await expect(page.locator('[data-testid="book-card"]')).toHaveCount(1, { timeout: 15000 });
 	} catch {

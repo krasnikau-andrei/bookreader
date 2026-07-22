@@ -37,13 +37,11 @@ Given('the database is cleared', async ({ page }) => {
 When('I upload {string} via file input', async ({ page }, filename: string) => {
 	const fileInput = page.locator('input[type="file"]');
 	await fileInput.setInputFiles(path.join(fixturesDir, filename));
-	await page.waitForTimeout(300);
 });
 
 When('I upload {string} via file input again', async ({ page }, filename: string) => {
 	const fileInput = page.locator('input[type="file"]');
 	await fileInput.setInputFiles(path.join(fixturesDir, filename));
-	await page.waitForTimeout(300);
 });
 
 When('I open the book from the library', async ({ page }) => {
