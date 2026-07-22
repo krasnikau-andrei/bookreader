@@ -64,4 +64,46 @@ describe('BookProgressBar', () => {
 		const pct = container.querySelector('[data-testid="progress-percentage"]');
 		expect(pct?.textContent).toBe('100%');
 	});
+
+	test('completed chapters have full fill, future chapters no fill', () => {
+		const { container } = render(BookProgressBar, {
+			props: {
+				chapterSizes: [100, 200, 300, 400],
+				currentChapter: 2,
+				scrollPercent: 0
+			}
+		});
+		const fills = container.querySelectorAll('.segment-fill');
+		const fullFills = container.querySelectorAll('.segment-fill.full');
+		expect(fullFills.length).toBe(2);
+		expect(fills.length).toBe(2);
+	});
+
+	test('current chapter shows partial fill when scrollPercent > 0', () => {
+		const { container } = render(BookProgressBar, {
+			props: {
+				chapterSizes: [100, 200, 300],
+				currentChapter: 1,
+				scrollPercent: 0.5
+			}
+		});
+		const fullFills = container.querySelectorAll('.segment-fill.full');
+		expect(fullFills.length).toBe(1);
+		const partialFills = container.querySelectorAll('.segment-fill:not(.full)');
+		expect(partialFills.length).toBe(1);
+		const partial = partialFills[0] as HTMLElement;
+		expect(partial.style.width).toBe('50%');
+	});
+
+	test('no fill when first chapter at scrollPercent 0', () => {
+		const { container } = render(BookProgressBar, {
+			props: {
+				chapterSizes: [100, 200, 300],
+				currentChapter: 0,
+				scrollPercent: 0
+			}
+		});
+		const fills = container.querySelectorAll('.segment-fill');
+		expect(fills.length).toBe(0);
+	});
 });
