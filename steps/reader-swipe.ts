@@ -64,7 +64,9 @@ When('I swipe left from right to left', async ({ page }) => {
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchmove');
 	await page.waitForTimeout(50);
-	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');});
+	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');
+	await page.waitForTimeout(800);
+});
 
 When('I swipe right from left to right', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');

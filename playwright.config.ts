@@ -14,10 +14,10 @@ export default defineConfig({
 		reuseExistingServer: true
 	},
 	testMatch: '**/*.{spec,e2e}.{ts,js}',
-	timeout: 30000,
+	timeout: 15000,
 	globalTimeout: 300000,
 	fullyParallel: true,
-	workers: 8,
+	workers: 4,
 	use: {
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure'

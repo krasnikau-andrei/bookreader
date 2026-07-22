@@ -3,6 +3,19 @@ import { createBdd } from 'playwright-bdd';
 
 const { Given, When, Then } = createBdd();
 
+async function clickNav(page: import('@playwright/test').Page, locator: ReturnType<typeof page.locator>, x: number, y: number) {
+	const before = page.url().match(/chapter=(\d+)/)?.[1];
+	await locator.click({ position: { x, y } });
+	const after = page.url().match(/chapter=(\d+)/)?.[1];
+	if (after !== before) {
+		console.log(`[nav] chapter ${before} → ${after}, waiting for transition`);
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+		await page.waitForTimeout(150);
+	} else {
+		await page.waitForTimeout(30);
+	}
+}
+
 Then('the reader should be visible', async ({ page }) => {
 	await expect(page.locator('.reader')).toBeVisible();
 });
@@ -258,9 +271,9 @@ Then('I navigate near a chapter boundary', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 5; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(300);
-	}});
+		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
+	}
+});
 
 When('I rapidly tap the right zone {int} times', async ({ page }, times: number) => {
 	const reader = page.locator('.reader');
@@ -270,9 +283,19 @@ When('I rapidly tap the right zone {int} times', async ({ page }, times: number)
 	for (let i = 0; i < times; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(50);
-	}});
+	}
+});
 
 Then('the scroll position should be at a valid page boundary', async ({ page }) => {
+	await page.waitForFunction(() => {
+		const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+		if (!e) return false;
+		const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
+		const expectedScroll = expectedPage * e.clientWidth;
+		const positionError = Math.abs(e.scrollLeft - expectedScroll);
+		const maxScroll = e.scrollWidth - e.clientWidth;
+		return positionError < e.clientWidth * 0.02 || e.scrollLeft >= maxScroll - 10 || e.scrollLeft <= 10;
+	}, { timeout: 5000 });
 	const content = page.locator('[data-testid="reader-content"]');
 	const state = await content.evaluate((el) => {
 		const e = el as HTMLElement;
@@ -315,6 +338,13 @@ Then('the scroll position should not be stuck mid-scroll', async ({ page }) => {
 });
 
 Then('the final scroll position should be at a valid page boundary', async ({ page }) => {
+	await page.waitForFunction(() => {
+		const e = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+		if (!e) return false;
+		const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
+		const expectedScroll = expectedPage * e.clientWidth;
+		return Math.abs(e.scrollLeft - expectedScroll) < e.clientWidth * 0.02;
+	}, { timeout: 5000 });
 	const content = page.locator('[data-testid="reader-content"]');
 	const state = await content.evaluate((el) => {
 		const e = el as HTMLElement;
@@ -394,8 +424,7 @@ When('I navigate forward through the content', async ({ page }) => {
 	expect(contentBox).toBeTruthy();
 	if (!contentBox) return;
 	for (let i = 0; i < 12; i++) {
-		await content.click({ position: { x: contentBox.width * 0.85, y: contentBox.height * 0.5 } });
-		await page.waitForTimeout(150);
+		await clickNav(page, content, contentBox.width * 0.85, contentBox.height * 0.5);
 	}
 });
 
@@ -410,9 +439,9 @@ When('I navigate backward', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 2; i++) {
-		await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-		await page.waitForTimeout(500);
-	}});
+		await clickNav(page, reader, box.width * 0.2, box.height * 0.5);
+	}
+});
 
 Then('the URL should reflect the earlier position', async ({ page }) => {
 	const url = page.url();
@@ -426,9 +455,9 @@ When('I navigate to a specific position', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 5; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(400);
-	}});
+		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
+	}
+});
 
 When('I save the URL params and navigate away', async ({ page }) => {
 	await page.goto('/');
@@ -662,7 +691,9 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 	for (let i = 0; i < 10; i++) {
 		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
 		await page.waitForTimeout(150);
-	}});
+	}
+	await page.waitForTimeout(1500);
+});
 
 When('I close the book and reopen it', async ({ page }) => {
 	await page.goto('/');
@@ -871,8 +902,15 @@ Then('I navigate past the cover chapter', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 20; i++) {
+		const before = page.url().match(/chapter=(\d+)/)?.[1];
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(150);
+		const after = page.url().match(/chapter=(\d+)/)?.[1];
+		if (after !== before) {
+			console.log(`[nav] chapter changed ${before} → ${after}`);
+			await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+		} else {
+			await page.waitForTimeout(300);
+		}
 	}
 	await page.waitForTimeout(800);
 });
