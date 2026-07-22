@@ -1,7 +1,16 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 
 const { Given, When, Then } = createBdd();
+
+async function waitForScrollSnap(page: Page) {
+	await page.waitForFunction(() => {
+		const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+		if (!el) return false;
+		const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
+		return Math.abs(el.scrollLeft - snap) < 1;
+	}, { timeout: 5000 });
+}
 
 Then('the reader should be visible', async ({ page }) => {
 	await expect(page.locator('.reader')).toBeVisible();
