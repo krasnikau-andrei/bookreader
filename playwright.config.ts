@@ -17,6 +17,7 @@ export default defineConfig({
 	timeout: 15000,
 	globalTimeout: 300000,
 	fullyParallel: true,
+	retries: 1,
 	maxFailures: 1,
 	workers: 4,
 	use: {
