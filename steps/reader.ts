@@ -981,7 +981,7 @@ When('I tap outside the TOC panel', async ({ page }) => {
 	expect(overlayBox).toBeTruthy();
 	if (!overlayBox) return;
 	await page.mouse.click(overlayBox.x + 10, overlayBox.y + 10);
-	await page.waitForTimeout(300);
+	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible({ timeout: 3000 });
 });
 
 When('I select the second chapter', async ({ page }) => {
