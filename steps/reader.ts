@@ -988,7 +988,6 @@ When('I select the second chapter', async ({ page }) => {
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
 	await expect(chapterItems.nth(1)).toBeVisible();
 	await chapterItems.nth(1).click();
-	await page.waitForTimeout(300);
 });
 
 When('I tap the left zone to go back', async ({ page }) => {
@@ -996,8 +995,7 @@ When('I tap the left zone to go back', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
-	await page.waitForTimeout(500);
+	await clickNav(page, reader, box.width * 0.2, box.height * 0.5);
 });
 
 When('I tap the right zone to go forward', async ({ page }) => {
@@ -1005,6 +1003,5 @@ When('I tap the right zone to go forward', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(500);
+	await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
 });
