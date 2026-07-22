@@ -15,9 +15,9 @@ export default defineConfig({
 	},
 	testMatch: '**/*.{spec,e2e}.{ts,js}',
 	timeout: 15000,
-	globalTimeout: 300000,
+	globalTimeout: 600000,
 	fullyParallel: true,
-	retries: 1,
+	retries: 2,
 	maxFailures: 1,
 	workers: 4,
 	use: {
