@@ -450,10 +450,8 @@ When('I navigate to a position and open with a shared URL', async ({ page }) => 
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 8; i++) {
-		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-		await page.waitForTimeout(500);
+		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
 	}
-	await page.waitForTimeout(1000);
 	const url = page.url();
 	const bookIdMatch = url.match(/\/read\/([^/]+)/);
 	const bookId = bookIdMatch ? bookIdMatch[1] : '';
@@ -476,7 +474,6 @@ Then('the reader should open at the shared position', async ({ page }) => {
 
 When('I select text by dragging across it', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
-	await page.waitForTimeout(500);
 
 	const selected = await content.evaluate(() => {
 		const textNodes: Text[] = [];
@@ -538,11 +535,10 @@ When('I select text by dragging across it', async ({ page }) => {
 			}
 		});
 	}
-	await page.waitForTimeout(300);
+	await page.waitForFunction(() => (window.getSelection()?.toString().length ?? 0) > 0, { timeout: 3000 });
 });
 
 Then('some text should be selected', async ({ page }) => {
-	await page.waitForTimeout(300);
 	const selection = await page.evaluate(() => {
 		const sel = window.getSelection();
 		return { text: sel?.toString() || '', rangeCount: sel?.rangeCount || 0 };
