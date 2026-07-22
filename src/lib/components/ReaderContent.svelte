@@ -47,6 +47,7 @@
 	let isAnimatingScroll = $state(false);
 	let isFragmentNavigation = $state(false);
 	let isUserSwiping = false;
+	let isSelecting = false;
 	let swipeStartScrollLeft = 0;
 	let isUpdatingUrl = false;
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
@@ -73,9 +74,11 @@
 			},
 			onSwipeCancel: () => {
 				isUserSwiping = false;
-				if (scrollContainer) {
-					animateScroll(scrollContainer, swipeStartScrollLeft, 200);
-				}
+				if (!scrollContainer) return;
+				// Don't snap scroll back if user has selected text (vertical drag)
+				const sel = window.getSelection();
+				if (sel && !sel.isCollapsed) return;
+				animateScroll(scrollContainer, swipeStartScrollLeft, 200);
 			}
 		});
 
@@ -330,7 +333,8 @@
 	}
 
 	function handleScroll() {
-		if (!scrollContainer || isUpdatingUrl || isChangingChapter || isAnimatingScroll) return;
+		if (!scrollContainer || isUpdatingUrl || isChangingChapter || isAnimatingScroll || isSelecting)
+			return;
 
 		// iOS Safari restores cached scrollLeft after JS sets it — if we detect
 		// a non-user scroll during the restore guard period, re-apply the correct
@@ -391,6 +395,16 @@
 			document.removeEventListener('visibilitychange', handler);
 			document.removeEventListener('pagehide', handler);
 		};
+	});
+
+	// Track text selection state to suppress scroll processing during selection
+	$effect(() => {
+		function onChange() {
+			const sel = window.getSelection();
+			isSelecting = sel !== null && !sel.isCollapsed;
+		}
+		document.addEventListener('selectionchange', onChange);
+		return () => document.removeEventListener('selectionchange', onChange);
 	});
 
 	$effect(() => {
@@ -457,6 +471,8 @@
 		font-family: 'Literata', serif;
 		font-size: var(--font-size-reader-text);
 		scroll-behavior: auto;
+		touch-action: pan-x;
+		overscroll-behavior: none;
 	}
 
 	.content-inner {
