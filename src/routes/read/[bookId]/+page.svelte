@@ -117,6 +117,7 @@
 
 			if (hasProgressParam) {
 				urlScrollPercent = parseInt(urlSearchParams.get('progress') || '0', 10) / 10000;
+				currentScrollPercent = urlScrollPercent;
 			}
 
 			if (hasChapterParam || hasProgressParam) {
