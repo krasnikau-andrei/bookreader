@@ -270,7 +270,7 @@ Then('I navigate near a chapter boundary', async ({ page }) => {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(300);
 	}
-	await page.waitForTimeout(500);
+	await waitForScrollSnap(page);
 });
 
 When('I rapidly tap the right zone {int} times', async ({ page }, times: number) => {
@@ -282,7 +282,7 @@ When('I rapidly tap the right zone {int} times', async ({ page }, times: number)
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(50);
 	}
-	await page.waitForTimeout(2000);
+	await waitForScrollSnap(page);
 });
 
 Then('the scroll position should be at a valid page boundary', async ({ page }) => {
@@ -426,7 +426,7 @@ When('I navigate backward', async ({ page }) => {
 		await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
 		await page.waitForTimeout(500);
 	}
-	await page.waitForTimeout(300);
+	await waitForScrollSnap(page);
 });
 
 Then('the URL should reflect the earlier position', async ({ page }) => {
@@ -444,7 +444,7 @@ When('I navigate to a specific position', async ({ page }) => {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(400);
 	}
-	await page.waitForTimeout(500);
+	await waitForScrollSnap(page);
 });
 
 When('I save the URL params and navigate away', async ({ page }) => {
@@ -680,7 +680,7 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
 		await page.waitForTimeout(150);
 	}
-	await page.waitForTimeout(1500);
+	await waitForScrollSnap(page);
 });
 
 When('I close the book and reopen it', async ({ page }) => {
