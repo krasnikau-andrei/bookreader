@@ -127,12 +127,8 @@ export function createSwipeHandler(
 
 	// Mouse event handlers (for desktop testing)
 	function handleMouseDown(event: MouseEvent) {
-		if (event.button !== 0) return; // Only left mouse button
-
-		// End any previous swipe first
-		if (state.isActive) {
-			endSwipe();
-		}
+		if (event.button !== 0) return;
+		if (state.isActive) return;
 
 		startSwipe(event.clientX, event.clientY);
 	}
