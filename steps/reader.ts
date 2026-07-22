@@ -1,16 +1,7 @@
-import { expect, type Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 
 const { Given, When, Then } = createBdd();
-
-async function waitForScrollSnap(page: Page) {
-	await page.waitForFunction(() => {
-		const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
-		if (!el) return false;
-		const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
-		return Math.abs(el.scrollLeft - snap) < 1;
-	}, { timeout: 5000 });
-}
 
 Then('the reader should be visible', async ({ page }) => {
 	await expect(page.locator('.reader')).toBeVisible();
@@ -269,9 +260,7 @@ Then('I navigate near a chapter boundary', async ({ page }) => {
 	for (let i = 0; i < 5; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(300);
-	}
-	await waitForScrollSnap(page);
-});
+	}});
 
 When('I rapidly tap the right zone {int} times', async ({ page }, times: number) => {
 	const reader = page.locator('.reader');
@@ -281,9 +270,7 @@ When('I rapidly tap the right zone {int} times', async ({ page }, times: number)
 	for (let i = 0; i < times; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(50);
-	}
-	await waitForScrollSnap(page);
-});
+	}});
 
 Then('the scroll position should be at a valid page boundary', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
@@ -425,9 +412,7 @@ When('I navigate backward', async ({ page }) => {
 	for (let i = 0; i < 2; i++) {
 		await reader.click({ position: { x: box.width * 0.2, y: box.height * 0.5 } });
 		await page.waitForTimeout(500);
-	}
-	await waitForScrollSnap(page);
-});
+	}});
 
 Then('the URL should reflect the earlier position', async ({ page }) => {
 	const url = page.url();
@@ -443,9 +428,7 @@ When('I navigate to a specific position', async ({ page }) => {
 	for (let i = 0; i < 5; i++) {
 		await reader.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 		await page.waitForTimeout(400);
-	}
-	await waitForScrollSnap(page);
-});
+	}});
 
 When('I save the URL params and navigate away', async ({ page }) => {
 	await page.goto('/');
@@ -679,9 +662,7 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 	for (let i = 0; i < 10; i++) {
 		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
 		await page.waitForTimeout(150);
-	}
-	await waitForScrollSnap(page);
-});
+	}});
 
 When('I close the book and reopen it', async ({ page }) => {
 	await page.goto('/');

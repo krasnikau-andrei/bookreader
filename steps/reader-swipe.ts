@@ -1,6 +1,23 @@
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 
+async function waitForScrollSnap(page: Page) {
+	const initialScroll = await page.evaluate(() => {
+		const el = document.querySelector('[data-testid="reader-content"]');
+		return el ? el.scrollLeft : 0;
+	});
+	await page.waitForFunction(
+		(initScroll: number) => {
+			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			if (!el) return false;
+			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
+			return Math.abs(el.scrollLeft - snap) < 1 && el.scrollLeft !== initScroll;
+		},
+		initialScroll,
+		{ timeout: 5000 }
+	);
+}
+
 declare global {
 	interface Window {
 		__trackedScrollLeft: number;
@@ -47,9 +64,7 @@ When('I swipe left from right to left', async ({ page }) => {
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchmove');
 	await page.waitForTimeout(50);
-	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
-});
+	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');});
 
 When('I swipe right from left to right', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
