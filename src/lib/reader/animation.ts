@@ -36,8 +36,6 @@ export function animateScroll(
 	const startScroll = element.scrollLeft;
 	let distance = snapTarget - startScroll;
 
-	// ponytail: when snap-target lands on current page but target intent is
-	// forward (e.g. cover page with content < 1/2 page width), scroll directly
 	if (Math.abs(distance) < 1 && Math.abs(targetScroll - startScroll) >= 1) {
 		distance = targetScroll - startScroll;
 	}
