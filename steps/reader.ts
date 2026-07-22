@@ -18,16 +18,17 @@ Then('the overlay should be visible', async ({ page }) => {
 });
 
 When('I tap the center of the page', async ({ page }) => {
+	const url = page.url();
+	const urlObj = new URL(url);
+	urlObj.searchParams.set('chapter', '1');
+	urlObj.searchParams.set('progress', '0');
+	await page.goto(urlObj.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
-	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
-	for (let i = 0; i < 3; i++) {
-		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
-		await page.waitForTimeout(400);
-	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(300);
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
 });
 
 When('I tap the center of the page again', async ({ page }) => {
@@ -35,7 +36,6 @@ When('I tap the center of the page again', async ({ page }) => {
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(300);
 });
 
 When('I tap the right zone', async ({ page }) => {
