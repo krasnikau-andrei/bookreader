@@ -118,6 +118,10 @@ export function createSwipeHandler(
 	function handleTouchMove(event: TouchEvent) {
 		if (!state.isActive || event.touches.length !== 1) return;
 		const touch = event.touches[0];
+		const deltaX = touch.clientX - state.startX;
+		if (Math.abs(deltaX) > 20) {
+			event.preventDefault();
+		}
 		moveSwipe(touch.clientX, touch.clientY);
 	}
 
@@ -150,7 +154,7 @@ export function createSwipeHandler(
 	function attach() {
 		// Touch events
 		element.addEventListener('touchstart', handleTouchStart, { passive: true });
-		element.addEventListener('touchmove', handleTouchMove, { passive: true });
+		element.addEventListener('touchmove', handleTouchMove, { passive: false });
 		element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
 		// Mouse events (for desktop/testing)

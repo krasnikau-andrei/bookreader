@@ -97,7 +97,6 @@ When('I swipe right a long distance across the screen', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 
-	await page.waitForTimeout(200);
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchmove');
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchend');
