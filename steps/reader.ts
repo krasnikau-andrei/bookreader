@@ -572,13 +572,11 @@ When('I tap the center to show the overlay', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
-	// Navigate past cover/title chapters so center tap isn't intercepted by cover image
 	for (let i = 0; i < 3; i++) {
-		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
-		await page.waitForTimeout(400);
+		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(300);
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
 });
 
 Then('the TOC button should be visible', async ({ page }) => {
@@ -606,7 +604,6 @@ When('I click on the second chapter in the TOC', async ({ page }) => {
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
 	await expect(chapterItems.nth(1)).toBeVisible();
 	await chapterItems.nth(1).click();
-	await page.waitForTimeout(500);
 });
 
 Then('the TOC should close', async ({ page }) => {
@@ -690,7 +687,10 @@ When('I scroll to the beginning of the current chapter', async ({ page }) => {
 	await content.evaluate((el) => {
 		(el as HTMLElement).scrollLeft = 0;
 	});
-	await page.waitForTimeout(300);
+	await page.waitForFunction(() => {
+		const el = document.querySelector('[data-testid="reader-content"]');
+		return el && (el as HTMLElement).scrollLeft === 0;
+	}, { timeout: 3000 });
 });
 
 When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: number) => {
@@ -699,11 +699,10 @@ When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: num
 	expect(box).toBeTruthy();
 	if (!box) return;
 	for (let i = 0; i < 3; i++) {
-		await content.click({ position: { x: box!.width * 0.85, y: box!.height * 0.5 } });
-		await page.waitForTimeout(150);
+		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
 	}
 	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await page.waitForTimeout(200);
+	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({ timeout: 3000 });
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
 	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
