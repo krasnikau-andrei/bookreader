@@ -350,7 +350,7 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 				if (text.length > 10) {
 					const elementLeftInViewport = elementLeft - viewportLeft;
 					const elementRightInViewport = elementRight - viewportLeft;
-					if (elementLeftInViewport < 0 || elementRightInViewport > viewportWidth) continue;
+					if (elementRightInViewport <= 0 || elementLeftInViewport >= viewportWidth) continue;
 					return { elementLeft, elementRight, viewportLeft, viewportRight, viewportWidth };
 				}
 			}
