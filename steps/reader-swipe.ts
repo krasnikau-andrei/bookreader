@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 
 async function waitForScrollSnap(page: Page) {
@@ -63,9 +63,8 @@ When('I swipe left from right to left', async ({ page }) => {
 
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(50);
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForScrollSnap(page);
 });
 
 When('I swipe right from left to right', async ({ page }) => {
@@ -76,9 +75,8 @@ When('I swipe right from left to right', async ({ page }) => {
 
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(50);
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForScrollSnap(page);
 });
 
 When('I swipe left a long distance across the screen', async ({ page }) => {
@@ -89,9 +87,8 @@ When('I swipe left a long distance across the screen', async ({ page }) => {
 
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(50);
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForScrollSnap(page);
 });
 
 When('I swipe right a long distance across the screen', async ({ page }) => {
@@ -102,9 +99,8 @@ When('I swipe right a long distance across the screen', async ({ page }) => {
 
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchmove');
-	await page.waitForTimeout(50);
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForScrollSnap(page);
 });
 
 When('I swipe left a short distance', async ({ page }) => {
@@ -166,13 +162,15 @@ Then('the scroll position should change gradually over time', async ({ page }) =
 	const initialScroll = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 
 	await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
-	await page.waitForTimeout(50);
-	const scrollAfter50ms = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-	await page.waitForTimeout(50);
-	const scrollAfter100ms = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-
-	const hasAnimation = scrollAfter50ms > initialScroll || scrollAfter100ms > scrollAfter50ms;
-	expect(hasAnimation || scrollAfter100ms > initialScroll).toBe(true);
+	const scrollMid = await page.waitForFunction(
+		(initial: number) => {
+			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			return el && el.scrollLeft > initial ? el.scrollLeft : false;
+		},
+		initialScroll,
+		{ timeout: 2000 }
+	);
+	expect(await scrollMid.jsonValue()).toBeGreaterThan(initialScroll);
 });
 
 When('I start tracking the scroll position', async ({ page }) => {

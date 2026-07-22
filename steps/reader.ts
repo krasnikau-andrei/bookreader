@@ -782,7 +782,7 @@ When('I navigate to chapter {int} and scroll within it', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 14; i++) {
+	for (let i = 0; i < 18; i++) {
 		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
 	}
 	const contentEl = page.locator('[data-testid="reader-content"]');
