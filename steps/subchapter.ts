@@ -159,8 +159,8 @@ Then('each subchapter heading should be at the start of a column', async ({ page
 		section1: { distanceToColumnStart: number };
 		section2: { distanceToColumnStart: number };
 	};
-	expect(info.section1.distanceToColumnStart).toBeLessThan(25);
-	expect(info.section2.distanceToColumnStart).toBeLessThan(25);
+	expect(info.section1.distanceToColumnStart).toBeLessThan(10);
+	expect(info.section2.distanceToColumnStart).toBeLessThan(10);
 });
 
 Then('subchapters should be in different columns', async ({ page }) => {
