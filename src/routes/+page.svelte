@@ -15,7 +15,7 @@
 	import type { Book, ReadingProgress } from '$lib/types';
 	import { calculateBookProgress, measureChapterContent } from '$lib/reader/progress';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, preloadCode } from '$app/navigation';
 	import {
 		BookCard,
 		ConfirmSheet,
@@ -47,6 +47,12 @@
 		chapterSizesReady = cache.chapterSizesReady;
 
 		refresh();
+	});
+
+	$effect(() => {
+		if (focusBook) {
+			preloadCode(`/read/${focusBook.id}`);
+		}
 	});
 
 	async function refresh() {

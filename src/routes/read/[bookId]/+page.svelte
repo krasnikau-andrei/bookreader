@@ -130,8 +130,10 @@
 			if (!hasChapterParam && !hasProgressParam) {
 				updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
 			}
-		} finally {
-			// No explicit loading state — content appears via chapters reactivity
+		} catch (e) {
+			console.error('[READER] Failed to load book:', e);
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto('/');
 		}
 	});
 
