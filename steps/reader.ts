@@ -946,14 +946,18 @@ When('I navigate forward one page', async ({ page }) => {
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
+	const before = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
 	await content.click({ position: { x: box.width * 0.8, y: box.height * 0.5 } });
 	await page.waitForFunction(
-		() => {
+		(init: number) => {
 			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
 			if (!el) return false;
 			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
-			return Math.abs(el.scrollLeft - snap) < 1;
+			return (
+				Math.abs(el.scrollLeft - init) > el.clientWidth * 0.2 && Math.abs(el.scrollLeft - snap) < 1
+			);
 		},
+		before,
 		{ timeout: 5000 }
 	);
 });

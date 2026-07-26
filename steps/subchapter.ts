@@ -121,9 +121,14 @@ Then('subchapter headings should have the {string} class', async ({ page }) => {
 });
 
 Then('each subchapter heading should be at the start of a column', async ({ page }) => {
+	await page.evaluate(() => document.fonts.ready);
+	await page.waitForTimeout(100);
+
 	const columnInfo = await page.evaluate(() => {
 		const content = document.querySelector('[data-testid="reader-content"]') as HTMLElement;
 		if (!content) return { error: 'Content not found' };
+		const inner = content.querySelector('.content-inner') as HTMLElement | null;
+		const pad = inner ? parseFloat(getComputedStyle(inner).paddingLeft) || 0 : 0;
 		const section1 = document.getElementById('section1');
 		const section2 = document.getElementById('section2');
 		if (!section1 || !section2) {
@@ -144,12 +149,12 @@ Then('each subchapter heading should be at the start of a column', async ({ page
 			section1: {
 				offsetLeft: section1Offset,
 				column: section1Column,
-				distanceToColumnStart: Math.abs(section1Offset - section1Column * columnWidth)
+				distanceToColumnStart: Math.abs(section1Offset - section1Column * columnWidth - pad)
 			},
 			section2: {
 				offsetLeft: section2Offset,
 				column: section2Column,
-				distanceToColumnStart: Math.abs(section2Offset - section2Column * columnWidth)
+				distanceToColumnStart: Math.abs(section2Offset - section2Column * columnWidth - pad)
 			}
 		};
 	});
