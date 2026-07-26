@@ -121,8 +121,10 @@ Then('subchapter headings should have the {string} class', async ({ page }) => {
 });
 
 Then('each subchapter heading should be at the start of a column', async ({ page }) => {
-	await page.evaluate(() => document.fonts.ready);
-	await page.waitForTimeout(100);
+	await page.evaluate(async () => {
+		await document.fonts.ready;
+		await new Promise((r) => requestAnimationFrame(r));
+	});
 
 	const columnInfo = await page.evaluate(() => {
 		const content = document.querySelector('[data-testid="reader-content"]') as HTMLElement;
