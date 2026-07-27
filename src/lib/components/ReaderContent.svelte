@@ -2,9 +2,10 @@
 	import { tick } from 'svelte';
 	import { createSwipeHandler } from '$lib/reader/swipe';
 	import { createSafetyNet } from '$lib/reader/safety-net';
+	import { createScrollRestore } from '$lib/reader/scroll-restore';
+	import { createProgressSaver } from '$lib/reader/progress-saver';
 	import { animateScroll, jumpTo } from '$lib/reader/animation';
 	import { calculateScrollPercent } from '$lib/reader/pagination';
-	import { saveProgress } from '$lib/storage';
 	import type { Chapter } from '$lib/types';
 	import ImageFullscreen from './ImageFullscreen.svelte';
 
@@ -52,9 +53,15 @@
 	let isUpdatingUrl = false;
 	let swipeHandler: ReturnType<typeof createSwipeHandler> | null = null;
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
-	let debounceTimer: ReturnType<typeof setTimeout>;
-	let scrollRestoreGuard: ReturnType<typeof setTimeout> | undefined;
 	let fullscreenSrc: string | null = $state(null);
+
+	const scrollRestore = createScrollRestore(() => isChangingChapter);
+	const progressSaver = createProgressSaver({
+		bookId: () => bookId,
+		chapterIndex: () => currentChapter,
+		container: () => scrollContainer,
+		isChangingChapter: () => isChangingChapter
+	});
 
 	$effect(() => {
 		if (!scrollContainer) return;
@@ -97,9 +104,6 @@
 		};
 	});
 
-	// Track if we should apply initialProgress to scroll
-	let shouldRestoreScroll = $state(true);
-
 	// Restore scroll position when content changes (e.g., on mount or chapter change)
 	$effect(() => {
 		// This effect re-runs when content, currentChapter, or initialProgress changes
@@ -110,46 +114,11 @@
 
 		if (!scrollContainer || !_content) return;
 
-		const container = scrollContainer;
-
 		// Skip restore if fragment navigation will handle scrolling
 		// (isFragmentNavigation is set synchronously in the fragment effect body)
 		if (isFragmentNavigation) return;
 
-		// Synchronous scroll restoration — sets scrollLeft before first paint,
-		// preventing a flash of content at scroll=0 before jumping to saved position
-		if (shouldRestoreScroll) {
-			const maxScroll = container.scrollWidth - container.clientWidth;
-			if (maxScroll > 0) {
-				container.scrollLeft = Math.round(maxScroll * _progress);
-			}
-		}
-		shouldRestoreScroll = true;
-
-		// Block scroll events for 600ms after programmatic scroll restoration
-		// to prevent iOS Safari's auto-scroll-restore from corrupting the
-		// correct progress position with a stale cached scrollLeft
-		clearTimeout(scrollRestoreGuard);
-		scrollRestoreGuard = setTimeout(() => {
-			scrollRestoreGuard = undefined;
-		}, 600);
-
-		// Async safety net: re-apply after paint in case layout shifts
-		// (e.g., images load, fonts swap) changed scrollWidth
-		if (!isChangingChapter) {
-			tick().then(() => {
-				requestAnimationFrame(() => {
-					if (!container || isChangingChapter) return;
-					const maxScroll = container.scrollWidth - container.clientWidth;
-					if (maxScroll > 0) {
-						const targetScroll = Math.round(maxScroll * _progress);
-						if (Math.abs(container.scrollLeft - targetScroll) > 1) {
-							jumpTo(container, targetScroll);
-						}
-					}
-				});
-			});
-		}
+		scrollRestore.restore(scrollContainer, _progress);
 	});
 
 	function handleLeftTap(baseScrollLeft?: number) {
@@ -167,9 +136,9 @@
 				const prevChapter = currentChapter - 1;
 				isChangingChapter = true;
 				// Clear any pending debounced saves to prevent race conditions
-				clearTimeout(debounceTimer);
+				progressSaver.cancelPending();
 				// Don't let the $effect restore scroll - we'll handle it manually
-				shouldRestoreScroll = false;
+				scrollRestore.skipNextRestore();
 				// Pass progress=1 to open previous chapter at the end
 				onChapterChange(prevChapter, 1);
 				onUrlUpdate(prevChapter, 1);
@@ -181,12 +150,7 @@
 					setTimeout(() => {
 						isChangingChapter = false;
 						// Save progress for the new chapter after transition completes
-						saveProgress({
-							bookId,
-							chapterIndex: prevChapter,
-							scrollPercent: 1,
-							lastReadAt: new Date()
-						});
+						progressSaver.saveNow(prevChapter, 1);
 					}, 100);
 				});
 			}
@@ -205,12 +169,7 @@
 		animateScroll(scrollContainer, targetScroll, 250);
 		setTimeout(() => {
 			isAnimatingScroll = false;
-			saveProgress({
-				bookId,
-				chapterIndex: currentChapter,
-				scrollPercent: targetPercent,
-				lastReadAt: new Date()
-			});
+			progressSaver.saveNow(currentChapter, targetPercent);
 		}, 250);
 	}
 
@@ -230,7 +189,7 @@
 				const nextChapter = currentChapter + 1;
 				isChangingChapter = true;
 				// Clear any pending debounced saves to prevent race conditions
-				clearTimeout(debounceTimer);
+				progressSaver.cancelPending();
 				// Pass progress=0 to open next chapter at the beginning
 				onChapterChange(nextChapter, 0);
 				onUrlUpdate(nextChapter, 0);
@@ -242,12 +201,7 @@
 					setTimeout(() => {
 						isChangingChapter = false;
 						// Save progress for the new chapter after transition completes
-						saveProgress({
-							bookId,
-							chapterIndex: nextChapter,
-							scrollPercent: 0,
-							lastReadAt: new Date()
-						});
+						progressSaver.saveNow(nextChapter, 0);
 					}, 100);
 				});
 			}
@@ -266,12 +220,7 @@
 		animateScroll(scrollContainer, targetScroll, 250);
 		setTimeout(() => {
 			isAnimatingScroll = false;
-			saveProgress({
-				bookId,
-				chapterIndex: currentChapter,
-				scrollPercent: targetPercent,
-				lastReadAt: new Date()
-			});
+			progressSaver.saveNow(currentChapter, targetPercent);
 		}, 250);
 	}
 
@@ -336,19 +285,9 @@
 		if (!scrollContainer || isUpdatingUrl || isChangingChapter || isAnimatingScroll || isSelecting)
 			return;
 
-		// iOS Safari restores cached scrollLeft after JS sets it — if we detect
-		// a non-user scroll during the restore guard period, re-apply the correct
-		// position and suppress the save/URL-update.
-		if (scrollRestoreGuard) {
-			const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-			if (maxScroll > 0) {
-				const targetScroll = Math.round(maxScroll * initialProgress);
-				if (Math.abs(scrollContainer.scrollLeft - targetScroll) > 1) {
-					jumpTo(scrollContainer, targetScroll);
-				}
-			}
-			return;
-		}
+		// Suppress stale scroll events during the post-restore guard period
+		// (iOS Safari auto-scroll-restore); the correct position is re-applied inside.
+		if (scrollRestore.guardScroll(scrollContainer)) return;
 
 		const percent = calculateScrollPercent(
 			scrollContainer.scrollLeft,
@@ -361,40 +300,14 @@
 		// Only save progress when not transitioning between chapters
 		// to avoid race conditions where we save the old chapter with the new scroll position
 		if (!isChangingChapter) {
-			debouncedSaveProgress(currentChapter, percent);
+			progressSaver.schedule(currentChapter, percent);
 		}
 	}
 
-	function debouncedSaveProgress(chapterIndex: number, scrollPercent: number) {
-		clearTimeout(debounceTimer);
-		debounceTimer = setTimeout(() => {
-			saveProgress({ bookId, chapterIndex, scrollPercent, lastReadAt: new Date() });
-		}, 300);
-	}
-
+	// Flush any in-flight debounced save when the user switches apps
 	$effect(() => {
-		const handler = () => {
-			if (document.visibilityState !== 'hidden') return;
-			if (!scrollContainer || isChangingChapter) return;
-			clearTimeout(debounceTimer);
-			const percent = calculateScrollPercent(
-				scrollContainer.scrollLeft,
-				scrollContainer.scrollWidth,
-				scrollContainer.clientWidth
-			);
-			saveProgress({
-				bookId,
-				chapterIndex: currentChapter,
-				scrollPercent: percent,
-				lastReadAt: new Date()
-			});
-		};
-		document.addEventListener('visibilitychange', handler);
-		document.addEventListener('pagehide', handler);
-		return () => {
-			document.removeEventListener('visibilitychange', handler);
-			document.removeEventListener('pagehide', handler);
-		};
+		progressSaver.attach();
+		return () => progressSaver.detach();
 	});
 
 	// Track text selection state to suppress scroll processing during selection
