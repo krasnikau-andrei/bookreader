@@ -7,7 +7,8 @@
 	let { bookTitle, onConfirm, onCancel }: Props = $props();
 </script>
 
-<!-- Backdrop -->
+<!-- Backdrop: tap-outside cancels; keyboard users have the Cancel button -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="backdrop" data-testid="confirm-sheet-backdrop" onclick={onCancel}></div>
 
 <!-- Sheet -->

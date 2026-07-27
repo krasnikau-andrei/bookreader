@@ -1,12 +1,12 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { createSwipeHandler } from './swipe';
 
 describe('Swipe Detection', () => {
 	let element: HTMLElement;
 	let callbacks: {
-		onSwipeLeft: ReturnType<typeof vi.fn>;
-		onSwipeRight: ReturnType<typeof vi.fn>;
-		onSwipeCancel: ReturnType<typeof vi.fn>;
+		onSwipeLeft: Mock<() => void>;
+		onSwipeRight: Mock<() => void>;
+		onSwipeCancel: Mock<() => void>;
 	};
 	let handler: ReturnType<typeof createSwipeHandler>;
 
@@ -27,9 +27,9 @@ describe('Swipe Detection', () => {
 		});
 
 		callbacks = {
-			onSwipeLeft: vi.fn(),
-			onSwipeRight: vi.fn(),
-			onSwipeCancel: vi.fn()
+			onSwipeLeft: vi.fn<() => void>(),
+			onSwipeRight: vi.fn<() => void>(),
+			onSwipeCancel: vi.fn<() => void>()
 		};
 
 		handler = createSwipeHandler(element, callbacks);
@@ -46,8 +46,8 @@ describe('Swipe Detection', () => {
 		touches: { clientX: number; clientY: number }[]
 	): TouchEvent {
 		const event = new TouchEvent(type, {
-			touches: touches as unknown as TouchList,
-			changedTouches: touches as unknown as TouchList,
+			touches: touches as unknown as Touch[],
+			changedTouches: touches as unknown as Touch[],
 			bubbles: true,
 			cancelable: true
 		});

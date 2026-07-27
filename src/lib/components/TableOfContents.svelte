@@ -36,16 +36,21 @@
 </script>
 
 {#if show}
+	<!-- Backdrop: tap-outside closes the panel; keyboard users have the Close button -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div
 		class="toc-overlay"
 		data-testid="toc-overlay"
 		transition:fade={{ duration: 200 }}
 		onclick={onClose}
 	>
+		<!-- Panel: click handler only stops propagation from reaching the backdrop -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div
 			class="toc-panel"
 			role="dialog"
 			aria-label="Table of contents"
+			tabindex="-1"
 			transition:fly={{ y: 50, duration: 300 }}
 			onclick={(e) => e.stopPropagation()}
 		>

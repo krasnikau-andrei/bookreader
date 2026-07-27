@@ -94,7 +94,7 @@ describe('TableOfContents scrolling', () => {
 
 	afterEach(() => {
 		window.requestAnimationFrame = originalRAF;
-		delete Element.prototype.scrollIntoView;
+		delete (Element.prototype as Partial<Element>).scrollIntoView;
 	});
 
 	it('scrolls current chapter into view centered when TOC opens', async () => {

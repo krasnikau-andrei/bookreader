@@ -23,19 +23,23 @@
 		title: 'The Great Gatsby',
 		author: 'F. Scott Fitzgerald',
 		cover: null,
+		description: null,
 		format: 'epub',
 		addedAt: new Date(),
-		filename: 'great-gatsby.epub'
+		filename: 'great-gatsby.epub',
+		language: 'en'
 	};
 
 	const sampleBookWithCover: Book = {
 		id: '2',
-		title: '1984',
-		author: 'George Orwell',
-		cover: 'https://placehold.co/200x300/2a2a4a/ffffff?text=1984',
+		title: 'The Time Machine',
+		author: 'H.G. Wells',
+		cover: 'https://placehold.co/200x300/2a2a4a/ffffff?text=TimeMachine',
+		description: null,
 		format: 'epub',
 		addedAt: new Date(),
-		filename: '1984.epub'
+		filename: 'time-machine.epub',
+		language: 'en'
 	};
 </script>
 

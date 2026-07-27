@@ -1,9 +1,9 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { createSafetyNet } from './safety-net';
 
 describe('Safety Net', () => {
 	let element: HTMLElement;
-	let onSnapCorrection: ReturnType<typeof vi.fn>;
+	let onSnapCorrection: Mock<(targetScroll: number) => void>;
 	let safetyNet: ReturnType<typeof createSafetyNet>;
 
 	beforeEach(() => {
@@ -21,7 +21,7 @@ describe('Safety Net', () => {
 			value: 400
 		});
 
-		onSnapCorrection = vi.fn();
+		onSnapCorrection = vi.fn<(targetScroll: number) => void>();
 	});
 
 	afterEach(() => {
