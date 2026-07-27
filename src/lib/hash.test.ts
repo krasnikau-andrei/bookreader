@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { generateFileHash } from './hash';
 
 describe('File Hash', () => {
@@ -36,5 +36,20 @@ describe('File Hash', () => {
 
 		expect(hash).toHaveLength(64);
 		expect(hash).toMatch(/^[a-f0-9]{64}$/);
+	});
+
+	test('fallback hash is deterministic when crypto.subtle is unavailable', async () => {
+		vi.stubGlobal('crypto', { subtle: undefined });
+		try {
+			const hashes = await Promise.all(
+				Array.from({ length: 10 }, () => generateFileHash(new Uint8Array([1, 2, 3, 4, 5]).buffer))
+			);
+			expect(
+				new Set(hashes).size,
+				`expected identical hashes for identical bytes, got: ${hashes.join(', ')}`
+			).toBe(1);
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 });
