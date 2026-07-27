@@ -22,8 +22,11 @@ bun run dev
 Run all tests before submitting:
 
 ```sh
-bun test
+bunx vitest run   # unit tests
+bun run test:e2e  # e2e tests (Playwright BDD)
 ```
+
+Do not use `bun test` — Bun's test runner lacks DOMParser/XMLSerializer globals needed by parser tests.
 
 ### Code Quality
 
@@ -34,74 +37,27 @@ bun run format
 bun run lint
 ```
 
-## Version Numbering
+## Versioning
 
-### When to Update the Version
+Releases follow [Semantic Versioning](https://semver.org/): MAJOR for breaking changes, MINOR for new features, PATCH for fixes.
 
-Update the version number when:
-
-- Adding new features (minor version bump)
-- Fixing bugs (patch version bump)
-- Making breaking changes (major version bump)
-- Deploying a new build that changes static assets
-
-**Important for PWA:** Since this is a PWA with offline support, updating the version ensures users receive the latest service worker and cached assets.
-
-### How to Update the Version
-
-Edit `package.json` and change the version field:
-
-```json
-{
-	"version": "0.1.0"
-}
-```
-
-Then rebuild and deploy:
-
-```sh
-bun run build
-```
-
-### Version Format
-
-We follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR** (X.0.0): Breaking changes
-- **MINOR** (0.X.0): New features, backward compatible
-- **PATCH** (0.0.X): Bug fixes, backward compatible
-
-Examples:
-
-- `0.0.1` → `0.0.2` - Fixed a typo
-- `0.0.2` → `0.1.0` - Added bookmark feature
-- `0.1.0` → `1.0.0` - Major rewrite
-
-### Why Version Updates Matter
-
-The service worker uses the version number to:
-
-1. Create unique cache names (e.g., `cache-0.0.1`)
-2. Invalidate old caches when deploying updates
-3. Ensure users download fresh assets after deployment
-
-Without version bumps, users may see stale cached content.
+No manual version bump is needed for deployments: the service worker cache name derives from SvelteKit's build version, so caches invalidate automatically on every deploy.
 
 ## Submitting Changes
 
-1. Ensure all tests pass: `bun test`
+1. Ensure all tests pass: `bunx vitest run && bun run test:e2e`
 2. Update documentation if needed
-3. Commit with clear messages: `git commit -m "Add: bookmarks feature"`
+3. Commit with clear messages: `git commit -m "feat: bookmarks feature"`
 4. Push to your fork: `git push origin feature/your-feature-name`
 5. Open a Pull Request
 
+Pre-commit hooks run lint + unit tests + the full e2e suite, so each commit takes a few minutes. Never bypass hooks — if e2e is too slow, report it as a bug.
+
 ## Commit Message Format
 
-- `Add:` New features
-- `Fix:` Bug fixes
-- `Update:` Changes to existing features
-- `Refactor:` Code restructuring
-- `Docs:` Documentation updates
+[Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci`.
+
+Example: `fix: preload reader chunk for offline resume`
 
 ## Questions?
 
