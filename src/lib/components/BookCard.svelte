@@ -99,7 +99,12 @@
 		width: 100%;
 		aspect-ratio: 3/4;
 		transition: opacity 0.2s;
-		background: linear-gradient(135deg, #1c1512 0%, #2a1f1a 50%, #16110e 100%);
+		background: linear-gradient(
+			135deg,
+			var(--color-cardBackground) 0%,
+			var(--color-cardBorder) 50%,
+			var(--color-backgroundSecondary) 100%
+		);
 		display: flex;
 		align-items: center;
 		justify-content: center;

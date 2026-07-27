@@ -149,6 +149,6 @@
 	}
 
 	.close-btn:hover {
-		color: #fff;
+		color: var(--color-onImage);
 	}
 </style>

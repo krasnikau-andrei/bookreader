@@ -37,6 +37,8 @@
 		--color-error: {theme.colors.error};
 		--color-overlay: {theme.colors.overlay};
 		--color-progressTrack: {theme.colors.progressTrack};
+		--color-onImage: {theme.colors.onImage};
+		--color-surfaceHover: {theme.colors.surfaceHover};
 		--padding-xs: {theme.padding.xs};
 		--padding-sm: {theme.padding.sm};
 		--padding-md: {theme.padding.md};

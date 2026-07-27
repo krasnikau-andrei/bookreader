@@ -18,6 +18,8 @@ interface Theme {
 		error: string;
 		overlay: string;
 		progressTrack: string;
+		onImage: string;
+		surfaceHover: string;
 	};
 	imageFilter: string;
 	fontFamily: string;
@@ -66,7 +68,9 @@ export const theme: Theme = {
 		cardVignette: 'rgba(0, 0, 0, 0.8)',
 		error: '#c44a4a',
 		overlay: 'rgba(15, 11, 10, 0.95)',
-		progressTrack: 'rgba(255, 255, 255, 0.15)'
+		progressTrack: 'rgba(255, 255, 255, 0.15)',
+		onImage: '#ffffff',
+		surfaceHover: '#f5f5f5'
 	},
 	imageFilter: 'sepia(0.15) brightness(0.85)',
 	fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

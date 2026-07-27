@@ -177,15 +177,15 @@
 	}
 
 	.icon-button:hover {
-		background: #f5f5f5;
+		background: var(--color-surfaceHover);
 	}
 
 	.popover {
 		position: absolute;
 		top: calc(100% + 8px);
 		right: 0;
-		background: #1c1512;
-		border: 1px solid #2a1f1a;
+		background: var(--color-cardBackground);
+		border: 1px solid var(--color-cardBorder);
 		border-radius: 12px;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 		min-width: 200px;
@@ -201,7 +201,7 @@
 		padding: 12px 16px;
 		border: none;
 		background: transparent;
-		color: #d6caba;
+		color: var(--color-text-primary);
 		font-size: 0.875rem;
 		font-family: inherit;
 		cursor: pointer;
@@ -211,7 +211,7 @@
 	}
 
 	.menu-item:hover:not(:disabled) {
-		background: #16110e;
+		background: var(--color-backgroundSecondary);
 	}
 
 	.menu-item:disabled {
