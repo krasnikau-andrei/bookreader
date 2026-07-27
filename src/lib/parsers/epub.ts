@@ -17,23 +17,14 @@ export interface ParsedBook {
 	language: string;
 }
 
-export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
+async function openEpubPackage(
+	buffer: ArrayBuffer
+): Promise<{ zip: JSZip; opfPath: string; opfDoc: Document }> {
 	let zip: JSZip;
 	try {
 		zip = await JSZip.loadAsync(buffer);
 	} catch {
 		throw new Error('Invalid EPUB format: unable to parse ZIP archive');
-	}
-
-	// Check mimetype
-	const mimetype = await zip.file('mimetype')?.async('string');
-	if (mimetype !== 'application/epub+zip') {
-		if (mimetype === undefined) {
-			throw new Error('Invalid EPUB format: missing mimetype file');
-		}
-		throw new Error(
-			`Invalid EPUB format: mimetype is "${mimetype.trim()}" instead of "application/epub+zip"`
-		);
 	}
 
 	// Read container.xml to find content.opf
@@ -42,7 +33,6 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		throw new Error('Invalid EPUB format: missing container.xml');
 	}
 
-	// Parse container.xml using DOMParser
 	const opfPath = extractOpfPath(containerXml);
 	if (!opfPath) {
 		throw new Error('Invalid EPUB format: cannot find content.opf');
@@ -54,8 +44,24 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		throw new Error('Invalid EPUB format: missing content.opf');
 	}
 
-	// Parse content.opf using DOMParser
 	const opfDoc = parseXml(opfContent, 'application/xml');
+
+	return { zip, opfPath, opfDoc };
+}
+
+export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
+	const { zip, opfPath, opfDoc } = await openEpubPackage(buffer);
+
+	// Check mimetype
+	const mimetype = await zip.file('mimetype')?.async('string');
+	if (mimetype !== 'application/epub+zip') {
+		if (mimetype === undefined) {
+			throw new Error('Invalid EPUB format: missing mimetype file');
+		}
+		throw new Error(
+			`Invalid EPUB format: mimetype is "${mimetype.trim()}" instead of "application/epub+zip"`
+		);
+	}
 
 	// Check for parsing errors
 	const parserError = opfDoc.querySelector('parsererror');
@@ -326,32 +332,7 @@ async function extractTocHierarchy(
 }
 
 export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChapters> {
-	let zip: JSZip;
-	try {
-		zip = await JSZip.loadAsync(buffer);
-	} catch {
-		throw new Error('Invalid EPUB format: unable to parse ZIP archive');
-	}
-
-	// Read container.xml to find content.opf
-	const containerXml = await zip.file('META-INF/container.xml')?.async('string');
-	if (!containerXml) {
-		throw new Error('Invalid EPUB format: missing container.xml');
-	}
-
-	const opfPath = extractOpfPath(containerXml);
-	if (!opfPath) {
-		throw new Error('Invalid EPUB format: cannot find content.opf');
-	}
-
-	// Read content.opf
-	const opfContent = await zip.file(opfPath)?.async('string');
-	if (!opfContent) {
-		throw new Error('Invalid EPUB format: missing content.opf');
-	}
-
-	// Parse content.opf
-	const opfDoc = parseXml(opfContent, 'application/xml');
+	const { zip, opfPath, opfDoc } = await openEpubPackage(buffer);
 
 	// Extract book title for filtering TOC entries
 	const dcNamespace = 'http://purl.org/dc/elements/1.1/';
