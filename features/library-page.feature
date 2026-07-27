@@ -45,9 +45,9 @@ Feature: Library Page
   Scenario: Multiple books appear in the grid
     When I upload "great-gatsby.epub" via the file chooser button
     Then I should see 1 book card
-    When I upload "1984.epub" via the file chooser button
+    When I upload "second-book.epub" via the file chooser button
     Then I should see 2 book cards
-    And the grid should contain "The Great Gatsby" and "1984"
+    And the grid should contain "The Great Gatsby" and "Test Book Two"
 
   Scenario: Deleting a book removes it from the grid
     When I upload "great-gatsby.epub" via the file chooser button
