@@ -23,7 +23,6 @@
 		title: 'The Great Gatsby',
 		author: 'F. Scott Fitzgerald',
 		cover: null,
-		fileData: new ArrayBuffer(0),
 		format: 'epub',
 		addedAt: new Date(),
 		filename: 'great-gatsby.epub'
@@ -34,7 +33,6 @@
 		title: '1984',
 		author: 'George Orwell',
 		cover: 'https://placehold.co/200x300/2a2a4a/ffffff?text=1984',
-		fileData: new ArrayBuffer(0),
 		format: 'epub',
 		addedAt: new Date(),
 		filename: '1984.epub'

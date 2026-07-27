@@ -4,7 +4,6 @@ export interface Book {
 	author: string;
 	cover: string | null;
 	description: string | null;
-	fileData?: ArrayBuffer;
 	format: 'epub';
 	addedAt: Date;
 	filename: string;
@@ -30,5 +29,4 @@ export interface Chapter {
 	content: string;
 	filePath: string;
 	level?: number; // 0 = root, 1 = nested, etc. for tree structure
-	language?: string;
 }
