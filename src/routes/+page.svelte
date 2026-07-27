@@ -3,6 +3,7 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import { onMount } from 'svelte';
 	import { goto, preloadCode } from '$app/navigation';
+	import { env } from '$env/dynamic/public';
 	import BookCard from '$lib/components/BookCard.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -117,7 +118,7 @@
 <div class="library" data-testid="library-container">
 	{#if errorMessage}
 		<Banner message={errorMessage} onDismiss={clearError} variant="error">
-			{#if failedBookFile}
+			{#if failedBookFile && env.PUBLIC_DEBUG_UPLOAD}
 				<button onclick={uploadForDebug} type="button">Upload for Debug</button>
 			{/if}
 		</Banner>

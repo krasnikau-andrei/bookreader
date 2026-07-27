@@ -1,10 +1,16 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { error, json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/public';
 
 const BROKEN_BOOKS_DIR = join(process.cwd(), 'broken_books');
 
 export async function POST({ request }) {
+	// Debug-only endpoint: gated behind PUBLIC_DEBUG_UPLOAD, absent in production.
+	if (!env.PUBLIC_DEBUG_UPLOAD) {
+		throw error(404, 'Not found');
+	}
+
 	const formData = await request.formData();
 	const file = formData.get('file');
 

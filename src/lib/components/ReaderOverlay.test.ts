@@ -3,6 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import '@testing-library/jest-dom/vitest';
 import ReaderOverlay from './ReaderOverlay.svelte';
 
+// The More-actions menu (debug upload) is gated behind PUBLIC_DEBUG_UPLOAD
+vi.mock('$env/dynamic/public', () => ({ env: { PUBLIC_DEBUG_UPLOAD: '1' } }));
+
 describe('ReaderOverlay', () => {
 	it('renders back button and TOC button when show is true', () => {
 		render(ReaderOverlay, {
