@@ -547,6 +547,5 @@
 
 	.content :global(sup) {
 		font-size: 0.6em;
-		opacity: 0.45;
 	}
 </style>

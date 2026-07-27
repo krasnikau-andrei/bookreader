@@ -74,6 +74,10 @@
 		background-color: #000000;
 	}
 
+	:global(a) {
+		color: var(--color-accent);
+	}
+
 	.theme-root {
 		min-height: 100vh;
 		background-color: var(--color-background);
