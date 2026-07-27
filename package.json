@@ -2,6 +2,21 @@
 	"name": "bookreader",
 	"private": true,
 	"version": "0.0.1",
+	"description": "Mobile PWA for reading EPUB files in the browser, built with Svelte 5 and SvelteKit",
+	"license": "MIT",
+	"author": "Andrei Krasnikau",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/krasnikau-andrei/bookreader.git"
+	},
+	"keywords": [
+		"epub",
+		"ebook",
+		"reader",
+		"pwa",
+		"svelte",
+		"sveltekit"
+	],
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
