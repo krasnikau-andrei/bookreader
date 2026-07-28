@@ -86,6 +86,12 @@
 				const sel = window.getSelection();
 				if (sel && !sel.isCollapsed) return;
 				animateScroll(scrollContainer, swipeStartScrollLeft, 200);
+			},
+			shouldSkipSwipe: (event: TouchEvent) => {
+				const target = event.target as HTMLElement;
+				const wrapper = target.closest('.table-scroll-wrapper');
+				if (!wrapper) return false;
+				return wrapper.scrollWidth > wrapper.clientWidth;
 			}
 		});
 
@@ -234,6 +240,11 @@
 
 		const target = event.target as HTMLElement;
 
+		const tableWrapper = target.closest('.table-scroll-wrapper');
+		if (tableWrapper && tableWrapper.scrollWidth > tableWrapper.clientWidth) {
+			return;
+		}
+
 		if (target.tagName === 'IMG') {
 			event.preventDefault();
 			event.stopPropagation();
@@ -308,6 +319,22 @@
 	$effect(() => {
 		progressSaver.attach();
 		return () => progressSaver.detach();
+	});
+
+	// Wrap tables in scrollable containers for horizontal scrolling
+	$effect(() => {
+		const _content = content;
+		if (!scrollContainer || !_content) return;
+
+		tick().then(() => {
+			scrollContainer!.querySelectorAll('table').forEach((table) => {
+				if (table.parentElement?.classList.contains('table-scroll-wrapper')) return;
+				const wrapper = document.createElement('div');
+				wrapper.className = 'table-scroll-wrapper';
+				table.parentNode?.insertBefore(wrapper, table);
+				wrapper.appendChild(table);
+			});
+		});
 	});
 
 	// Track text selection state to suppress scroll processing during selection
@@ -390,7 +417,7 @@
 
 	.content-inner {
 		padding: 0 var(--reader-gap-sides);
-		overflow-x: clip;
+		overflow-x: visible;
 		-webkit-box-decoration-break: clone;
 		box-decoration-break: clone;
 	}
@@ -451,6 +478,37 @@
 
 	.content :global(.subchapter-start) {
 		break-before: column;
+	}
+
+	.content :global(.table-scroll-wrapper) {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		margin: 1em auto;
+		width: fit-content;
+		max-width: 100%;
+	}
+
+	.content :global(table) {
+		border-collapse: collapse;
+		margin: 0;
+		font-size: 0.9em;
+	}
+
+	.content :global(td),
+	.content :global(th) {
+		border: 1px solid var(--color-accent);
+		padding: 0.3em 0.6em;
+	}
+
+	.content :global(td p),
+	.content :global(th p) {
+		text-indent: 0;
+		text-align: left;
+	}
+
+	.content :global(th) {
+		font-weight: bold;
+		text-align: center;
 	}
 
 	.content :global(a:has(sup)) {
