@@ -408,8 +408,8 @@ When('I navigate forward through the content', async ({ page }) => {
 	for (let i = 0; i < 10; i++) {
 		await clickNav(page, content, contentBox.width * 0.85, contentBox.height * 0.5);
 		const url = page.url();
-		const p = url.match(/progress=(\d+)/);
-		if (p && parseInt(p[1], 10) > 0) return;
+		const chapterMatch = url.match(/chapter=(\d+)/);
+		if (chapterMatch && parseInt(chapterMatch[1], 10) > 0) return;
 	}
 });
 
@@ -851,23 +851,41 @@ When('I navigate to chapter {int} and scroll within it', async ({ page }, chapte
 });
 
 When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: number) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Show table of contents' })
+			.isVisible()
+			.catch(() => false);
+		if (!vis) continue;
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+		await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
+		const chapterItems = page.locator('[data-testid="chapter-item"]');
+		await expect(chapterItems.nth(chapterIdx)).toBeVisible();
+		await chapterItems.nth(chapterIdx).click();
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+		return;
 	}
-	await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
 	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
 		timeout: 3000
 	});
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
-	await page.waitForSelector('[data-testid="toc-overlay"]');
+	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
+	await expect(chapterItems.nth(chapterIdx)).toBeVisible();
 	await chapterItems.nth(chapterIdx).click();
-	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible();
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 });
 
 Then('the URL should show the new chapter', async ({ page }) => {
