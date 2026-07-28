@@ -26,7 +26,9 @@ export class BookDatabase extends Dexie {
 				bookFiles: 'id'
 			})
 			.upgrade(async (tx) => {
-				const books = await tx.table('books').toArray();
+				// v2 rows may carry fileData inline; move it to bookFiles
+				type LegacyBook = Book & { fileData?: ArrayBuffer };
+				const books = (await tx.table('books').toArray()) as LegacyBook[];
 				const bookFiles = tx.table('bookFiles');
 				for (const book of books) {
 					if (book.fileData) {
@@ -60,10 +62,11 @@ export async function saveBook(book: Book): Promise<void> {
 
 export async function getAllBooks(): Promise<Book[]> {
 	const books = await db.books.toArray();
-	return books.map(({ fileData, ...rest }) => {
-		void fileData;
-		return rest as Book;
-	});
+	// Strip legacy inline fileData blobs (pre-v3 rows); file data lives in bookFiles
+	for (const book of books) {
+		delete (book as { fileData?: ArrayBuffer }).fileData;
+	}
+	return books;
 }
 
 export async function getBook(id: string): Promise<Book | undefined> {

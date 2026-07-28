@@ -15,6 +15,6 @@ export async function generateFileHash(buffer: ArrayBuffer): Promise<string> {
 			.map((b) => b.toString(16).padStart(2, '0'))
 			.join('');
 	} catch {
-		return `${simpleHash(typedArray)}-${Date.now()}`;
+		return `${simpleHash(typedArray)}-${typedArray.byteLength}`;
 	}
 }
