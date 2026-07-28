@@ -88,6 +88,7 @@
 	class="fullscreen"
 	role="dialog"
 	aria-label="Fullscreen image"
+	tabindex="-1"
 	data-testid="image-fullscreen"
 	ontouchstart={handleTouchStart}
 	ontouchmove={handleTouchMove}
@@ -117,7 +118,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 200;
-		background: rgba(0, 0, 0, 0.95);
+		background: var(--color-imageBackdrop);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -140,7 +141,7 @@
 		z-index: 201;
 		background: none;
 		border: none;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color-onImageMuted);
 		font-size: 32px;
 		line-height: 1;
 		cursor: pointer;

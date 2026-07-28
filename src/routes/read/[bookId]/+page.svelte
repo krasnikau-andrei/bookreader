@@ -26,7 +26,7 @@
 	let showOverlay = $state(false);
 	let showToc = $state(false);
 	let showLoadingFallback = $state(false);
-	let bookId = $derived($page.params.bookId);
+	let bookId = $derived($page.params.bookId ?? '');
 
 	let pendingFragment: string | null = $state(null);
 

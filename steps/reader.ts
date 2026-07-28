@@ -330,7 +330,7 @@ Then('the final scroll position should be at a valid page boundary', async ({ pa
 			if (!e) return false;
 			const expectedPage = Math.round(e.scrollLeft / e.clientWidth);
 			const expectedScroll = expectedPage * e.clientWidth;
-			return Math.abs(e.scrollLeft - expectedScroll) < e.clientWidth * 0.02;
+			return Math.abs(e.scrollLeft - expectedScroll) < 1;
 		},
 		{ timeout: 5000 }
 	);

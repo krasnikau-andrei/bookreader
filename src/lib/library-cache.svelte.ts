@@ -26,7 +26,9 @@ class LibraryCache {
 			getAllProgress()
 		]);
 
-		const lastRead = new Map(allProgress.map((p) => [p.bookId, p.lastReadAt]));
+		const lastRead = new Map<string, number>(
+			allProgress.map((p) => [p.bookId, p.lastReadAt.getTime()])
+		);
 		allBooks.sort((a, b) => (lastRead.get(b.id) ?? 0) - (lastRead.get(a.id) ?? 0));
 
 		this.books = allBooks;

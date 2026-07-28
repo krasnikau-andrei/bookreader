@@ -41,6 +41,7 @@
 ## Known Bugs / Lessons
 
 - **`docs/lessons/chaptersizes-overwrite-by-debounced-save.md`** — ReaderContent.svelte's debounced saves strip `chapterSizes` from IndexedDB records. Fix: `saveProgress` merges existing data.
+- **Debug book-upload** — the "Upload for Debug" UI and `POST /api/upload-broken-book` endpoint are intentionally gated behind `PUBLIC_DEBUG_UPLOAD` (see `.env.example`). It looks like a security hole; it is not. Do not "fix" it by removing it.
 
 ## iOS (Phone) Status Bar
 

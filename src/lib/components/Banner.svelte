@@ -49,7 +49,7 @@
 	}
 
 	.banner-actions :global(*) {
-		background: rgba(255, 255, 255, 0.2);
+		background: var(--color-bannerAction);
 		border: none;
 		color: var(--color-text-primary);
 		padding: var(--padding-sm) var(--padding-md);

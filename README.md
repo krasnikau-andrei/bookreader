@@ -1,5 +1,7 @@
 # BookReader
 
+![CI](https://github.com/krasnikau-andrei/bookreader/actions/workflows/ci.yml/badge.svg)
+
 A mobile Progressive Web App (PWA) for reading EPUB files, built with Svelte and SvelteKit.
 
 ## Features
@@ -80,12 +82,6 @@ Test workflow:
 3. Run `bddgen` to compile features into Playwright test files (auto-runs with `test:e2e`)
 4. Generated tests run via standard Playwright runner in `.features-gen/`
 
-Or simply:
-
-```sh
-bun test
-```
-
 ### Run All Tests
 
 To run both unit and e2e tests:
@@ -94,27 +90,49 @@ To run both unit and e2e tests:
 bunx vitest run && bun run test:e2e
 ```
 
-### E2E Test Coverage
+### E2E Test Report
 
-Playwright provides built-in coverage reporting. Generate an HTML coverage report:
+Playwright can generate an HTML test report with pass/fail results, traces, and screenshots:
 
 ```sh
 bun run test:e2e -- --reporter=html
 ```
 
-The coverage report will be available in the `playwright-report/` directory.
+The report will be available in the `playwright-report/` directory.
 
 ## Project Structure
 
 ```
 src/
-├── app.html          # HTML template
-├── app.d.ts          # TypeScript declarations
-├── lib/              # Shared components and utilities
-└── routes/           # SvelteKit routes
+├── app.html             # HTML template
+├── app.d.ts             # TypeScript declarations
+├── service-worker.ts    # Offline caching
+├── lib/
+│   ├── components/      # Svelte components
+│   ├── parsers/         # EPUB parsing (epub, link-transformer, normalize-path)
+│   ├── reader/          # Reader engine (pagination, swipe, progress, etc.)
+│   ├── storage.ts       # Dexie/IndexedDB persistence
+│   ├── theme.svelte.ts  # Theme tokens
+│   ├── library-cache.svelte.ts
+│   └── hash.ts          # Book content hashing
+├── routes/              # SvelteKit routes
+└── stories/             # Storybook stories
 
-static/               # Static assets (favicon, manifest, etc.)
+features/                # BDD e2e scenarios (Gherkin)
+steps/                   # e2e step definitions
+static/                  # Static assets (favicon, manifest, etc.)
 ```
+
+## Debug tooling
+
+Optional debug book-upload feature: "Upload for Debug" buttons in the UI and `POST /api/upload-broken-book`, which saves epubs to `./broken_books/` for parser debugging. Disabled unless `PUBLIC_DEBUG_UPLOAD=1` is set (see `.env.example`; works in `bun run dev`). Do not enable in production.
+
+```sh
+bun run check:books      # fast parser check on saved books (Node.js)
+bun run check:books:e2e  # full check via real UI (Chromium, Firefox, WebKit)
+```
+
+See `broken_books/readme.md` for details.
 
 ## License
 

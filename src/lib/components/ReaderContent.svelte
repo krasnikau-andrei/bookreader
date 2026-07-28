@@ -349,6 +349,9 @@
 	});
 </script>
 
+<!-- Tap-zone navigation is intentional: the whole page acts as a touch target for page
+     turns and overlay toggling; keyboard/AT users get equivalent controls in ReaderOverlay -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div
 	class="content"
 	lang={language}

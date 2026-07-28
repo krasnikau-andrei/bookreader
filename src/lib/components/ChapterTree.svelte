@@ -19,7 +19,12 @@
 <nav class="chapter-tree" aria-label="Table of contents">
 	<ul class="chapter-list" role="tree">
 		{#each chapters as chapter, index (chapter.id)}
-			<li class="chapter-item" role="treeitem" aria-level={(chapter.level || 0) + 1}>
+			<li
+				class="chapter-item"
+				role="treeitem"
+				aria-level={(chapter.level || 0) + 1}
+				aria-selected={index === currentChapter}
+			>
 				<button
 					class="chapter-button"
 					class:current={index === currentChapter}
@@ -27,7 +32,6 @@
 					style="padding-left: {getIndentation(chapter.level)}"
 					onclick={() => onChapterSelect(index)}
 					aria-current={index === currentChapter ? 'page' : undefined}
-					aria-selected={index === currentChapter ? 'true' : 'false'}
 					data-testid="chapter-item"
 					data-chapter-index={index}
 					data-level={chapter.level || 0}
@@ -91,6 +95,7 @@
 	.chapter-title {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		line-height: 1.4;

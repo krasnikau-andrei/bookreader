@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import { theme } from '$lib/theme.svelte';
+	import { env } from '$env/dynamic/public';
 
 	interface Props {
 		show: boolean;
@@ -62,62 +63,64 @@
 			</svg>
 		</button>
 		<div class="right-buttons">
-			<div class="more-wrapper">
-				<button
-					class="icon-button"
-					onclick={toggleMenu}
-					aria-label="More actions"
-					aria-expanded={showMenu}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
+			{#if env.PUBLIC_DEBUG_UPLOAD}
+				<div class="more-wrapper">
+					<button
+						class="icon-button"
+						onclick={toggleMenu}
+						aria-label="More actions"
+						aria-expanded={showMenu}
 					>
-						<circle cx="12" cy="5" r="1" />
-						<circle cx="12" cy="12" r="1" />
-						<circle cx="12" cy="19" r="1" />
-					</svg>
-				</button>
-				{#if showMenu}
-					<div class="popover" role="presentation" onclick={(e) => e.stopPropagation()}>
-						<button
-							class="menu-item"
-							onclick={handleUpload}
-							disabled={uploadStatus === 'uploading'}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
 						>
-							<span class="menu-icon">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-									<polyline points="17 8 12 3 7 8" />
-									<line x1="12" y1="3" x2="12" y2="15" />
-								</svg>
-							</span>
-							{uploadStatus === 'uploading'
-								? 'Загрузка...'
-								: uploadStatus === 'success'
-									? 'Загружено'
-									: 'Загрузить на сервер'}
-						</button>
-					</div>
-				{/if}
-			</div>
+							<circle cx="12" cy="5" r="1" />
+							<circle cx="12" cy="12" r="1" />
+							<circle cx="12" cy="19" r="1" />
+						</svg>
+					</button>
+					{#if showMenu}
+						<div class="popover" role="presentation" onclick={(e) => e.stopPropagation()}>
+							<button
+								class="menu-item"
+								onclick={handleUpload}
+								disabled={uploadStatus === 'uploading'}
+							>
+								<span class="menu-icon">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+										<polyline points="17 8 12 3 7 8" />
+										<line x1="12" y1="3" x2="12" y2="15" />
+									</svg>
+								</span>
+								{uploadStatus === 'uploading'
+									? 'Загрузка...'
+									: uploadStatus === 'success'
+										? 'Загружено'
+										: 'Загрузить на сервер'}
+							</button>
+						</div>
+					{/if}
+				</div>
+			{/if}
 			<button class="icon-button" onclick={onShowToc} aria-label="Show table of contents">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -163,7 +166,7 @@
 	}
 
 	.icon-button {
-		background: white;
+		background: var(--color-onImage);
 		border: none;
 		border-radius: 50%;
 		width: 44px;
@@ -172,7 +175,7 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 2px 8px var(--color-shadowSm);
 		transition: background-color 0.15s ease;
 	}
 
@@ -187,7 +190,7 @@
 		background: var(--color-cardBackground);
 		border: 1px solid var(--color-cardBorder);
 		border-radius: 12px;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 8px 24px var(--color-shadowMd);
 		min-width: 200px;
 		overflow: hidden;
 		z-index: 30;

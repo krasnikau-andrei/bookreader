@@ -11,15 +11,20 @@ interface Theme {
 		'text-secondary': string;
 		accent: string;
 		shadow: string;
+		shadowSm: string;
+		shadowMd: string;
 		cardBackground: string;
 		cardBorder: string;
 		borderMuted: string;
 		cardVignette: string;
 		error: string;
 		overlay: string;
+		imageBackdrop: string;
 		progressTrack: string;
 		onImage: string;
+		onImageMuted: string;
 		surfaceHover: string;
+		bannerAction: string;
 	};
 	imageFilter: string;
 	fontFamily: string;
@@ -62,15 +67,20 @@ export const theme: Theme = {
 		'text-secondary': '#85705a',
 		accent: '#a08868',
 		shadow: 'rgba(0, 0, 0, 0.5)',
+		shadowSm: 'rgba(0, 0, 0, 0.2)',
+		shadowMd: 'rgba(0, 0, 0, 0.4)',
 		cardBackground: '#1c1512',
 		cardBorder: '#2a1f1a',
 		borderMuted: '#241a15',
 		cardVignette: 'rgba(0, 0, 0, 0.8)',
 		error: '#c44a4a',
 		overlay: 'rgba(15, 11, 10, 0.95)',
+		imageBackdrop: 'rgba(0, 0, 0, 0.95)',
 		progressTrack: 'rgba(255, 255, 255, 0.15)',
 		onImage: '#ffffff',
-		surfaceHover: '#f5f5f5'
+		onImageMuted: 'rgba(255, 255, 255, 0.7)',
+		surfaceHover: '#f5f5f5',
+		bannerAction: 'rgba(255, 255, 255, 0.2)'
 	},
 	imageFilter: 'sepia(0.15) brightness(0.85)',
 	fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

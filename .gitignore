@@ -28,7 +28,9 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 playwright-report/
-docs/
+docs/plans/
+docs/todo/
+docs/superpowers/
 .features-gen/
 
 # Broken books test fixtures (ignore epub files only)
