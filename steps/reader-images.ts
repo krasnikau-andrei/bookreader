@@ -242,59 +242,30 @@ When('I pinch to zoom on the image', async ({ page }) => {
 	const startDist = 50;
 	const endDist = 150;
 
-	await page.evaluate(
-		({ cx, cy, d }: { cx: number; cy: number; d: number }) => {
-			const el = document.querySelector('[data-testid="image-fullscreen"]');
-			if (!el) return;
-			const t1 = new Touch({ identifier: 0, target: el, clientX: cx - d / 2, clientY: cy });
-			const t2 = new Touch({ identifier: 1, target: el, clientX: cx + d / 2, clientY: cy });
-			el.dispatchEvent(
-				new TouchEvent('touchstart', {
-					touches: [t1, t2],
-					changedTouches: [t1, t2],
-					bubbles: true,
-					cancelable: true
-				})
-			);
-		},
-		{ cx, cy, d: startDist }
-	);
+	const fullscreenLoc = page.locator('[data-testid="image-fullscreen"]');
 
-	await page.evaluate(
-		({ cx, cy, d }: { cx: number; cy: number; d: number }) => {
-			const el = document.querySelector('[data-testid="image-fullscreen"]');
-			if (!el) return;
-			const t1 = new Touch({ identifier: 0, target: el, clientX: cx - d / 2, clientY: cy });
-			const t2 = new Touch({ identifier: 1, target: el, clientX: cx + d / 2, clientY: cy });
-			el.dispatchEvent(
-				new TouchEvent('touchmove', {
-					touches: [t1, t2],
-					changedTouches: [t1, t2],
-					bubbles: true,
-					cancelable: true
-				})
-			);
-		},
-		{ cx, cy, d: endDist }
-	);
+	const startTouches = [
+		{ identifier: 0, clientX: cx - startDist / 2, clientY: cy },
+		{ identifier: 1, clientX: cx + startDist / 2, clientY: cy }
+	];
+	await fullscreenLoc.dispatchEvent('touchstart', {
+		touches: startTouches,
+		changedTouches: startTouches
+	});
 
-	await page.evaluate(
-		({ cx, cy, d }: { cx: number; cy: number; d: number }) => {
-			const el = document.querySelector('[data-testid="image-fullscreen"]');
-			if (!el) return;
-			const t1 = new Touch({ identifier: 0, target: el, clientX: cx - d / 2, clientY: cy });
-			const t2 = new Touch({ identifier: 1, target: el, clientX: cx + d / 2, clientY: cy });
-			el.dispatchEvent(
-				new TouchEvent('touchend', {
-					touches: [],
-					changedTouches: [t1, t2],
-					bubbles: true,
-					cancelable: true
-				})
-			);
-		},
-		{ cx, cy, d: endDist }
-	);
+	const endTouches = [
+		{ identifier: 0, clientX: cx - endDist / 2, clientY: cy },
+		{ identifier: 1, clientX: cx + endDist / 2, clientY: cy }
+	];
+	await fullscreenLoc.dispatchEvent('touchmove', {
+		touches: endTouches,
+		changedTouches: endTouches
+	});
+
+	await fullscreenLoc.dispatchEvent('touchend', {
+		touches: [],
+		changedTouches: endTouches
+	});
 });
 
 Then('the image should be zoomed in', async ({ page }) => {

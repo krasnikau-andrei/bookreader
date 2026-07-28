@@ -155,32 +155,18 @@ Then('the info message should not be visible', async ({ page }) => {
 });
 
 When('I long-press the book card', async ({ page }) => {
-	await page.evaluate(() => {
-		const card = document.querySelector('[data-testid="book-card"]') as HTMLElement;
-		if (card) {
-			const rect = card.getBoundingClientRect();
-			const touchEvent = new TouchEvent('touchstart', {
-				bubbles: true,
-				cancelable: true,
-				touches: [
-					new Touch({
-						identifier: 0,
-						target: card,
-						clientX: rect.left + rect.width / 2,
-						clientY: rect.top + rect.height / 2
-					})
-				]
-			});
-			card.dispatchEvent(touchEvent);
-			setTimeout(() => {
-				const touchEndEvent = new TouchEvent('touchend', {
-					bubbles: true,
-					cancelable: true
-				});
-				card.dispatchEvent(touchEndEvent);
-			}, 500);
-		}
-	});
+	const card = page.locator('[data-testid="book-card"]');
+	const box = await card.boundingBox();
+	expect(box).toBeTruthy();
+	if (!box) return;
+
+	const cx = box.x + box.width / 2;
+	const cy = box.y + box.height / 2;
+	const touch = { identifier: 0, clientX: cx, clientY: cy };
+
+	await card.dispatchEvent('touchstart', { touches: [touch], changedTouches: [touch] });
+	await page.waitForTimeout(700);
+	await card.dispatchEvent('touchend', { touches: [], changedTouches: [touch] });
 	await expect(page.locator('[data-testid="confirm-sheet"]')).toBeVisible({ timeout: 3000 });
 });
 

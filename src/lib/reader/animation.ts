@@ -34,7 +34,11 @@ export function animateScroll(
 
 	const snapTarget = Math.round(targetScroll / element.clientWidth) * element.clientWidth;
 	const startScroll = element.scrollLeft;
-	const distance = snapTarget - startScroll;
+	let distance = snapTarget - startScroll;
+
+	if (Math.abs(distance) < 1 && Math.abs(targetScroll - startScroll) >= 1) {
+		distance = targetScroll - startScroll;
+	}
 
 	// Already at target
 	if (Math.abs(distance) < 1) return;

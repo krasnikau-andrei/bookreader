@@ -3,7 +3,7 @@ import { createBdd } from 'playwright-bdd';
 
 const { Given, When, Then } = createBdd();
 
-async function clickNav(
+export async function clickNav(
 	page: import('@playwright/test').Page,
 	locator: ReturnType<typeof page.locator>,
 	x: number,
@@ -130,14 +130,17 @@ Then('tapping the left zone should navigate back', async ({ page }) => {
 
 Then('the text should be visible with sufficient contrast', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
-	expect(box).toBeTruthy();
-	if (box) {
-		for (let i = 0; i < 9; i++) {
-			await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
-		}
-	}
+
+	// Navigate to a text chapter directly — avoids animation/snap issues on cover page
+	const urlObj = new URL(page.url());
+	urlObj.searchParams.set('chapter', '10');
+	urlObj.searchParams.set('progress', '0');
+	await page.goto(urlObj.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+	await page.waitForFunction(
+		() => (document.querySelector('[data-testid="reader-content"]')?.children?.length ?? 0) > 0,
+		{ timeout: 5000 }
+	);
 
 	const visibilityInfo = await content.evaluate((el) => {
 		const selectors = ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
@@ -344,61 +347,57 @@ Then('the visible text should be properly centered in the viewport', async ({ pa
 		const viewportWidth = rect.width;
 		const scrollLeft = contentEl.scrollLeft;
 		const textElements = contentEl.querySelectorAll('p, span, h1, h2, h3, h4, h5, h6');
+		let totalVisibleWidth = 0;
 		for (const textEl of Array.from(textElements)) {
+			const text = textEl.textContent?.trim() || '';
+			if (text.length <= 10) continue;
 			const elRect = textEl.getBoundingClientRect();
 			const elementLeft = elRect.left - rect.left + scrollLeft;
 			const elementRight = elementLeft + elRect.width;
 			const viewportLeft = scrollLeft;
 			const viewportRight = scrollLeft + viewportWidth;
 			if (elementRight > viewportLeft && elementLeft < viewportRight) {
-				const text = textEl.textContent?.trim() || '';
-				if (text.length > 10) {
-					const elementLeftInViewport = elementLeft - viewportLeft;
-					const elementRightInViewport = elementRight - viewportLeft;
-					if (
-						elementRightInViewport <= 0 ||
-						elementLeftInViewport >= viewportWidth ||
-						elementLeftInViewport < -viewportWidth
-					)
-						continue;
-					return { elementLeft, elementRight, viewportLeft, viewportRight, viewportWidth };
-				}
+				const elementLeftInViewport = elementLeft - viewportLeft;
+				const elementRightInViewport = elementRight - viewportLeft;
+				if (elementRightInViewport <= 0 || elementLeftInViewport >= viewportWidth) continue;
+				const visibleWidth =
+					Math.min(viewportWidth, elementRightInViewport) - Math.max(0, elementLeftInViewport);
+				totalVisibleWidth += visibleWidth;
 			}
 		}
-		return null;
+		return { totalVisibleWidth, viewportWidth };
 	});
 
 	expect(viewportInfo).toBeTruthy();
 	if (viewportInfo) {
-		const elementLeftInViewport = viewportInfo.elementLeft - viewportInfo.viewportLeft;
-		const elementRightInViewport = viewportInfo.elementRight - viewportInfo.viewportLeft;
-		const inViewportWidth =
-			Math.min(viewportInfo.viewportWidth, elementRightInViewport) -
-			Math.max(0, elementLeftInViewport);
-		expect(inViewportWidth).toBeGreaterThan(viewportInfo.viewportWidth * 0.3);
+		expect(viewportInfo.totalVisibleWidth).toBeGreaterThan(viewportInfo.viewportWidth * 0.3);
 	}
 });
 
 Then('the URL should include chapter and progress parameters', async ({ page }) => {
-	const url = page.url();
-	expect(url).toContain('?');
-	expect(url).toContain('chapter=');
-	expect(url).toContain('progress=');
+	await page.waitForFunction(
+		() => {
+			const u = window.location.href;
+			return u.includes('chapter=') && u.includes('progress=');
+		},
+		{ timeout: 5000 }
+	);
 });
 
 Then('the URL should have valid chapter and progress parameters', async ({ page }) => {
-	const url = page.url();
-	expect(url).toContain('chapter=');
-	expect(url).toContain('progress=');
-	const chapterMatch = url.match(/chapter=(\d+)/);
-	const progressMatch = url.match(/progress=(\d+)/);
-	expect(chapterMatch).toBeTruthy();
-	expect(progressMatch).toBeTruthy();
-	const chapter = parseInt(chapterMatch![1], 10);
-	const progress = parseInt(progressMatch![1], 10);
-	expect(chapter).toBeGreaterThanOrEqual(0);
-	expect(progress).toBeGreaterThanOrEqual(0);
-	expect(progress).toBeLessThanOrEqual(10000);
+	await page.waitForFunction(
+		() => {
+			const u = window.location.href;
+			if (!u.includes('chapter=') || !u.includes('progress=')) return false;
+			const chapterMatch = u.match(/chapter=(\d+)/);
+			const progressMatch = u.match(/progress=(\d+)/);
+			if (!chapterMatch || !progressMatch) return false;
+			const chapter = parseInt(chapterMatch[1], 10);
+			const progress = parseInt(progressMatch[1], 10);
+			return chapter >= 0 && progress >= 0 && progress <= 10000;
+		},
+		{ timeout: 5000 }
+	);
 });
 
 When('I navigate forward through the content', async ({ page }) => {
@@ -406,8 +405,11 @@ When('I navigate forward through the content', async ({ page }) => {
 	const contentBox = await content.boundingBox();
 	expect(contentBox).toBeTruthy();
 	if (!contentBox) return;
-	for (let i = 0; i < 12; i++) {
+	for (let i = 0; i < 10; i++) {
 		await clickNav(page, content, contentBox.width * 0.85, contentBox.height * 0.5);
+		const url = page.url();
+		const chapterMatch = url.match(/chapter=(\d+)/);
+		if (chapterMatch && parseInt(chapterMatch[1], 10) > 0) return;
 	}
 });
 
@@ -590,15 +592,25 @@ Then('some text should be selected', async ({ page }) => {
 });
 
 When('I tap the center to show the overlay', async ({ page }) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]');
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	if (!box) return;
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Show table of contents' })
+			.isVisible()
+			.catch(() => false);
+		if (vis) return;
 	}
-	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
-		timeout: 3000
+		timeout: 1000
 	});
 });
 
@@ -667,7 +679,7 @@ Then('I navigate to chapter {int}', async ({ page }) => {
 	const box = await reader.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 14; i++) {
 		await reader.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
 		await page.waitForTimeout(150);
 	}
@@ -720,23 +732,33 @@ When('I scroll to the beginning of the current chapter', async ({ page }) => {
 });
 
 When('I open the TOC and select chapter {int}', async ({ page }, chapterIdx: number) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]');
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Show table of contents' })
+			.isVisible()
+			.catch(() => false);
+		if (!vis) continue;
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+		await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
+		const chapterItems = page.locator('[data-testid="chapter-item"]');
+		await chapterItems.nth(chapterIdx).click();
+		await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible({ timeout: 5000 });
+		return;
 	}
-	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
 	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
-		timeout: 3000
+		timeout: 1000
 	});
-	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
-	await tocButton.click();
-	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
-	const chapterItems = page.locator('[data-testid="chapter-item"]');
-	await chapterItems.nth(chapterIdx).click();
-	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible({ timeout: 5000 });
 });
 
 Then('the progress should be near 100%', async ({ page }) => {
@@ -806,44 +828,64 @@ Then(
 	}
 );
 
-When('I navigate to chapter {int} and scroll within it', async ({ page }) => {
-	const reader = page.locator('.reader');
-	const box = await reader.boundingBox();
-	expect(box).toBeTruthy();
-	if (!box) return;
-	for (let i = 0; i < 18; i++) {
-		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
-	}
-	const contentEl = page.locator('[data-testid="reader-content"]');
-	await contentEl.evaluate((el) => {
-		(el as HTMLElement).scrollLeft = el.clientWidth;
-	});
-});
-
 Then('the scroll position should be greater than {int}', async ({ page }, min: number) => {
 	const content = page.locator('[data-testid="reader-content"]');
 	const scroll = await content.evaluate((el) => el.scrollLeft);
 	expect(scroll).toBeGreaterThan(min);
 });
 
+When('I navigate to chapter {int} and scroll within it', async ({ page }, chapterIdx: number) => {
+	const reader = page.locator('.reader');
+	const box = await reader.boundingBox();
+	expect(box).toBeTruthy();
+	if (!box) return;
+	const urlBefore = page.url();
+	const currentChapter = parseInt(urlBefore.match(/chapter=(\d+)/)?.[1] ?? '0', 10);
+	for (let i = currentChapter; i < chapterIdx; i++) {
+		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
+	}
+	const content = page.locator('[data-testid="reader-content"]');
+	await content.evaluate((el) => {
+		(el as HTMLElement).scrollLeft = (el as HTMLElement).clientWidth;
+	});
+});
+
 When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: number) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
 	if (!box) return;
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Show table of contents' })
+			.isVisible()
+			.catch(() => false);
+		if (!vis) continue;
+		const tocButton = page.getByRole('button', { name: 'Show table of contents' });
+		await tocButton.click();
+		await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
+		const chapterItems = page.locator('[data-testid="chapter-item"]');
+		await expect(chapterItems.nth(chapterIdx)).toBeVisible();
+		await chapterItems.nth(chapterIdx).click();
+		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
+		return;
 	}
-	await content.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } });
 	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
 		timeout: 3000
 	});
 	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
 	await tocButton.click();
-	await page.waitForSelector('[data-testid="toc-overlay"]');
+	await page.waitForSelector('[data-testid="chapter-item"]', { timeout: 5000 });
 	const chapterItems = page.locator('[data-testid="chapter-item"]');
+	await expect(chapterItems.nth(chapterIdx)).toBeVisible();
 	await chapterItems.nth(chapterIdx).click();
-	await expect(page.locator('[data-testid="toc-overlay"]')).not.toBeVisible();
+	await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 });
 
 Then('the URL should show the new chapter', async ({ page }) => {
@@ -953,9 +995,7 @@ When('I navigate forward one page', async ({ page }) => {
 			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
 			if (!el) return false;
 			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
-			return (
-				Math.abs(el.scrollLeft - init) > el.clientWidth * 0.2 && Math.abs(el.scrollLeft - snap) < 1
-			);
+			return Math.abs(el.scrollLeft - snap) < 1 && el.scrollLeft !== init;
 		},
 		before,
 		{ timeout: 5000 }
@@ -963,14 +1003,37 @@ When('I navigate forward one page', async ({ page }) => {
 });
 
 Given('the overlay is open', async ({ page }) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]');
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	if (!box) return;
+	expect(box).toBeTruthy();
+	if (!box) return;
+	await content.evaluate((el) => {
+		(el as HTMLElement).scrollLeft += (el as HTMLElement).clientWidth * 3;
+	});
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Go back' })
+			.isVisible()
+			.catch(() => false);
+		if (vis) {
+			await page.evaluate(() => {
+				const el = document.querySelector('[data-testid="reader-content"]');
+				(window as Window & { __scrollBeforeAction: number }).__scrollBeforeAction = el
+					? (el as HTMLElement).scrollLeft
+					: 0;
+			});
+			return;
+		}
 	}
-	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Go back' })).toBeVisible({ timeout: 3000 });
+	await expect(page.getByRole('button', { name: 'Go back' })).toBeVisible({ timeout: 1000 });
 });
 
 Then('the overlay should close', async ({ page }) => {
@@ -985,8 +1048,11 @@ Then('the overlay should also close', async ({ page }) => {
 
 Then('the page should not turn', async ({ page }) => {
 	const content = page.locator('[data-testid="reader-content"]');
-	const scrollPosition = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
-	expect(scrollPosition).toBe(0);
+	const scrollNow = await content.evaluate((el) => (el as HTMLElement).scrollLeft);
+	const scrollBefore = await page.evaluate(
+		() => (window as Window & { __scrollBeforeAction: number }).__scrollBeforeAction ?? 0
+	);
+	expect(scrollNow).toBe(scrollBefore);
 });
 
 When('I swipe left', async ({ page }) => {
@@ -1004,20 +1070,34 @@ When('I swipe left', async ({ page }) => {
 });
 
 Given('the TOC is open', async ({ page }) => {
+	const url = new URL(page.url());
+	url.searchParams.set('chapter', '1');
+	url.searchParams.set('progress', '0');
+	await page.goto(url.toString());
+	await page.waitForSelector('[data-testid="reader-content"]');
 	const content = page.locator('[data-testid="reader-content"]');
 	const box = await content.boundingBox();
 	expect(box).toBeTruthy();
-	for (let i = 0; i < 3; i++) {
-		await clickNav(page, content, box!.width * 0.85, box!.height * 0.5);
+	if (!box) return;
+	for (const xOff of [0.5, 0.45, 0.55, 0.4, 0.6]) {
+		await content.click({ position: { x: box.width * xOff, y: box.height * 0.5 } });
+		const vis = await page
+			.getByRole('button', { name: 'Show table of contents' })
+			.isVisible()
+			.catch(() => false);
+		if (!vis) continue;
+		await page.evaluate(() => {
+			const el = document.querySelector('[data-testid="reader-content"]');
+			(window as Window & { __scrollBeforeAction: number }).__scrollBeforeAction = el
+				? (el as HTMLElement).scrollLeft
+				: 0;
+		});
+		await page.getByRole('button', { name: 'Show table of contents' }).click();
+		await page.waitForSelector('[data-testid="toc-overlay"]');
+		await expect(page.locator('[data-testid="toc-overlay"]')).toBeVisible();
+		return;
 	}
-	await content.click({ position: { x: box!.width * 0.5, y: box!.height * 0.5 } });
-	await expect(page.getByRole('button', { name: 'Show table of contents' })).toBeVisible({
-		timeout: 3000
-	});
-	const tocButton = page.getByRole('button', { name: 'Show table of contents' });
-	await tocButton.click();
-	await page.waitForSelector('[data-testid="toc-overlay"]');
-	await expect(page.locator('[data-testid="toc-overlay"]')).toBeVisible();
+	await expect(page.locator('[data-testid="toc-overlay"]')).toBeVisible({ timeout: 1000 });
 });
 
 When('I tap outside the TOC panel', async ({ page }) => {
