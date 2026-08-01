@@ -425,6 +425,7 @@
 	.content :global(h4),
 	.content :global(h5),
 	.content :global(h6) {
+		text-indent: 0;
 		text-align: center;
 	}
 
