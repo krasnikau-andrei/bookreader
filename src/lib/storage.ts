@@ -47,7 +47,27 @@ export class BookDatabase extends Dexie {
 
 export const db = new BookDatabase();
 
+let openPromise: Promise<unknown> | null = null;
+
+/**
+ * Dexie auto-opens the database on first use, but after `closeDatabase()` it
+ * stays closed. Reopen lazily so every operation works whether the page was
+ * freshly loaded or restored from bfcache (where we close the connection so
+ * iOS Safari can restore the page instead of reloading it).
+ */
+async function ensureOpen() {
+	if (db.isOpen()) return;
+	openPromise ??= db.open().finally(() => (openPromise = null));
+	await openPromise;
+}
+
+/** Close the IndexedDB connection, e.g. on pagehide to allow bfcache restore. */
+export function closeDatabase() {
+	db.close();
+}
+
 export async function saveBook(book: Book): Promise<void> {
+	await ensureOpen();
 	try {
 		await db.books.put(book);
 	} catch (error) {
@@ -61,6 +81,7 @@ export async function saveBook(book: Book): Promise<void> {
 }
 
 export async function getAllBooks(): Promise<Book[]> {
+	await ensureOpen();
 	const books = await db.books.toArray();
 	// Strip legacy inline fileData blobs (pre-v3 rows); file data lives in bookFiles
 	for (const book of books) {
@@ -70,44 +91,53 @@ export async function getAllBooks(): Promise<Book[]> {
 }
 
 export async function getBook(id: string): Promise<Book | undefined> {
+	await ensureOpen();
 	return await db.books.get(id);
 }
 
 export async function bookExists(id: string): Promise<boolean> {
+	await ensureOpen();
 	const count = await db.books.where('id').equals(id).count();
 	return count > 0;
 }
 
 export async function saveChapterCache(bookId: string, chapters: Chapter[]): Promise<void> {
+	await ensureOpen();
 	await db.chapterCache.put({ bookId, chapters, cachedAt: new Date() });
 }
 
 export async function getChapterCache(bookId: string): Promise<Chapter[] | undefined> {
+	await ensureOpen();
 	const entry = await db.chapterCache.get(bookId);
 	return entry?.chapters;
 }
 
 export async function deleteChapterCache(bookId: string): Promise<void> {
+	await ensureOpen();
 	await db.chapterCache.delete(bookId);
 }
 
 export async function deleteBook(id: string): Promise<void> {
+	await ensureOpen();
 	await db.books.delete(id);
 	await db.bookFiles.delete(id);
 	await deleteChapterCache(id);
 }
 
 export async function saveBookWithFile(book: Book, fileData: ArrayBuffer): Promise<void> {
+	await ensureOpen();
 	await saveBook(book);
 	await db.bookFiles.put({ id: book.id, fileData });
 }
 
 export async function getBookFile(id: string): Promise<ArrayBuffer | undefined> {
+	await ensureOpen();
 	const entry = await db.bookFiles.get(id);
 	return entry?.fileData;
 }
 
 export async function saveProgress(progress: ReadingProgress): Promise<void> {
+	await ensureOpen();
 	try {
 		await db.transaction('rw', db.readingProgress, async () => {
 			if (!progress.chapterSizes) {
@@ -125,6 +155,7 @@ export async function saveProgress(progress: ReadingProgress): Promise<void> {
 }
 
 export async function getProgress(bookId: string): Promise<ReadingProgress | undefined> {
+	await ensureOpen();
 	try {
 		const result = await db.readingProgress.get(bookId);
 		return result;
@@ -135,6 +166,7 @@ export async function getProgress(bookId: string): Promise<ReadingProgress | und
 }
 
 export async function getAllProgress(): Promise<ReadingProgress[]> {
+	await ensureOpen();
 	try {
 		return await db.readingProgress.toArray();
 	} catch (e) {
@@ -146,6 +178,7 @@ export async function getAllProgress(): Promise<ReadingProgress[]> {
 export async function getMostRecentProgress(): Promise<
 	{ book: Book; progress: ReadingProgress } | undefined
 > {
+	await ensureOpen();
 	try {
 		const allProgress = await db.readingProgress.orderBy('lastReadAt').reverse().toArray();
 		if (allProgress.length === 0) return;

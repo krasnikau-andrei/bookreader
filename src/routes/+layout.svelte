@@ -1,8 +1,19 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import { theme } from '$lib/theme.svelte';
+	import { closeDatabase } from '$lib/storage';
+	import { onMount } from 'svelte';
 
 	let { children } = $props();
+
+	onMount(() => {
+		// Close the IndexedDB connection on pagehide: iOS Safari won't restore a
+		// page from bfcache while a connection is open — it reloads it instead,
+		// causing the flash on resume. Operations reopen lazily via ensureOpen().
+		window.addEventListener('pagehide', () => {
+			setTimeout(closeDatabase, 0);
+		});
+	});
 </script>
 
 <svelte:head>
