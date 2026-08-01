@@ -17,7 +17,19 @@ export async function clickNav(
 		await page.waitForSelector('[data-testid="reader-content"]', { timeout: 10000 });
 		await page.waitForTimeout(150);
 	} else {
-		await page.waitForTimeout(30);
+		// Wait until the scroll animation lands on a page boundary before the
+		// next click. Clicking mid-animation cancels it, so the tap at the end
+		// of a chapter (which should advance to the next one) would never see
+		// scrollLeft at the end and chapter navigation would stall.
+		await page.waitForFunction(
+			() => {
+				const el = document.querySelector('[data-testid="reader-content"]');
+				if (!el) return true;
+				const width = el.clientWidth;
+				return Math.abs(el.scrollLeft - Math.round(el.scrollLeft / width) * width) <= 5;
+			},
+			{ timeout: 5000 }
+		);
 	}
 }
 
