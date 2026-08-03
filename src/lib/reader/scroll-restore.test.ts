@@ -32,6 +32,7 @@ describe('Scroll Restore', () => {
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
 		vi.useRealTimers();
 		document.body.removeChild(element);
 	});
@@ -69,6 +70,12 @@ describe('Scroll Restore', () => {
 			sr.restore(element, 1);
 			expect(element.scrollLeft).toBe(50);
 		});
+
+		test('restores to the nearest page boundary so the first paint is snapped', () => {
+			const sr = createScrollRestore(() => true);
+			sr.restore(element, 0.3); // target 360 → nearest boundary 400
+			expect(element.scrollLeft).toBe(400);
+		});
 	});
 
 	describe('guardScroll', () => {
@@ -86,16 +93,52 @@ describe('Scroll Restore', () => {
 			expect(element.scrollLeft).toBe(400);
 		});
 
-		test('expires after 600ms', () => {
-			vi.useFakeTimers();
-			const sr = createScrollRestore(() => true);
+		test('expires after the guard window', () => {
+			const sr = createScrollRestore(() => false);
 			sr.restore(element, 1 / 3);
 
 			expect(sr.guardScroll(element)).toBe(true);
-			vi.advanceTimersByTime(600);
+			vi.spyOn(performance, 'now').mockReturnValue(performance.now() + 3001);
+			runRaf(); // watchdog sees the window has expired
+			expect(sr.guardScroll(element)).toBe(false);
+		});
+
+		test('disarms when the user starts interacting', () => {
+			let interacting = false;
+			const sr = createScrollRestore(
+				() => true,
+				() => interacting
+			);
+			sr.restore(element, 1 / 3);
+
+			interacting = true;
+			element.scrollLeft = 123; // user gesture moved us
+			expect(sr.guardScroll(element)).toBe(false);
+			expect(element.scrollLeft).toBe(123); // untouched
+		});
+
+		test('re-applies drift that happens after the first frame', () => {
+			const sr = createScrollRestore(() => false);
+			sr.restore(element, 1 / 3);
+
+			element.scrollLeft = 100; // late iOS restore, no scroll event
+			runRaf(); // watchdog frame corrects it
+			expect(element.scrollLeft).toBe(400);
+		});
+
+		test('later restores (chapter changes) disarm as soon as the position settles', () => {
+			const sr = createScrollRestore(() => false);
+			sr.restore(element, 0); // first restore: full guard window
+			sr.restore(element, 1 / 3); // chapter change: settle-based guard
+
+			element.scrollLeft = 123; // drift
+			runRaf(); // frame 1: corrected, settle counter starts
+			expect(element.scrollLeft).toBe(400);
+			runRaf(); // frame 2: position matches → disarmed
+
 			element.scrollLeft = 123;
 			expect(sr.guardScroll(element)).toBe(false);
-			expect(element.scrollLeft).toBe(123); // untouched after expiry
+			expect(element.scrollLeft).toBe(123); // untouched after disarm
 		});
 	});
 
