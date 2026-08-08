@@ -42,19 +42,37 @@ describe('EPUB Parser', () => {
 
 		await expect(parseEpub(pdfBuffer)).rejects.toThrow(/Invalid EPUB format/);
 	});
+
+	test('accepts mimetype with trailing newline', async () => {
+		// Some converters write CRLF after the mimetype string
+		const epubBuffer = await createMinimalEpub(
+			{
+				title: 'CRLF Mimetype',
+				author: 'Anonymous'
+			},
+			'application/epub+zip\r\n'
+		);
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.title).toBe('CRLF Mimetype');
+	});
 });
 
 // Test helpers
-async function createMinimalEpub(metadata: {
-	title: string;
-	author: string;
-	cover?: Uint8Array;
-}): Promise<ArrayBuffer> {
+async function createMinimalEpub(
+	metadata: {
+		title: string;
+		author: string;
+		cover?: Uint8Array;
+	},
+	mimetypeContent: string = 'application/epub+zip'
+): Promise<ArrayBuffer> {
 	const JSZip = (await import('jszip')).default;
 	const zip = new JSZip();
 
 	// mimetype file
-	zip.file('mimetype', 'application/epub+zip');
+	zip.file('mimetype', mimetypeContent);
 
 	// container.xml
 	zip.file(
