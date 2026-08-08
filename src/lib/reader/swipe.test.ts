@@ -9,6 +9,7 @@ describe('Swipe Detection', () => {
 		onSwipeCancel: ReturnType<typeof vi.fn>;
 	};
 	let handler: ReturnType<typeof createSwipeHandler>;
+	let nowCounter: number;
 
 	beforeEach(() => {
 		element = document.createElement('div');
@@ -16,7 +17,6 @@ describe('Swipe Detection', () => {
 		element.style.height = '600px';
 		document.body.appendChild(element);
 
-		// Mock scrollLeft
 		Object.defineProperty(element, 'scrollLeft', {
 			writable: true,
 			value: 0
@@ -32,6 +32,9 @@ describe('Swipe Detection', () => {
 			onSwipeCancel: vi.fn()
 		};
 
+		nowCounter = 1000;
+		vi.spyOn(performance, 'now').mockImplementation(() => nowCounter);
+
 		handler = createSwipeHandler(element, callbacks);
 		handler.attach();
 	});
@@ -39,19 +42,19 @@ describe('Swipe Detection', () => {
 	afterEach(() => {
 		handler.detach();
 		document.body.removeChild(element);
+		vi.restoreAllMocks();
 	});
 
 	function createTouchEvent(
 		type: string,
 		touches: { clientX: number; clientY: number }[]
 	): TouchEvent {
-		const event = new TouchEvent(type, {
+		return new TouchEvent(type, {
 			touches: touches as unknown as TouchList,
 			changedTouches: touches as unknown as TouchList,
 			bubbles: true,
 			cancelable: true
 		});
-		return event;
 	}
 
 	describe('touch start', () => {
@@ -59,7 +62,6 @@ describe('Swipe Detection', () => {
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 100, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Swipe should be active - will be verified by subsequent behavior
 			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
 			expect(callbacks.onSwipeRight).not.toHaveBeenCalled();
 		});
@@ -71,7 +73,6 @@ describe('Swipe Detection', () => {
 			]);
 			element.dispatchEvent(touchStart);
 
-			// Complete a swipe - should not trigger any callback
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
@@ -88,11 +89,9 @@ describe('Swipe Detection', () => {
 			const touchMove = createTouchEvent('touchmove', [{ clientX: 100, clientY: 100 }]);
 			element.dispatchEvent(touchMove);
 
-			// Complete the gesture
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 100 }]);
 			element.dispatchEvent(touchEnd);
 
-			// Should not trigger swipe callbacks due to vertical movement
 			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
 			expect(callbacks.onSwipeRight).not.toHaveBeenCalled();
 		});
@@ -101,14 +100,36 @@ describe('Swipe Detection', () => {
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			const touchMove = createTouchEvent('touchmove', [{ clientX: 150, clientY: 205 }]);
+			// Move to 50px - large enough to pass 20px threshold
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 50, clientY: 205 }]);
 			element.dispatchEvent(touchMove);
 
-			// Complete a strong left swipe
+			// Slow movement: advance time so velocity stays low
+			// progress = 150/400 = 0.375 > 0.3 → triggers by progress
+			nowCounter += 2000;
+
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 205 }]);
 			element.dispatchEvent(touchEnd);
 
 			expect(callbacks.onSwipeLeft).toHaveBeenCalled();
+		});
+
+		test('does not set didSwipe when movement is under 20px', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 185, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			nowCounter += 500;
+
+			const touchEnd = createTouchEvent('touchend', [{ clientX: 185, clientY: 200 }]);
+			element.dispatchEvent(touchEnd);
+
+			// 15px / 400 = 0.0375 < 0.3, velocity = 15/400/0.5 = 0.075 < 0.5
+			expect(callbacks.onSwipeCancel).toHaveBeenCalled();
+			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
+			expect(callbacks.onSwipeRight).not.toHaveBeenCalled();
 		});
 	});
 
@@ -117,11 +138,12 @@ describe('Swipe Detection', () => {
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 300, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Need touchmove to update lastX/lastTime for velocity calculation
 			const touchMove = createTouchEvent('touchmove', [{ clientX: 100, clientY: 200 }]);
 			element.dispatchEvent(touchMove);
 
-			// Simulate fast swipe: 200px movement detected
+			// Fast swipe: 200px in 100ms → velocity = 200/400/(0.1) = 5.0 > 0.5
+			nowCounter += 100;
+
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 100, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
@@ -134,11 +156,11 @@ describe('Swipe Detection', () => {
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 100, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Need touchmove to update lastX/lastTime for velocity calculation
 			const touchMove = createTouchEvent('touchmove', [{ clientX: 300, clientY: 200 }]);
 			element.dispatchEvent(touchMove);
 
-			// Simulate fast right swipe
+			nowCounter += 100;
+
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 300, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
@@ -146,22 +168,37 @@ describe('Swipe Detection', () => {
 			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
 			expect(callbacks.onSwipeCancel).not.toHaveBeenCalled();
 		});
+
+		test('cancels when velocity is below threshold and progress is below threshold', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 150, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			// Slow: 50px in 2s → velocity = 50/400/2 = 0.0625 < 0.5
+			// progress = 50/400 = 0.125 < 0.3
+			nowCounter += 2000;
+
+			const touchEnd = createTouchEvent('touchend', [{ clientX: 150, clientY: 200 }]);
+			element.dispatchEvent(touchEnd);
+
+			expect(callbacks.onSwipeCancel).toHaveBeenCalled();
+			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
+			expect(callbacks.onSwipeRight).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('swipe completion by progress', () => {
 		test('triggers onSwipeLeft when progress exceeds threshold', () => {
-			// Start at scroll position 0
-			element.scrollLeft = 0;
-
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Move scroll to 150px (37.5% of viewport, above 30% threshold)
-			element.scrollLeft = 150;
-
-			// Need touchmove to update lastX for direction detection
 			const touchMove = createTouchEvent('touchmove', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchMove);
+
+			// Slow: progress = 150/400 = 0.375 > 0.3, velocity = 150/400/2 = 0.1875 < 0.5
+			nowCounter += 2000;
 
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
@@ -170,33 +207,50 @@ describe('Swipe Detection', () => {
 		});
 
 		test('triggers onSwipeRight when progress exceeds threshold', () => {
-			// For right swipe: finger moves from left to right
-			// Start touch at x=50 (left side)
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Move finger to x=350 (right side) - 300px movement = 75% progress
 			const touchMove = createTouchEvent('touchmove', [{ clientX: 350, clientY: 200 }]);
 			element.dispatchEvent(touchMove);
 
-			// End touch at x=350
+			// Slow: progress = 300/400 = 0.75 > 0.3, velocity = 300/400/2 = 0.375 < 0.5
+			nowCounter += 2000;
+
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 350, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
 			expect(callbacks.onSwipeRight).toHaveBeenCalledTimes(1);
 		});
+
+		test('cancels when progress is below threshold', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 120, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			// Slow: progress = 80/400 = 0.2 < 0.3, velocity = 80/400/2 = 0.1 < 0.5
+			nowCounter += 2000;
+
+			const touchEnd = createTouchEvent('touchend', [{ clientX: 120, clientY: 200 }]);
+			element.dispatchEvent(touchEnd);
+
+			expect(callbacks.onSwipeCancel).toHaveBeenCalled();
+			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('swipe cancellation', () => {
 		test('calls onSwipeCancel when neither threshold is met', () => {
-			element.scrollLeft = 0;
-
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
-			// Small movement: 50px = 12.5% progress (below 30% threshold)
-			// And slow movement means low velocity
-			element.scrollLeft = 50;
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 150, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			// Slow: 50px in 2s → velocity = 50/400/2 = 0.0625 < 0.5
+			// progress = 50/400 = 0.125 < 0.3
+			nowCounter += 2000;
 
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 150, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
@@ -209,42 +263,117 @@ describe('Swipe Detection', () => {
 
 	describe('configuration', () => {
 		test('uses default config when not provided', () => {
-			const handler = createSwipeHandler(element, callbacks);
-			expect(handler).toBeDefined();
+			const h = createSwipeHandler(element, callbacks);
+			expect(h).toBeDefined();
 		});
 
 		test('accepts custom config', () => {
-			const handler = createSwipeHandler(element, callbacks, {
+			const h = createSwipeHandler(element, callbacks, {
 				velocityThreshold: 1.0,
 				progressThreshold: 0.5
 			});
-			expect(handler).toBeDefined();
+			expect(h).toBeDefined();
+		});
+
+		test('custom progressThreshold affects swipe completion', () => {
+			handler.detach();
+			handler = createSwipeHandler(element, callbacks, {
+				velocityThreshold: 0.5,
+				progressThreshold: 0.6
+			});
+			handler.attach();
+
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 50, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			// Slow: progress = 150/400 = 0.375 < 0.6 (custom threshold)
+			// velocity = 150/400/2 = 0.1875 < 0.5
+			nowCounter += 2000;
+
+			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 200 }]);
+			element.dispatchEvent(touchEnd);
+
+			expect(callbacks.onSwipeCancel).toHaveBeenCalled();
+			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
+		});
+
+		test('custom velocityThreshold affects swipe completion', () => {
+			handler.detach();
+			handler = createSwipeHandler(element, callbacks, {
+				velocityThreshold: 5.0,
+				progressThreshold: 0.3
+			});
+			handler.attach();
+
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 120, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			// Slow: progress = 80/400 = 0.2 < 0.3, velocity = 80/400/2 = 0.1 < 5.0
+			nowCounter += 2000;
+
+			const touchEnd = createTouchEvent('touchend', [{ clientX: 120, clientY: 200 }]);
+			element.dispatchEvent(touchEnd);
+
+			expect(callbacks.onSwipeCancel).toHaveBeenCalled();
+			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('attach and detach', () => {
 		test('attach returns handler with attach and detach methods', () => {
-			const handler = createSwipeHandler(element, callbacks);
-			expect(handler.attach).toBeDefined();
-			expect(handler.detach).toBeDefined();
+			const h = createSwipeHandler(element, callbacks);
+			expect(h.attach).toBeDefined();
+			expect(h.detach).toBeDefined();
 		});
 
 		test('detach removes event listeners', () => {
-			const handler = createSwipeHandler(element, callbacks);
-			handler.attach();
-			handler.detach();
+			const h = createSwipeHandler(element, callbacks);
+			h.attach();
+			h.detach();
 
-			// After detach, events should not trigger callbacks
 			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
 			element.dispatchEvent(touchStart);
 
 			const touchEnd = createTouchEvent('touchend', [{ clientX: 50, clientY: 200 }]);
 			element.dispatchEvent(touchEnd);
 
-			// Callbacks should not be called because listeners are removed
-			// Note: In jsdom, removing listeners might not work perfectly,
-			// but the API should still be callable
 			expect(callbacks.onSwipeLeft).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('hasSwiped', () => {
+		test('returns true after significant horizontal movement', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 100, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			expect(handler.hasSwiped()).toBe(true);
+		});
+
+		test('returns false when no significant movement', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			expect(handler.hasSwiped()).toBe(false);
+		});
+
+		test('resets flag after checking', () => {
+			const touchStart = createTouchEvent('touchstart', [{ clientX: 200, clientY: 200 }]);
+			element.dispatchEvent(touchStart);
+
+			const touchMove = createTouchEvent('touchmove', [{ clientX: 100, clientY: 200 }]);
+			element.dispatchEvent(touchMove);
+
+			expect(handler.hasSwiped()).toBe(true);
+			expect(handler.hasSwiped()).toBe(false);
 		});
 	});
 });
