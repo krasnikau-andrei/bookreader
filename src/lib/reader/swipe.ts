@@ -7,6 +7,7 @@ export interface SwipeCallbacks {
 	onSwipeRight: () => void;
 	onSwipeCancel: () => void;
 	onSwipeStart?: () => void; // Called when swipe starts
+	shouldSkipSwipe?: (event: TouchEvent) => boolean; // Return true to skip swipe handling (e.g. scrolling a table)
 }
 
 export function createSwipeHandler(
@@ -130,6 +131,7 @@ export function createSwipeHandler(
 	// Touch event handlers
 	function handleTouchStart(event: TouchEvent) {
 		if (event.touches.length !== 1) return;
+		if (callbacks.shouldSkipSwipe?.(event)) return;
 		const touch = event.touches[0];
 		startSwipe(touch.clientX, touch.clientY);
 	}
