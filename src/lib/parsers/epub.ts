@@ -250,6 +250,33 @@ function parseTocHierarchy(
 	}
 }
 
+const MIN_TITLE_LENGTH = 3;
+const MAX_TITLE_LENGTH = 300;
+
+function firstMeaningfulTitle(candidates: (string | undefined)[], bookTitle: string): string {
+	for (const candidate of candidates) {
+		if (isUsableTitle(candidate, bookTitle)) {
+			return candidate;
+		}
+	}
+	// Fallback: nothing of reasonable length — return the best available
+	for (const candidate of candidates) {
+		if (candidate && candidate.toLowerCase() !== bookTitle.toLowerCase()) {
+			return candidate;
+		}
+	}
+	return 'Untitled';
+}
+
+function isUsableTitle(candidate: string | undefined, bookTitle: string): boolean {
+	return (
+		!!candidate &&
+		candidate.length >= MIN_TITLE_LENGTH &&
+		candidate.length <= MAX_TITLE_LENGTH &&
+		candidate.toLowerCase() !== bookTitle.toLowerCase()
+	);
+}
+
 function isBookTitleEntry(label: string, bookTitle: string, isFirstEntry: boolean): boolean {
 	// Skip if it's the first entry and matches book title
 	if (isFirstEntry && label.toLowerCase() === bookTitle.toLowerCase()) {
@@ -445,13 +472,16 @@ export async function parseEpubChapters(buffer: ArrayBuffer): Promise<ParsedChap
 		const chapterDoc = parseXml(content, 'application/xhtml+xml');
 		const shortPath = filePath.replace(/^EPUB\//, '');
 
-		// Extract chapter title from HTML headers (H1 first, then H2, then title tag),
-		// fall back to TOC label if the book doesn't use heading elements
-		const htmlH1 = chapterDoc.querySelector('h1')?.textContent?.trim();
-		const htmlH2 = chapterDoc.querySelector('h2')?.textContent?.trim();
+		// Extract chapter title: prefer the book's TOC label over in-chapter
+		// headings, since headings may hold only a number (e.g. Sigil exports
+		// put the full name in the title attribute: <h2 title="...">1</h2>)
+		const htmlH1El = chapterDoc.querySelector('h1');
+		const htmlH2El = chapterDoc.querySelector('h2');
+		const htmlH1 = htmlH1El?.getAttribute('title')?.trim() || htmlH1El?.textContent?.trim();
+		const htmlH2 = htmlH2El?.getAttribute('title')?.trim() || htmlH2El?.textContent?.trim();
 		const htmlTitle = chapterDoc.querySelector('title')?.textContent?.trim();
 		const tocLabel = tocLabels.get(filePath) || tocLabels.get(shortPath);
-		const title = htmlH1 || htmlH2 || htmlTitle || tocLabel || 'Untitled';
+		const title = firstMeaningfulTitle([tocLabel, htmlH1, htmlH2, htmlTitle], bookTitle);
 
 		// Process images in chapter content - convert to data URIs
 		const chapterDir = filePath.substring(0, filePath.lastIndexOf('/') + 1);
