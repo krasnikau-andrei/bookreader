@@ -138,7 +138,142 @@ ${chapters.map((c) => `<itemref idref="${c.id}"/>`).join('\n')}
 	return zip.generateAsync({ type: 'arraybuffer' });
 }
 
+async function createEpub3WithCustomBodies(
+	chapters: { id: string; label: string | null; href: string; body: string }[]
+) {
+	const zip = new JSZip();
+
+	const tocHtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>TOC</title></head>
+<body>
+<nav epub:type="toc" id="toc">
+<h2>Table of Contents</h2>
+<ol>
+${chapters
+	.filter((c) => c.label !== null)
+	.map((c) => `<li><a href="${c.href}">${c.label}</a></li>`)
+	.join('\n')}
+</ol>
+</nav>
+</body>
+</html>`;
+
+	chapters.forEach((c) => {
+		zip.file(
+			`EPUB/${c.href}`,
+			`<?xml version="1.0"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Test Book</title></head>
+<body>${c.body}</body>
+</html>`
+		);
+	});
+
+	zip.file('EPUB/nav.xhtml', tocHtml);
+	zip.file('mimetype', 'application/epub+zip');
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+<rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>`
+	);
+
+	zip.file(
+		'EPUB/content.opf',
+		`<?xml version="1.0"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+<dc:title>Test Book</dc:title>
+<dc:creator>Test Author</dc:creator>
+</metadata>
+<manifest>
+<item id="toc" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+${chapters.map((c) => `<item id="${c.id}" href="${c.href}" media-type="application/xhtml+xml"/>`).join('\n')}
+</manifest>
+<spine>
+${chapters.map((c) => `<itemref idref="${c.id}"/>`).join('\n')}
+</spine>
+</package>`
+	);
+
+	return zip.generateAsync({ type: 'arraybuffer' });
+}
+
 describe('TOC label parsing', () => {
+	describe('chapter title selection', () => {
+		it('prefers TOC label over number-only h2 heading', async () => {
+			const epubBuffer = await createEpub3WithCustomBodies([
+				{
+					id: 'ch1',
+					label: '1. Все, что вам нужно знать',
+					href: 'chapter1.xhtml',
+					body: '<h2 class="_gl-nom">1</h2><p>Content</p>'
+				}
+			]);
+
+			const result = await parseEpubChapters(epubBuffer);
+
+			expect(result.chapters).toHaveLength(1);
+			// TOC label has the full name; the visible h2 text is a bare number
+			expect(result.chapters[0].title).toBe('1. Все, что вам нужно знать');
+		});
+
+		it('uses h2 title attribute when heading text is a bare number and TOC label is missing', async () => {
+			const epubBuffer = await createEpub3WithCustomBodies([
+				{
+					id: 'ch1',
+					label: null,
+					href: 'chapter1.xhtml',
+					body: '<h2 class="_gl-nom" title="1. Все, что вам нужно знать">1</h2><p>Content</p>'
+				}
+			]);
+
+			const result = await parseEpubChapters(epubBuffer);
+
+			expect(result.chapters).toHaveLength(1);
+			expect(result.chapters[0].title).toBe('1. Все, что вам нужно знать');
+		});
+
+		it('ignores html title tag equal to the book title', async () => {
+			const epubBuffer = await createEpub3WithCustomBodies([
+				{
+					id: 'ch1',
+					label: null,
+					href: 'chapter1.xhtml',
+					body: '<p>Content</p>'
+				}
+			]);
+
+			const result = await parseEpubChapters(epubBuffer);
+
+			expect(result.chapters).toHaveLength(1);
+			// <title>Test Book</title> matches dc:title and must not become the chapter name
+			expect(result.chapters[0].title).toBe('Untitled');
+		});
+
+		it('skips number-only heading in favor of a longer heading', async () => {
+			const epubBuffer = await createEpub3WithCustomBodies([
+				{
+					id: 'ch1',
+					label: null,
+					href: 'chapter1.xhtml',
+					body: '<h1>1</h1><h2>Полное название главы</h2><p>Content</p>'
+				}
+			]);
+
+			const result = await parseEpubChapters(epubBuffer);
+
+			expect(result.chapters).toHaveLength(1);
+			expect(result.chapters[0].title).toBe('Полное название главы');
+		});
+	});
+
 	describe('EPUB 3 nav.xhtml', () => {
 		it('uses HTML h1 title instead of TOC label', async () => {
 			const epubBuffer = await createEpub3WithNavToc([
@@ -440,7 +575,7 @@ describe('TOC label parsing', () => {
 	});
 
 	describe('Title priority', () => {
-		it('prefers h1 over TOC label, title, and h2', async () => {
+		it('prefers TOC label over h1, h2, and title tag', async () => {
 			const zip = new JSZip();
 
 			// Create chapter with all title sources
@@ -503,8 +638,8 @@ describe('TOC label parsing', () => {
 			const result = await parseEpubChapters(epubBuffer);
 
 			expect(result.chapters).toHaveLength(1);
-			// Should use h1, not TOC label
-			expect(result.chapters[0].title).toBe('H1 Title Preferred');
+			// Should use TOC label, not h1
+			expect(result.chapters[0].title).toBe('TOC Label - Not Preferred');
 		});
 	});
 });
