@@ -52,14 +52,14 @@ async function openEpubPackage(
 export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	const { zip, opfPath, opfDoc } = await openEpubPackage(buffer);
 
-	// Check mimetype
-	const mimetype = await zip.file('mimetype')?.async('string');
+	// Check mimetype (trim trailing whitespace — some converters add CRLF)
+	const mimetype = (await zip.file('mimetype')?.async('string'))?.trim();
 	if (mimetype !== 'application/epub+zip') {
 		if (mimetype === undefined) {
 			throw new Error('Invalid EPUB format: missing mimetype file');
 		}
 		throw new Error(
-			`Invalid EPUB format: mimetype is "${mimetype.trim()}" instead of "application/epub+zip"`
+			`Invalid EPUB format: mimetype is "${mimetype}" instead of "application/epub+zip"`
 		);
 	}
 
