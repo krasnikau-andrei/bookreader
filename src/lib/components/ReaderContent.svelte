@@ -48,6 +48,7 @@
 	let isAnimatingScroll = $state(false);
 	let isFragmentNavigation = $state(false);
 	let isUserSwiping = false;
+	let hasUserInteracted = false;
 	let isSelecting = false;
 	let swipeStartScrollLeft = 0;
 	let isUpdatingUrl = false;
@@ -55,7 +56,10 @@
 	let safetyNet: ReturnType<typeof createSafetyNet> | null = null;
 	let fullscreenSrc: string | null = $state(null);
 
-	const scrollRestore = createScrollRestore(() => isChangingChapter);
+	const scrollRestore = createScrollRestore(
+		() => isChangingChapter,
+		() => hasUserInteracted
+	);
 	const progressSaver = createProgressSaver({
 		bookId: () => bookId,
 		chapterIndex: () => currentChapter,
@@ -68,6 +72,9 @@
 
 		swipeHandler = createSwipeHandler(scrollContainer, {
 			onSwipeStart: () => {
+				// One-shot latch: the first gesture ends the scroll-restore guard
+				// for good — iOS's restore is done by the time the user touches.
+				hasUserInteracted = true;
 				isUserSwiping = true;
 				swipeStartScrollLeft = scrollContainer!.scrollLeft;
 			},
