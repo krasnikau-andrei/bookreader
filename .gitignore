@@ -38,3 +38,7 @@ broken_books/*.epub
 storybook-static/
 .server.log
 test-results.json
+
+# Stryker mutation testing
+.stryker-tmp/
+reports/

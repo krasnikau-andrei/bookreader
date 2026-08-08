@@ -57,6 +57,118 @@ describe('EPUB Parser', () => {
 
 		expect(result.title).toBe('CRLF Mimetype');
 	});
+
+	test('throws error when mimetype is missing', async () => {
+		const epubBuffer = await createMinimalEpub(
+			{
+				title: 'Missing Mimetype',
+				author: 'Anonymous'
+			},
+			'' // Empty mimetype
+		);
+
+		await expect(parseEpub(epubBuffer)).rejects.toThrow(/Invalid EPUB format/);
+	});
+
+	test('throws error when mimetype is wrong', async () => {
+		const epubBuffer = await createMinimalEpub(
+			{
+				title: 'Wrong Mimetype',
+				author: 'Anonymous'
+			},
+			'application/pdf'
+		);
+
+		await expect(parseEpub(epubBuffer)).rejects.toThrow(
+			/mimetype is "application\/pdf" instead of "application\/epub\+zip"/
+		);
+	});
+
+	test('uses default language when dc:language is missing', async () => {
+		const epubBuffer = await createMinimalEpubWithoutLanguage({
+			title: 'No Language Book',
+			author: 'Anonymous'
+		});
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.language).toBe('en');
+	});
+
+	test('uses Untitled when dc:title is missing', async () => {
+		const epubBuffer = await createMinimalEpubWithoutTitle({
+			author: 'Author Only'
+		});
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.title).toBe('Untitled');
+	});
+
+	test('uses Unknown Author when dc:creator is missing', async () => {
+		const epubBuffer = await createMinimalEpubWithoutAuthor({
+			title: 'Title Only'
+		});
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.author).toBe('Unknown Author');
+	});
+
+	test('extracts description when present', async () => {
+		const epubBuffer = await createMinimalEpubWithDescription(
+			'Book With Description',
+			'An interesting book'
+		);
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.description).toBe('An interesting book');
+	});
+
+	test('returns null description when dc:description is missing', async () => {
+		const epubBuffer = await createMinimalEpub({
+			title: 'No Description',
+			author: 'Anonymous'
+		});
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.description).toBeNull();
+	});
+
+	test('throws error for EPUB with missing container.xml', async () => {
+		const JSZip = (await import('jszip')).default;
+		const zip = new JSZip();
+
+		// Add mimetype but no container.xml
+		zip.file('mimetype', 'application/epub+zip');
+
+		const buffer = await zip.generateAsync({ type: 'arraybuffer' });
+
+		await expect(parseEpub(buffer)).rejects.toThrow(/missing container\.xml/);
+	});
+
+	test('throws error for EPUB with missing content.opf', async () => {
+		const JSZip = (await import('jszip')).default;
+		const zip = new JSZip();
+
+		zip.file('mimetype', 'application/epub+zip');
+
+		// container.xml exists but rootfile is missing
+		zip.file(
+			'META-INF/container.xml',
+			`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+	<rootfiles>
+	</rootfiles>
+</container>`
+		);
+
+		const buffer = await zip.generateAsync({ type: 'arraybuffer' });
+
+		await expect(parseEpub(buffer)).rejects.toThrow(/cannot find content\.opf/);
+	});
 });
 
 // Test helpers
@@ -116,6 +228,179 @@ async function createMinimalEpub(
 	if (metadata.cover) {
 		zip.file('cover.jpg', metadata.cover);
 	}
+
+	return await zip.generateAsync({ type: 'arraybuffer' });
+}
+
+async function createMinimalEpubWithoutLanguage(
+	metadata: {
+		title: string;
+		author: string;
+	},
+	mimetypeContent: string = 'application/epub+zip'
+): Promise<ArrayBuffer> {
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	zip.file('mimetype', mimetypeContent);
+
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+	<rootfiles>
+		<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+	</rootfiles>
+</container>`
+	);
+
+	// content.opf WITHOUT dc:language
+	zip.file(
+		'content.opf',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:title>${metadata.title}</dc:title>
+		<dc:creator>${metadata.author}</dc:creator>
+		<dc:identifier id="bookid">test-id</dc:identifier>
+	</metadata>
+	<manifest>
+		<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+	</manifest>
+	<spine toc="toc">
+		<itemref idref="chapter1"/>
+	</spine>
+</package>`
+	);
+
+	return await zip.generateAsync({ type: 'arraybuffer' });
+}
+
+async function createMinimalEpubWithoutTitle(
+	metadata: {
+		author: string;
+	},
+	mimetypeContent: string = 'application/epub+zip'
+): Promise<ArrayBuffer> {
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	zip.file('mimetype', mimetypeContent);
+
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+	<rootfiles>
+		<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+	</rootfiles>
+</container>`
+	);
+
+	// content.opf WITHOUT dc:title
+	zip.file(
+		'content.opf',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:creator>${metadata.author}</dc:creator>
+		<dc:identifier id="bookid">test-id</dc:identifier>
+		<dc:language>en</dc:language>
+	</metadata>
+	<manifest>
+		<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+	</manifest>
+	<spine toc="toc">
+		<itemref idref="chapter1"/>
+	</spine>
+</package>`
+	);
+
+	return await zip.generateAsync({ type: 'arraybuffer' });
+}
+
+async function createMinimalEpubWithoutAuthor(
+	metadata: {
+		title: string;
+	},
+	mimetypeContent: string = 'application/epub+zip'
+): Promise<ArrayBuffer> {
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	zip.file('mimetype', mimetypeContent);
+
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+	<rootfiles>
+		<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+	</rootfiles>
+</container>`
+	);
+
+	// content.opf WITHOUT dc:creator
+	zip.file(
+		'content.opf',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:title>${metadata.title}</dc:title>
+		<dc:identifier id="bookid">test-id</dc:identifier>
+		<dc:language>en</dc:language>
+	</metadata>
+	<manifest>
+		<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+	</manifest>
+	<spine toc="toc">
+		<itemref idref="chapter1"/>
+	</spine>
+</package>`
+	);
+
+	return await zip.generateAsync({ type: 'arraybuffer' });
+}
+
+async function createMinimalEpubWithDescription(
+	title: string,
+	description: string,
+	mimetypeContent: string = 'application/epub+zip'
+): Promise<ArrayBuffer> {
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	zip.file('mimetype', mimetypeContent);
+
+	zip.file(
+		'META-INF/container.xml',
+		`<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+	<rootfiles>
+		<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+	</rootfiles>
+</container>`
+	);
+
+	zip.file(
+		'content.opf',
+		`<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:title>${title}</dc:title>
+		<dc:creator>Test Author</dc:creator>
+		<dc:description>${description}</dc:description>
+		<dc:identifier id="bookid">test-id</dc:identifier>
+		<dc:language>en</dc:language>
+	</metadata>
+	<manifest>
+		<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+	</manifest>
+	<spine toc="toc">
+		<itemref idref="chapter1"/>
+	</spine>
+</package>`
+	);
 
 	return await zip.generateAsync({ type: 'arraybuffer' });
 }
