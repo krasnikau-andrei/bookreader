@@ -24,6 +24,12 @@
 		onCenterTap: () => void;
 		onCloseMenus: () => void;
 		onFragmentNavigate?: (fragment: string) => void;
+		/**
+		 * Fired the moment the reader starts jumping to a link target, before
+		 * any state changes — the only point where "where we came from" is
+		 * still intact. Used to record the jump in the reading history.
+		 */
+		onJump?: () => void;
 	}
 
 	let {
@@ -40,7 +46,8 @@
 		onUrlUpdate,
 		onCenterTap,
 		onCloseMenus,
-		onFragmentNavigate
+		onFragmentNavigate,
+		onJump
 	}: Props = $props();
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
@@ -272,12 +279,16 @@
 				if (chapterAttr) {
 					const targetChapter = parseInt(chapterAttr, 10);
 					if (targetChapter !== currentChapter) {
+						// Recorded before the chapter changes — afterwards the
+						// position we are jumping away from is already gone.
+						onJump?.();
 						onChapterChange(targetChapter);
 						if (fragmentAttr && onFragmentNavigate) {
 							onFragmentNavigate(fragmentAttr);
 						}
 						onUrlUpdate(targetChapter, 0);
 					} else if (fragmentAttr && onFragmentNavigate) {
+						onJump?.();
 						onFragmentNavigate(fragmentAttr);
 					}
 				}
