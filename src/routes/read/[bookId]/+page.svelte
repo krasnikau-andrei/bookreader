@@ -16,7 +16,9 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import ReaderContent from '$lib/components/ReaderContent.svelte';
 	import ReaderOverlay from '$lib/components/ReaderOverlay.svelte';
+	import ReaderBackButton from '$lib/components/ReaderBackButton.svelte';
 	import TableOfContents from '$lib/components/TableOfContents.svelte';
+	import { createReaderHistory, isAheadOf, type ReaderPosition } from '$lib/reader/history';
 	import type { Book, Chapter } from '$lib/types';
 
 	// Core state
@@ -36,6 +38,29 @@
 	let isUpdatingUrl = false;
 	let progressChapterSizes: number[] | undefined = $state();
 	let currentScrollPercent = $state(0);
+
+	// Reading history: every footnote/TOC jump records the position it left,
+	// so "back" returns to that exact spot. `backTarget` is the reactive
+	// snapshot the back button renders from.
+	let history = createReaderHistory({ chapter: 0, progress: 0 });
+	let backTarget = $state<ReaderPosition | null>(null);
+	let currentPosition = $derived({ chapter: currentChapter, progress: currentScrollPercent });
+
+	/** Record where we are before a jump replaces it. */
+	function pushCurrentPosition() {
+		history.push(currentPosition);
+		backTarget = history.previous();
+	}
+
+	function handleHistoryBack() {
+		const target = history.back();
+		if (!target) return;
+
+		// Land on the reading position, not on the chapter start
+		handleChapterChange(target.chapter, target.progress);
+		updateUrl(target.chapter, target.progress);
+		handleCloseMenus();
+	}
 
 	// Show "Loading..." fallback if content takes more than 500ms
 	$effect(() => {
@@ -127,6 +152,12 @@
 				currentChapter = Math.min(savedProgress.chapterIndex, chapters.length - 1);
 			}
 
+			// The opening position is the root of the reading history
+			history = createReaderHistory({
+				chapter: currentChapter,
+				progress: urlScrollPercent ?? savedProgress?.scrollPercent ?? 0
+			});
+
 			if (!hasChapterParam && !hasProgressParam) {
 				updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
 			}
@@ -140,6 +171,9 @@
 	function updateUrl(chapterIndex: number, progressValue: number) {
 		urlScrollPercent = undefined;
 		currentScrollPercent = progressValue;
+		// Every position the reader reports keeps the current history entry
+		// truthful — page turns included, they just don't add new entries.
+		history.sync({ chapter: chapterIndex, progress: progressValue });
 		if (isUpdatingUrl) return;
 
 		isUpdatingUrl = true;
@@ -174,6 +208,8 @@
 	}
 
 	function handleChapterSelect(chapterIndex: number) {
+		// Jumping from the table of contents is a history entry
+		pushCurrentPosition();
 		urlScrollPercent = undefined;
 		currentChapter = chapterIndex;
 		// Reset saved progress when switching chapters via TOC
@@ -219,6 +255,7 @@
 					onCenterTap={handleCenterTap}
 					onCloseMenus={handleCloseMenus}
 					onFragmentNavigate={handleFragmentNavigate}
+					onJump={pushCurrentPosition}
 				/>
 			</div>
 		{:else if showLoadingFallback}
@@ -250,6 +287,15 @@
 			onChapterSelect={handleChapterSelect}
 			onClose={() => (showToc = false)}
 		/>
+
+		<!-- Only while the reader header is open, and only when there is a jump to undo -->
+		{#if showOverlay && backTarget}
+			<ReaderBackButton
+				chapterTitle={chapters[backTarget.chapter]?.title ?? ''}
+				direction={isAheadOf(backTarget, currentPosition) ? 'forward' : 'back'}
+				onBack={handleHistoryBack}
+			/>
+		{/if}
 	</div>
 
 	<BottomProgressBar

@@ -8,3 +8,6 @@ bun.lockb
 # Miscellaneous
 /static/
 /broken_books/*_notes/
+
+# Local-only notes (untracked, personal)
+/memory.md

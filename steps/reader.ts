@@ -857,9 +857,30 @@ When('I navigate to chapter {int} and scroll within it', async ({ page }, chapte
 		await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
 	}
 	const content = page.locator('[data-testid="reader-content"]');
+	// Which chapter the taps land in depends on the layout, and some chapters
+	// (title pages) fit in a single column — there is nothing to scroll there,
+	// so scrollLeft clamps to 0 and the scenario would assert nothing. Keep
+	// turning pages until the chapter is actually scrollable.
+	await expect
+		.poll(
+			async () => {
+				const scrollable = await content.evaluate(
+					(el) => (el as HTMLElement).scrollWidth > (el as HTMLElement).clientWidth
+				);
+				if (!scrollable) {
+					await clickNav(page, reader, box.width * 0.8, box.height * 0.5);
+				}
+				return scrollable;
+			},
+			{ timeout: 10000 }
+		)
+		.toBe(true);
 	await content.evaluate((el) => {
 		(el as HTMLElement).scrollLeft = (el as HTMLElement).clientWidth;
 	});
+	await expect
+		.poll(() => content.evaluate((el) => (el as HTMLElement).scrollLeft), { timeout: 3000 })
+		.toBeGreaterThan(0);
 });
 
 When('I open the TOC and click on chapter {int}', async ({ page }, chapterIdx: number) => {
