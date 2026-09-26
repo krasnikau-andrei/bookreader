@@ -19,7 +19,11 @@ async function waitForScrollSnap(page: Page) {
 			);
 		},
 		initialScroll,
-		{ timeout: 5000 }
+		// The scroll animation itself takes 250ms, but with four webkit workers
+		// running in parallel the page can be starved of frames for several
+		// seconds, so this budget only has to exceed the contention — not the
+		// animation. The assertion below stays strict.
+		{ timeout: 15000 }
 	);
 }
 
