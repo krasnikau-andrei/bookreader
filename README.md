@@ -49,6 +49,16 @@ Preview the production build:
 bun run preview
 ```
 
+### Deploy (GitHub Pages)
+
+Every push to `master` builds the app and publishes it to GitHub Pages via `.github/workflows/deploy-pages.yml`.
+
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+The site is served from `/bookreader/`. The workflow passes this path to the build as `BASE_PATH`; locally it stays empty, so the app runs at `/`. Use `resolve()` / `asset()` from `$app/paths` for internal links instead of hardcoded `/...` paths.
+
+The `/api/upload-broken-book` endpoint needs a server, so it only works in `bun run dev` / `bun run preview`, not on GitHub Pages.
+
 ## Testing
 
 ### Unit Tests (Vitest)
