@@ -3,6 +3,7 @@
 	import { theme } from '$lib/theme.svelte';
 	import { closeDatabase } from '$lib/storage';
 	import { onMount } from 'svelte';
+	import { asset } from '$app/paths';
 
 	let { children } = $props();
 
@@ -18,7 +19,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<link rel="manifest" href="/manifest.json" />
+	<link rel="manifest" href={asset('/manifest.json')} />
 	<meta name="theme-color" content="#000000" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
