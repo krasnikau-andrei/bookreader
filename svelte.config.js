@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-static';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,10 +7,13 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-		adapter: adapter()
+		// Static build for GitHub Pages. 404.html is the SPA fallback:
+		// Pages serves it for deep links like /read/<id>, and the client router takes over.
+		adapter: adapter({ fallback: '404.html' }),
+		paths: {
+			// GitHub Pages serves the site from /<repo-name>. CI sets BASE_PATH; local dev stays at /.
+			base: process.env.BASE_PATH ?? ''
+		}
 	}
 };
 
