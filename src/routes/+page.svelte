@@ -3,6 +3,7 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import { onMount } from 'svelte';
 	import { goto, preloadCode } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import BookCard from '$lib/components/BookCard.svelte';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -23,7 +24,7 @@
 
 	$effect(() => {
 		if (cache.focusBook) {
-			preloadCode(`/read/${cache.focusBook.id}`);
+			preloadCode(resolve('/read/[bookId]', { bookId: cache.focusBook.id }));
 		}
 	});
 
@@ -45,8 +46,7 @@
 			isLongPress = false;
 			return;
 		}
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`/read/${bookId}`);
+		goto(resolve('/read/[bookId]', { bookId }));
 	}
 
 	function handleTouchStart(bookId: string) {
@@ -65,16 +65,14 @@
 		}
 	}
 
-	/* eslint-disable svelte/no-navigation-without-resolve */
 	function navigateToFocus() {
-		if (cache.focusBook) goto(`/read/${cache.focusBook.id}`);
+		if (cache.focusBook) goto(resolve('/read/[bookId]', { bookId: cache.focusBook.id }));
 	}
 
 	function navigateToFocusNoPropagate(e: Event) {
 		e.stopPropagation();
-		if (cache.focusBook) goto(`/read/${cache.focusBook.id}`);
+		if (cache.focusBook) goto(resolve('/read/[bookId]', { bookId: cache.focusBook.id }));
 	}
-	/* eslint-enable svelte/no-navigation-without-resolve */
 
 	function handleFocusKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') navigateToFocus();

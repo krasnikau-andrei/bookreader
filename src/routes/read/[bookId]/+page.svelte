@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import {
 		getBook,
 		getBookFile,
@@ -49,15 +50,13 @@
 	onMount(async () => {
 		try {
 			if (!bookId) {
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto('/');
+				goto(resolve('/'));
 				return;
 			}
 
 			book = await getBook(bookId);
 			if (!book) {
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto('/');
+				goto(resolve('/'));
 				return;
 			}
 
@@ -68,8 +67,7 @@
 			} else {
 				const fileData = await getBookFile(bookId);
 				if (!fileData) {
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto('/');
+					goto(resolve('/'));
 					return;
 				}
 
@@ -132,8 +130,7 @@
 			}
 		} catch (e) {
 			console.error('[READER] Failed to load book:', e);
-			// eslint-disable-next-line svelte/no-navigation-without-resolve
-			goto('/');
+			goto(resolve('/'));
 		}
 	});
 
@@ -237,8 +234,7 @@
 					cache.focusBook = book;
 					cache.focusProgress = Math.round(pct * 100);
 				}
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto('/');
+				goto(resolve('/'));
 			}}
 			onShowToc={() => (showToc = true)}
 			onUploadBook={handleUploadBook}
