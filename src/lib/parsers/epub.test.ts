@@ -18,6 +18,21 @@ describe('EPUB Parser', () => {
 		expect(result.cover?.startsWith('data:image')).toBe(true);
 	});
 
+	test('extracts genres from dc:subject and dc:type', async () => {
+		const epubBuffer = await createMinimalEpub({
+			title: 'Genre Book',
+			author: 'Anonymous',
+			extraMetadata: '<dc:subject>sf_epic</dc:subject><dc:subject /><dc:type>Образование</dc:type>'
+		});
+
+		const result = await parseEpub(epubBuffer);
+
+		expect(result.subjects, `subjects: ${JSON.stringify(result.subjects)}`).toEqual([
+			'sf_epic',
+			'Образование'
+		]);
+	});
+
 	test('handles EPUB without cover', async () => {
 		const epubBuffer = await createMinimalEpub({
 			title: 'Book Without Cover',
@@ -177,6 +192,7 @@ async function createMinimalEpub(
 		title: string;
 		author: string;
 		cover?: Uint8Array;
+		extraMetadata?: string;
 	},
 	mimetypeContent: string = 'application/epub+zip'
 ): Promise<ArrayBuffer> {
@@ -213,6 +229,7 @@ async function createMinimalEpub(
 		<dc:identifier id="bookid">test-id</dc:identifier>
 		<dc:language>en</dc:language>
 		${coverMeta}
+		${metadata.extraMetadata ?? ''}
 	</metadata>
 	<manifest>
 		<item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>

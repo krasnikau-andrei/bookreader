@@ -15,6 +15,7 @@ export interface ParsedBook {
 	cover: string | null;
 	description: string | null;
 	language: string;
+	subjects: string[];
 }
 
 async function openEpubPackage(
@@ -82,6 +83,11 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 	const author = authorElements[0]?.textContent?.trim() || null;
 	const language = languageElements[0]?.textContent?.trim() || 'en';
 	const description = descriptionElements[0]?.textContent?.trim() || null;
+	// Genres: FB2 conversions use codes in dc:subject ("sf_epic"), others plain words or dc:type
+	const subjects = ['subject', 'type']
+		.flatMap((tag) => Array.from(opfDoc.getElementsByTagNameNS(dcNamespace, tag)))
+		.map((el) => el.textContent?.trim() ?? '')
+		.filter(Boolean);
 
 	// Extract cover
 	const coverPath = extractCoverPath(opfDoc, opfPath);
@@ -92,7 +98,8 @@ export async function parseEpub(buffer: ArrayBuffer): Promise<ParsedBook> {
 		author: author || 'Unknown Author',
 		cover,
 		description,
-		language
+		language,
+		subjects
 	};
 }
 
