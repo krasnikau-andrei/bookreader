@@ -22,6 +22,7 @@ interface Theme {
 		surfaceHover: string;
 	};
 	imageFilter: string;
+	coverFilter: string;
 	fontFamily: string;
 	padding: {
 		xs: string;
@@ -53,7 +54,8 @@ interface Theme {
 
 export const theme: Theme = {
 	colors: {
-		background: '#0f0b0a',
+		// Pure black: OLED pixels switch off, which is what you want reading in the dark
+		background: '#000000',
 		backgroundSecondary: '#16110e',
 		backgroundTertiary: '#1c1512',
 		readerBackground: '#000000',
@@ -73,6 +75,8 @@ export const theme: Theme = {
 		surfaceHover: '#f5f5f5'
 	},
 	imageFilter: 'sepia(0.15) brightness(0.85)',
+	// Dims bright (often white) covers so they don't glare on a black screen at night
+	coverFilter: 'brightness(0.8)',
 	fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
 	padding: {
 		xs: '4px',

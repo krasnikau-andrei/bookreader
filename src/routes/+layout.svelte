@@ -69,7 +69,8 @@
     --reader-gap-bottom: {theme.reader.gapBottom};
     --reader-gap-sides: {theme.reader.gapSides};
     --font-family: {theme.fontFamily};
-    --image-filter: {theme.imageFilter}
+    --image-filter: {theme.imageFilter};
+    --cover-filter: {theme.coverFilter}
 "
 >
 	{@render children()}
