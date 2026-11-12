@@ -5,6 +5,7 @@ import {
 	getAllProgress,
 	getBookFile,
 	saveProgress,
+	saveBook,
 	saveBookWithFile,
 	deleteBook,
 	bookExists
@@ -16,6 +17,7 @@ import { generateFileHash } from './hash';
 class LibraryCache {
 	books = $state<Book[]>([]);
 	bookProgressMap = $state<Record<string, number>>({});
+	lastReadMap = $state<Record<string, Date>>({});
 	focusBook = $state<Book | null>(null);
 	focusProgress = $state(0);
 
@@ -30,6 +32,7 @@ class LibraryCache {
 		allBooks.sort((a, b) => (lastRead.get(b.id) ?? 0) - (lastRead.get(a.id) ?? 0));
 
 		this.books = allBooks;
+		this.lastReadMap = Object.fromEntries(lastRead);
 		this.bookProgressMap = this.buildProgressMap(allProgress);
 		this.focusBook = recent?.book ?? null;
 
@@ -48,13 +51,14 @@ class LibraryCache {
 		this.focusProgress = focusPct;
 
 		this.computeMissingChapterSizes(allBooks, allProgress);
+		this.backfillSubjects(allBooks);
 	}
 
-	/** Returns 'duplicate' if the file is already in the library; throws on parse/save failure. */
-	async upload(file: File): Promise<'ok' | 'duplicate'> {
+	/** Status is 'duplicate' if the file is already in the library; throws on parse/save failure. */
+	async upload(file: File): Promise<{ status: 'ok' | 'duplicate'; bookId: string }> {
 		const buffer = await file.arrayBuffer();
 		const id = await generateFileHash(buffer);
-		if (await bookExists(id)) return 'duplicate';
+		if (await bookExists(id)) return { status: 'duplicate', bookId: id };
 
 		const parsed = await parseEpub(buffer);
 		const book: Book = {
@@ -66,15 +70,17 @@ class LibraryCache {
 			format: 'epub',
 			addedAt: new Date(),
 			filename: file.name,
-			language: parsed.language
+			language: parsed.language,
+			subjects: parsed.subjects
 		};
 		await saveBookWithFile(book, buffer);
 		this.books = [book, ...this.books];
 		if (!this.focusBook) {
 			this.focusBook = book;
 		}
-		this.refresh();
-		return 'ok';
+		// Awaited so callers see the book at its final, sorted position
+		await this.refresh();
+		return { status: 'ok', bookId: id };
 	}
 
 	async remove(bookId: string) {
@@ -96,6 +102,21 @@ class LibraryCache {
 			}
 		}
 		return map;
+	}
+
+	/** Books saved before genres were extracted get them once, from the stored file. */
+	private async backfillSubjects(allBooks: Book[]) {
+		for (const book of allBooks.filter((b) => b.subjects === undefined)) {
+			try {
+				const fileData = await getBookFile(book.id);
+				if (!fileData) continue;
+				const { subjects } = await parseEpub(fileData);
+				await saveBook({ ...$state.snapshot(book), subjects });
+				this.books = this.books.map((b) => (b.id === book.id ? { ...b, subjects } : b));
+			} catch (e) {
+				console.error(`[LIBRARY] Failed to backfill subjects for ${book.id}:`, e);
+			}
+		}
 	}
 
 	private async computeMissingChapterSizes(allBooks: Book[], allProgress: ReadingProgress[]) {
