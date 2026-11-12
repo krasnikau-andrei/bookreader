@@ -27,6 +27,23 @@ async function waitForScrollSnap(page: Page) {
 	);
 }
 
+/** Waits until the content rests on a page boundary, wherever that is (used after cancelled swipes). */
+async function waitForSnapSettled(page: Page) {
+	await page.waitForFunction(
+		() => {
+			const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement | null;
+			if (!el) return false;
+			const w = window as unknown as { __lastSnapCheck?: number };
+			const prev = w.__lastSnapCheck;
+			w.__lastSnapCheck = el.scrollLeft;
+			const snap = Math.round(el.scrollLeft / el.clientWidth) * el.clientWidth;
+			return prev === el.scrollLeft && Math.abs(el.scrollLeft - snap) < 1;
+		},
+		undefined,
+		{ polling: 100, timeout: 10000 }
+	);
+}
+
 declare global {
 	interface Window {
 		__trackedScrollLeft: number;
@@ -109,7 +126,7 @@ When('I swipe left a short distance', async ({ page }) => {
 	await dispatchTouch(page, box.x + box.width * 0.4, box.y + box.height * 0.5, 'touchmove');
 	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.4, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForSnapSettled(page);
 });
 
 When('I swipe right a short distance', async ({ page }) => {
@@ -123,7 +140,7 @@ When('I swipe right a short distance', async ({ page }) => {
 	await dispatchTouch(page, box.x + box.width * 0.6, box.y + box.height * 0.5, 'touchmove');
 	await page.waitForTimeout(400);
 	await dispatchTouch(page, box.x + box.width * 0.6, box.y + box.height * 0.5, 'touchend');
-	await page.waitForTimeout(800);
+	await waitForSnapSettled(page);
 });
 
 Then('the scroll position should increase', async ({ page }) => {

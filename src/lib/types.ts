@@ -8,6 +8,8 @@ export interface Book {
 	addedAt: Date;
 	filename: string;
 	language: string;
+	// Absent on books saved before genres were extracted; backfilled by the library cache
+	subjects?: string[];
 }
 
 export interface ReadingProgress {

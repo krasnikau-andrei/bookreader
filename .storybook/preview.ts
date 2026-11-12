@@ -46,6 +46,7 @@ const preview: Preview = {
 			Object.entries(theme.fontSize).forEach(([key, value]) => {
 				body.style.setProperty(`--font-size-${key}`, value);
 			});
+			body.style.setProperty('--cover-filter', theme.coverFilter);
 			return story();
 		}
 	]

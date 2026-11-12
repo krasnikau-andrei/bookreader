@@ -67,6 +67,12 @@ Feature: Library Page
     And the book should be titled "Book With Cover"
     And the book should be authored by "Test Author"
 
+  Scenario: Book with a 1x1 placeholder cover gets a typographic cover
+    When I upload "book-with-pixel-cover.epub" via the file chooser button
+    Then the book should not display a cover image
+    And it should show a filename placeholder containing ".epub"
+    And the book should be titled "Book With Pixel Cover"
+
   Scenario: Book without cover displays filename placeholder
     When I upload "great-gatsby.epub" via the file chooser button
     Then the book should not display a cover image
