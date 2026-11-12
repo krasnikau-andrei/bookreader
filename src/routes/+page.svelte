@@ -3,6 +3,7 @@
 	import { cache } from '$lib/library-cache.svelte';
 	import { onMount, tick } from 'svelte';
 	import { goto, preloadCode } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import ConfirmSheet from '$lib/components/ConfirmSheet.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import BookDeck from '$lib/components/BookDeck.svelte';
@@ -21,7 +22,7 @@
 
 	$effect(() => {
 		if (cache.focusBook) {
-			preloadCode(`/read/${cache.focusBook.id}`);
+			preloadCode(resolve('/read/[bookId]', { bookId: cache.focusBook.id }));
 		}
 	});
 
@@ -43,8 +44,7 @@
 			isLongPress = false;
 			return;
 		}
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`/read/${bookId}`);
+		goto(resolve('/read/[bookId]', { bookId }));
 	}
 
 	function handleTouchStart(bookId: string) {
