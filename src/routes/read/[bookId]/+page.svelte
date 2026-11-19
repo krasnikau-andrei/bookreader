@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
@@ -21,6 +21,8 @@
 	import TableOfContents from '$lib/components/TableOfContents.svelte';
 	import { createReaderHistory, isAheadOf, type ReaderPosition } from '$lib/reader/history';
 	import type { Book, Chapter } from '$lib/types';
+	import { PluginManager } from '$lib/plugins/manager.svelte';
+	import PluginsSheet from '$lib/components/PluginsSheet.svelte';
 
 	// Core state
 	let book: Book | undefined = $state();
@@ -39,6 +41,34 @@
 	let isUpdatingUrl = false;
 	let progressChapterSizes: number[] | undefined = $state();
 	let currentScrollPercent = $state(0);
+
+	// Plugins run only while a book is open
+	const plugins = new PluginManager();
+	let showPlugins = $state(false);
+	onDestroy(() => plugins.destroy());
+
+	/** Friends' positions as stripes on the whole-book progress bar */
+	let progressMarkers = $derived(
+		progressChapterSizes
+			? plugins.markers
+					.filter((m) => m.chapter < chapters.length)
+					.map((m) => ({
+						id: m.id,
+						label: m.label,
+						hue: m.hue,
+						percent: calculateBookProgress(progressChapterSizes!, m.chapter, m.fraction)
+					}))
+			: []
+	);
+
+	/** Friends' positions in the open chapter, as lines over the text */
+	let textMarkers = $derived(plugins.markers.filter((m) => m.chapter === currentChapter));
+
+	function handlePagePosition(chapter: number, fraction: number) {
+		if (!bookId || !progressChapterSizes) return;
+		const percent = calculateBookProgress(progressChapterSizes, chapter, fraction);
+		plugins.setPosition({ bookId, chapter, fraction, percent });
+	}
 
 	// Reading history: every footnote/TOC jump records the position it left,
 	// so "back" returns to that exact spot. `backTarget` is the reactive
@@ -159,6 +189,8 @@
 			if (!hasChapterParam && !hasProgressParam) {
 				updateUrl(currentChapter, savedProgress?.scrollPercent ?? 0);
 			}
+
+			plugins.load().catch((e) => console.warn('[PLUGINS] Failed to load plugins:', e));
 		} catch (e) {
 			console.error('[READER] Failed to load book:', e);
 			goto(resolve('/'));
@@ -253,6 +285,8 @@
 					onCloseMenus={handleCloseMenus}
 					onFragmentNavigate={handleFragmentNavigate}
 					onJump={pushCurrentPosition}
+					markers={textMarkers}
+					onPagePosition={handlePagePosition}
 				/>
 			</div>
 		{:else if showLoadingFallback}
@@ -275,6 +309,10 @@
 			}}
 			onShowToc={() => (showToc = true)}
 			onUploadBook={handleUploadBook}
+			onShowPlugins={() => {
+				showOverlay = false;
+				showPlugins = true;
+			}}
 		/>
 		<TableOfContents
 			show={showToc}
@@ -285,6 +323,10 @@
 		/>
 
 		<!-- Only while the reader header is open, and only when there is a jump to undo -->
+		{#if showPlugins}
+			<PluginsSheet {plugins} onClose={() => (showPlugins = false)} />
+		{/if}
+
 		{#if showOverlay && backTarget}
 			<ReaderBackButton
 				chapterTitle={chapters[backTarget.chapter]?.title ?? ''}
@@ -298,6 +340,7 @@
 		chapterSizes={progressChapterSizes}
 		{currentChapter}
 		scrollPercent={currentScrollPercent}
+		markers={progressMarkers}
 	/>
 </div>
 
