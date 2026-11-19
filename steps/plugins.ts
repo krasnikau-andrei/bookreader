@@ -200,7 +200,12 @@ Then('a line for {string} is drawn over the text', async ({ page }, name: string
 		const probeX = rect.left + rect.width / 2;
 		const probeY = rect.bottom + 12;
 		const under = document.elementFromPoint(probeX, probeY);
+		// The reader forces colours on page elements — make sure the line kept its own
+		const lineColor = getComputedStyle(el.querySelector('hr')!).borderTopColor;
+		const labelColor = getComputedStyle(el.querySelector('mark')!).color;
 		return {
+			lineColor,
+			labelColor,
 			rect: { left: rect.left, top: rect.top, width: rect.width },
 			viewport: { width: window.innerWidth, height: window.innerHeight },
 			under: under?.closest('.content-inner') ? under.tagName : `outside text: ${under?.tagName}`
@@ -212,6 +217,8 @@ Then('a line for {string} is drawn over the text', async ({ page }, name: string
 	expect(result.rect.top, debug).toBeGreaterThan(0);
 	expect(result.rect.top, debug).toBeLessThan(result.viewport.height);
 	expect(result.under, debug).not.toContain('outside text');
+	expect(result.lineColor, debug).not.toMatch(/transparent|rgba\(0, 0, 0, 0\)/);
+	expect(result.labelColor, debug).toBe(result.lineColor);
 });
 
 Then('every escape attempt by the plugin failed', async ({ page }) => {

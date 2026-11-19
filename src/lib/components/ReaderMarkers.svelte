@@ -66,29 +66,36 @@
 	});
 </script>
 
+<!-- aside/hr/mark on purpose: the reader forces colours on every div and span inside the page -->
 {#each lines as line (line.id)}
-	<div
-		class="line"
+	<aside
+		class="marker"
 		data-testid="reader-marker"
 		style="left: {line.left}px; top: {line.top}px; width: {line.width}px; --marker: {line.color}"
 	>
-		<span class="label">{line.label}</span>
-	</div>
+		<hr />
+		<mark>{line.label}</mark>
+	</aside>
 {/each}
 
 <style>
 	/* Sits just above the text line, never takes taps from the page */
-	.line {
+	.marker {
 		position: absolute;
 		height: 2px;
 		margin-top: -3px;
-		background: var(--marker);
-		border-radius: 1px;
 		pointer-events: none;
 		z-index: 1;
 	}
 
-	.label {
+	hr {
+		margin: 0;
+		border: none;
+		border-top: 2px solid var(--marker);
+		border-radius: 1px;
+	}
+
+	mark {
 		position: absolute;
 		right: 0;
 		bottom: 3px;
@@ -96,6 +103,7 @@
 		font-size: var(--font-size-xs);
 		line-height: 1;
 		color: var(--marker);
+		background: none;
 		white-space: nowrap;
 	}
 </style>
