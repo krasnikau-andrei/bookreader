@@ -60,3 +60,14 @@ Feature: Reader Swipe Gestures
     Then the scroll position should be at a valid page boundary
     When I tap the right zone again
     Then the scroll position should be at a valid page boundary
+
+  # Regression: a touchmove the reader doesn't cancel hands the gesture to the
+  # browser as a native scroll, and on iOS the page then keeps sliding with
+  # momentum after the finger lifts instead of turning exactly one page.
+  Scenario: Finger swipe is never handed over to native scrolling
+    When I start tracking the scroll position
+    And I drag a finger left across the page in small steps
+    Then the browser was never allowed to scroll the page natively
+    And the page should have followed the finger during the drag
+    And the page should advance by exactly 1 page
+    And the scroll position should be at a valid page boundary

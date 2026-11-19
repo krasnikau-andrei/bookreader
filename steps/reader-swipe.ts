@@ -246,3 +246,90 @@ Then('the page should advance by exactly one page again', async ({ page }) => {
 	const pageAfter = Math.round(scrollAfter / clientWidth);
 	expect(pageAfter).toBeGreaterThanOrEqual(0);
 });
+
+interface DragRecord {
+	touchAction: string;
+	startScrollLeft: number;
+	moves: { fingerDx: number; prevented: boolean; scrollLeft: number }[];
+}
+
+declare global {
+	interface Window {
+		__drag: DragRecord;
+	}
+}
+
+When('I drag a finger left across the page in small steps', async ({ page }) => {
+	const content = page.locator('[data-testid="reader-content"]');
+	const box = await content.boundingBox();
+	expect(box).toBeTruthy();
+	if (!box) return;
+
+	// Record, after the reader's own handler has run, whether each touchmove was
+	// cancelled and where the page was. A listener on window runs last (bubbling).
+	await page.evaluate(() => {
+		const el = document.querySelector('[data-testid="reader-content"]') as HTMLElement;
+		const record: DragRecord = {
+			touchAction: getComputedStyle(el).touchAction,
+			startScrollLeft: el.scrollLeft,
+			moves: []
+		};
+		let startX: number | null = null;
+		window.addEventListener('touchmove', (e) => {
+			const x = e.touches[0].clientX;
+			startX ??= x;
+			record.moves.push({
+				fingerDx: x - startX,
+				prevented: e.defaultPrevented,
+				scrollLeft: el.scrollLeft
+			});
+		});
+		window.__drag = record;
+	});
+
+	// Small steps like a real finger: the first moves are well under the 20px
+	// "is this a swipe" threshold, which is exactly where native scroll used to start.
+	const y = box.y + box.height * 0.5;
+	const startX = box.x + box.width * 0.8;
+	const step = 8;
+	const steps = Math.round((box.width * 0.5) / step);
+	await dispatchTouch(page, startX, y, 'touchstart');
+	await dispatchTouch(page, startX, y, 'touchmove');
+	for (let i = 1; i <= steps; i++) {
+		await dispatchTouch(page, startX - i * step, y, 'touchmove');
+	}
+	await dispatchTouch(page, startX - steps * step, y, 'touchend');
+	await waitForScrollSnap(page);
+});
+
+Then('the browser was never allowed to scroll the page natively', async ({ page }) => {
+	const drag = await page.evaluate(() => window.__drag);
+	expect(drag.moves.length).toBeGreaterThan(0);
+
+	expect(
+		drag.touchAction,
+		`reader content has touch-action "${drag.touchAction}", expected "none": ` +
+			`any other value lets the browser pan natively and fling past the page`
+	).toBe('none');
+
+	const notPrevented = drag.moves
+		.map((m, i) => ({ i, ...m }))
+		.filter((m) => !m.prevented)
+		.map((m) => `#${m.i} (finger moved ${m.fingerDx}px)`);
+	expect(
+		notPrevented,
+		`touchmove events not cancelled by the reader: ${notPrevented.join(', ')}. ` +
+			`An uncancelled touchmove lets the browser take over the gesture as a native scroll.`
+	).toEqual([]);
+});
+
+Then('the page should have followed the finger during the drag', async ({ page }) => {
+	const drag = await page.evaluate(() => window.__drag);
+	const trace = drag.moves
+		.map((m) => `finger ${m.fingerDx}px → page ${m.scrollLeft - drag.startScrollLeft}px`)
+		.join('; ');
+	const lagging = drag.moves.filter(
+		(m) => Math.abs(drag.startScrollLeft - m.scrollLeft - m.fingerDx) > 1
+	);
+	expect(lagging.length, `page did not track the finger. Trace: ${trace}`).toBe(0);
+});
