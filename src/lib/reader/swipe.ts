@@ -7,6 +7,9 @@ export interface SwipeCallbacks {
 	onSwipeRight: () => void;
 	onSwipeCancel: () => void;
 	onSwipeStart?: () => void; // Called when swipe starts
+	// Called on every horizontal finger move with the distance from the start (px).
+	// The page must follow the finger in JS: native scrolling is disabled, see handleTouchMove.
+	onSwipeMove?: (deltaX: number) => void;
 	shouldSkipSwipe?: (event: TouchEvent) => boolean; // Return true to skip swipe handling (e.g. scrolling a table)
 }
 
@@ -139,11 +142,15 @@ export function createSwipeHandler(
 	function handleTouchMove(event: TouchEvent) {
 		if (!state.isActive || event.touches.length !== 1) return;
 		const touch = event.touches[0];
-		const deltaX = touch.clientX - state.startX;
-		if (Math.abs(deltaX) > 20) {
-			event.preventDefault();
-		}
 		moveSwipe(touch.clientX, touch.clientY);
+		if (state.isCancelled) return;
+
+		// Cancel from the FIRST move, not after some threshold. Once a touchmove
+		// goes through uncancelled, the browser takes over the gesture as a native
+		// scroll: later touchmoves become non-cancelable, and on release iOS keeps
+		// scrolling with momentum — the page drifts on after the finger lifts.
+		if (event.cancelable) event.preventDefault();
+		callbacks.onSwipeMove?.(touch.clientX - state.startX);
 	}
 
 	function handleTouchEnd() {
