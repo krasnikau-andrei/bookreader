@@ -6,8 +6,10 @@
 	import { createProgressSaver } from '$lib/reader/progress-saver';
 	import { animateScroll, dragTo, jumpTo } from '$lib/reader/animation';
 	import { calculateScrollPercent } from '$lib/reader/pagination';
-	import type { Chapter } from '$lib/types';
+	import { fractionAtPageStart } from '$lib/reader/text-position';
+	import type { Chapter, TextMarker } from '$lib/types';
 	import ImageFullscreen from './ImageFullscreen.svelte';
+	import ReaderMarkers from './ReaderMarkers.svelte';
 
 	interface Props {
 		bookId: string;
@@ -30,6 +32,13 @@
 		 * still intact. Used to record the jump in the reading history.
 		 */
 		onJump?: () => void;
+		/** Other readers' positions in this chapter */
+		markers?: TextMarker[];
+		/**
+		 * Where the visible page starts, as a fraction of the chapter's text.
+		 * Unlike scroll percent it means the same word on every screen size.
+		 */
+		onPagePosition?: (chapter: number, fraction: number) => void;
 	}
 
 	let {
@@ -47,10 +56,14 @@
 		onCenterTap,
 		onCloseMenus,
 		onFragmentNavigate,
-		onJump
+		onJump,
+		markers = [],
+		onPagePosition
 	}: Props = $props();
 
 	let scrollContainer: HTMLDivElement | null = $state(null);
+	let contentInner: HTMLDivElement | null = $state(null);
+	let pagePositionTimer: ReturnType<typeof setTimeout> | undefined;
 	let isChangingChapter = $state(false);
 	let isAnimatingScroll = $state(false);
 	let isFragmentNavigation = $state(false);
@@ -320,7 +333,27 @@
 		}
 	}
 
+	/** Report the page position once scrolling settles — it walks the text, so not on every frame */
+	function schedulePagePosition() {
+		if (!onPagePosition) return;
+		clearTimeout(pagePositionTimer);
+		pagePositionTimer = setTimeout(() => {
+			if (!scrollContainer || !contentInner || isChangingChapter) return;
+			const pageLeft = scrollContainer.getBoundingClientRect().left;
+			onPagePosition(currentChapter, fractionAtPageStart(contentInner, pageLeft));
+		}, 400);
+	}
+
+	$effect(() => () => clearTimeout(pagePositionTimer));
+
+	// A new chapter opens without a scroll event when it starts at the top
+	$effect(() => {
+		void [content, currentChapter, scrollContainer, contentInner];
+		schedulePagePosition();
+	});
+
 	function handleScroll() {
+		schedulePagePosition();
 		if (!scrollContainer || isUpdatingUrl || isChangingChapter || isAnimatingScroll || isSelecting)
 			return;
 
@@ -412,10 +445,13 @@
 	onclick={handleContentClick}
 	data-testid="reader-content"
 >
-	<div class="content-inner">
+	<div class="content-inner" bind:this={contentInner}>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html content}
 	</div>
+	{#if markers.length > 0}
+		<ReaderMarkers container={scrollContainer} root={contentInner} {content} {markers} />
+	{/if}
 </div>
 
 {#if fullscreenSrc}
@@ -424,6 +460,8 @@
 
 <style>
 	.content {
+		/* Anchors other readers' marker lines to the scrolled pages */
+		position: relative;
 		height: 100dvh;
 		column-width: calc(100vw - 2rem);
 		column-gap: 0;
