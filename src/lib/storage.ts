@@ -1,5 +1,12 @@
 import Dexie, { type Table } from 'dexie';
 import type { Book, BookFile, Chapter, ReadingProgress } from './types';
+import type { PluginRecord } from './plugins/types';
+
+export interface PluginDataRow {
+	pluginId: string;
+	key: string;
+	value: unknown;
+}
 
 export interface ChapterCache {
 	bookId: string;
@@ -12,6 +19,9 @@ export class BookDatabase extends Dexie {
 	readingProgress!: Table<ReadingProgress, string>;
 	bookFiles!: Table<BookFile, string>;
 	chapterCache!: Table<ChapterCache, string>;
+	plugins!: Table<PluginRecord, string>;
+	/** Each plugin's own key-value store; plugins never see each other's rows */
+	pluginData!: Table<PluginDataRow, [string, string]>;
 
 	constructor() {
 		super('bookreader');
@@ -41,6 +51,14 @@ export class BookDatabase extends Dexie {
 			readingProgress: 'bookId, lastReadAt',
 			bookFiles: 'id',
 			chapterCache: 'bookId'
+		});
+		this.version(5).stores({
+			books: 'id, title, author, addedAt',
+			readingProgress: 'bookId, lastReadAt',
+			bookFiles: 'id',
+			chapterCache: 'bookId',
+			plugins: 'id',
+			pluginData: '[pluginId+key]'
 		});
 	}
 }
@@ -190,4 +208,34 @@ export async function getMostRecentProgress(): Promise<
 		console.error('[STORAGE] getMostRecentProgress error:', e);
 		throw e;
 	}
+}
+
+export async function getPlugins(): Promise<PluginRecord[]> {
+	await ensureOpen();
+	return db.plugins.toArray();
+}
+
+export async function savePlugin(plugin: PluginRecord): Promise<void> {
+	await ensureOpen();
+	// Callers pass plain objects: Svelte $state proxies cannot be stored in IndexedDB
+	await db.plugins.put(plugin);
+}
+
+/** Removes the plugin and everything it stored. */
+export async function deletePlugin(id: string): Promise<void> {
+	await ensureOpen();
+	await db.transaction('rw', db.plugins, db.pluginData, async () => {
+		await db.plugins.delete(id);
+		await db.pluginData.where('[pluginId+key]').between([id, ''], [id, '￿']).delete();
+	});
+}
+
+export async function getPluginData(pluginId: string, key: string): Promise<unknown> {
+	await ensureOpen();
+	return (await db.pluginData.get([pluginId, key]))?.value;
+}
+
+export async function setPluginData(pluginId: string, key: string, value: unknown): Promise<void> {
+	await ensureOpen();
+	await db.pluginData.put({ pluginId, key, value });
 }

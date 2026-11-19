@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { calculateBookProgress } from '$lib/reader/progress';
+	import { markerColor } from '$lib/theme.svelte';
+	import type { ProgressMarker } from '$lib/types';
 
 	interface Props {
 		chapterSizes: number[];
 		currentChapter: number;
 		scrollPercent: number;
+		markers?: ProgressMarker[];
 	}
 
-	let { chapterSizes, currentChapter, scrollPercent }: Props = $props();
+	let { chapterSizes, currentChapter, scrollPercent, markers = [] }: Props = $props();
+
+	const toPct = (fraction: number) => Math.max(0, Math.min(100, fraction * 100));
 
 	let bookProgressPct = $derived(
 		Math.round(calculateBookProgress(chapterSizes, currentChapter, scrollPercent) * 100)
@@ -16,24 +21,35 @@
 
 {#if chapterSizes?.length}
 	<div class="book-progress-bar" data-testid="progress-bar">
-		<div class="progress-track">
-			{#each chapterSizes as size, i (i)}
+		<div class="track-wrap">
+			<div class="progress-track">
+				{#each chapterSizes as size, i (i)}
+					<div
+						class="progress-segment"
+						data-testid="progress-segment"
+						class:filled={i < currentChapter}
+						class:partial={i === currentChapter}
+						style="flex: {size}"
+					>
+						{#if i < currentChapter}
+							<div class="segment-fill full"></div>
+						{:else if i === currentChapter && scrollPercent > 0}
+							<div
+								class="segment-fill"
+								style="width: {Math.max(0, Math.min(100, scrollPercent * 100))}%"
+							></div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+			{#each markers as marker (marker.id)}
 				<div
-					class="progress-segment"
-					data-testid="progress-segment"
-					class:filled={i < currentChapter}
-					class:partial={i === currentChapter}
-					style="flex: {size}"
-				>
-					{#if i < currentChapter}
-						<div class="segment-fill full"></div>
-					{:else if i === currentChapter && scrollPercent > 0}
-						<div
-							class="segment-fill"
-							style="width: {Math.max(0, Math.min(100, scrollPercent * 100))}%"
-						></div>
-					{/if}
-				</div>
+					class="marker"
+					data-testid="progress-marker"
+					aria-label={marker.label}
+					title={marker.label}
+					style="left: {toPct(marker.percent)}%; background: {markerColor(marker.hue)}"
+				></div>
 			{/each}
 		</div>
 		<span class="progress-percentage" data-testid="progress-percentage">{bookProgressPct}%</span>
@@ -46,6 +62,23 @@
 		align-items: center;
 		gap: 6px;
 		width: 100%;
+	}
+
+	.track-wrap {
+		position: relative;
+		flex: 1;
+		display: flex;
+	}
+
+	/* Sticks out above and below the track so it reads even on a thin bar */
+	.marker {
+		position: absolute;
+		top: -3px;
+		bottom: -3px;
+		width: 3px;
+		border-radius: 1px;
+		transform: translateX(-50%);
+		pointer-events: none;
 	}
 
 	.progress-track {

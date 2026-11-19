@@ -7,9 +7,10 @@
 		onBack: () => void;
 		onShowToc: () => void;
 		onUploadBook: () => Promise<void>;
+		onShowPlugins?: () => void;
 	}
 
-	let { show, onBack, onShowToc, onUploadBook }: Props = $props();
+	let { show, onBack, onShowToc, onUploadBook, onShowPlugins }: Props = $props();
 
 	let showMenu = $state(false);
 	let uploadStatus: 'idle' | 'uploading' | 'success' | 'error' = $state('idle');
@@ -87,6 +88,33 @@
 				</button>
 				{#if showMenu}
 					<div class="popover" role="presentation" onclick={(e) => e.stopPropagation()}>
+						{#if onShowPlugins}
+							<button
+								class="menu-item"
+								data-testid="menu-plugins"
+								onclick={() => {
+									closeMenu();
+									onShowPlugins();
+								}}
+							>
+								<span class="menu-icon">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0V8zM12 18v4" />
+									</svg>
+								</span>
+								Плагины
+							</button>
+						{/if}
 						<button
 							class="menu-item"
 							onclick={handleUpload}

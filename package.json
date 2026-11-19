@@ -18,7 +18,8 @@
 		"check:books": "bun run scripts/check-broken-books.ts",
 		"check:books:e2e": "playwright test --config=playwright-check.config.ts",
 		"storybook": "storybook dev -p 6006",
-		"build-storybook": "storybook build"
+		"build-storybook": "storybook build",
+		"server": "bun run server/src/main.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",

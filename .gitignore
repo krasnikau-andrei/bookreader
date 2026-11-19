@@ -42,3 +42,4 @@ test-results.json
 # Stryker mutation testing
 .stryker-tmp/
 reports/
+reading-together.sqlite*

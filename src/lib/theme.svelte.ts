@@ -50,6 +50,11 @@ interface Theme {
 		gapBottom: string;
 		gapSides: string;
 	};
+	/** Other readers' markers: the hue comes from their key, these keep them readable on black */
+	marker: {
+		saturation: string;
+		lightness: string;
+	};
 }
 
 export const theme: Theme = {
@@ -103,5 +108,14 @@ export const theme: Theme = {
 		gapTop: '5px',
 		gapBottom: '25px',
 		gapSides: '20px'
+	},
+	marker: {
+		saturation: '65%',
+		lightness: '62%'
 	}
 };
+
+/** The colour of another reader's marker, from the hue their key maps to. */
+export function markerColor(hue: number): string {
+	return `hsl(${hue} ${theme.marker.saturation} ${theme.marker.lightness})`;
+}
