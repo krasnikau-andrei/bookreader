@@ -19,6 +19,21 @@ export interface ParsedPlugin {
 	code: string;
 }
 
+/** What the plugins UI needs from the manager — lets stories pass a fake */
+export type PluginsController = Pick<
+	PluginManager,
+	| 'plugins'
+	| 'runtime'
+	| 'available'
+	| 'install'
+	| 'uninstall'
+	| 'setEnabled'
+	| 'allowHost'
+	| 'denyHost'
+	| 'revokeHost'
+	| 'uiEvent'
+>;
+
 const emptyRuntime = (): PluginRuntimeState => ({
 	widgets: [],
 	markers: [],
@@ -38,7 +53,10 @@ export class PluginManager {
 	markers = $derived(
 		this.plugins
 			.filter((p) => p.enabled && p.manifest.permissions.includes('markers'))
-			.flatMap((p) => this.runtime[p.id]?.markers ?? [])
+			// Prefix ids so two plugins can't collide
+			.flatMap((p) =>
+				(this.runtime[p.id]?.markers ?? []).map((m) => ({ ...m, id: `${p.id}/${m.id}` }))
+			)
 	);
 
 	/** Built-in plugins the user hasn't installed yet */
@@ -83,7 +101,9 @@ export class PluginManager {
 	}
 
 	/** Install after the user confirmed the manifest's permissions. Replaces an older version. */
-	async install({ manifest, code }: ParsedPlugin) {
+	async install(parsed: ParsedPlugin) {
+		// The UI keeps the parsed plugin in $state; IndexedDB can't store its proxies
+		const { manifest, code } = $state.snapshot(parsed) as ParsedPlugin;
 		const existing = this.plugins.find((p) => p.id === manifest.id);
 		const record: PluginRecord = {
 			id: manifest.id,
