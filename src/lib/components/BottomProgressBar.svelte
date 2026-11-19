@@ -1,18 +1,20 @@
 <script lang="ts">
 	import BookProgressBar from './BookProgressBar.svelte';
+	import type { ProgressMarker } from '$lib/types';
 
 	interface Props {
 		chapterSizes: number[] | undefined;
 		currentChapter: number;
 		scrollPercent: number;
+		markers?: ProgressMarker[];
 	}
 
-	let { chapterSizes, currentChapter, scrollPercent }: Props = $props();
+	let { chapterSizes, currentChapter, scrollPercent, markers = [] }: Props = $props();
 </script>
 
 {#if chapterSizes}
 	<div class="progress-bottom-bar" data-testid="progress-bottom-bar">
-		<BookProgressBar {chapterSizes} {currentChapter} {scrollPercent} />
+		<BookProgressBar {chapterSizes} {currentChapter} {scrollPercent} {markers} />
 	</div>
 {/if}
 
