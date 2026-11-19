@@ -78,6 +78,15 @@ export function animateScroll(
 }
 
 /**
+ * Move to an exact position (no page rounding), e.g. to follow a finger.
+ * Stops any running animation so it doesn't fight the finger.
+ */
+export function dragTo(element: HTMLElement, scrollLeft: number): void {
+	cancelAnimation(element);
+	element.scrollLeft = scrollLeft;
+}
+
+/**
  * Jump to position without animation
  */
 export function jumpTo(element: HTMLElement, targetScroll: number): void {

@@ -4,7 +4,7 @@
 	import { createSafetyNet } from '$lib/reader/safety-net';
 	import { createScrollRestore } from '$lib/reader/scroll-restore';
 	import { createProgressSaver } from '$lib/reader/progress-saver';
-	import { animateScroll, jumpTo } from '$lib/reader/animation';
+	import { animateScroll, dragTo, jumpTo } from '$lib/reader/animation';
 	import { calculateScrollPercent } from '$lib/reader/pagination';
 	import type { Chapter } from '$lib/types';
 	import ImageFullscreen from './ImageFullscreen.svelte';
@@ -84,6 +84,16 @@
 				hasUserInteracted = true;
 				isUserSwiping = true;
 				swipeStartScrollLeft = scrollContainer!.scrollLeft;
+			},
+			onSwipeMove: (deltaX) => {
+				if (!scrollContainer) return;
+				const sel = window.getSelection();
+				if (sel && !sel.isCollapsed) return;
+				// Follow the finger, but never further than one page either way
+				const width = scrollContainer.clientWidth;
+				const maxScroll = scrollContainer.scrollWidth - width;
+				const offset = Math.max(-width, Math.min(width, -deltaX));
+				dragTo(scrollContainer, Math.max(0, Math.min(maxScroll, swipeStartScrollLeft + offset)));
 			},
 			onSwipeLeft: () => {
 				isUserSwiping = false;
@@ -429,7 +439,9 @@
 		font-family: 'Literata', serif;
 		font-size: var(--font-size-reader-text);
 		scroll-behavior: auto;
-		touch-action: pan-x;
+		/* No native panning: JS follows the finger and turns exactly one page.
+		   Native pan ends in momentum scrolling that drifts past the page. */
+		touch-action: none;
 		overscroll-behavior: none;
 	}
 
