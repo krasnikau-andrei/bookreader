@@ -1,12 +1,21 @@
 import { expect, type Page } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 
-async function waitForScrollSnap(page: Page) {
-	const initialScroll = await page.evaluate(() => {
+interface ScrollBeforeSwipe {
+	scrollLeft: number;
+	clientWidth: number;
+}
+
+/** Read before the finger touches: the page follows the finger, so after touchend it has already moved. */
+async function readScrollBeforeSwipe(page: Page): Promise<ScrollBeforeSwipe | -1> {
+	return page.evaluate(() => {
 		const el = document.querySelector('[data-testid="reader-content"]');
 		if (!el) return -1;
 		return { scrollLeft: el.scrollLeft, clientWidth: (el as HTMLElement).clientWidth };
 	});
+}
+
+async function waitForScrollSnap(page: Page, initialScroll: ScrollBeforeSwipe | -1) {
 	if (initialScroll === -1) return;
 	await page.waitForFunction(
 		(init: { scrollLeft: number; clientWidth: number }) => {
@@ -73,10 +82,11 @@ When('I swipe left from right to left', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 
+	const before = await readScrollBeforeSwipe(page);
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchmove');
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchend');
-	await waitForScrollSnap(page);
+	await waitForScrollSnap(page, before);
 });
 
 When('I swipe right from left to right', async ({ page }) => {
@@ -85,10 +95,11 @@ When('I swipe right from left to right', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 
+	const before = await readScrollBeforeSwipe(page);
 	await dispatchTouch(page, box.x + box.width * 0.2, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchmove');
 	await dispatchTouch(page, box.x + box.width * 0.8, box.y + box.height * 0.5, 'touchend');
-	await waitForScrollSnap(page);
+	await waitForScrollSnap(page, before);
 });
 
 When('I swipe left a long distance across the screen', async ({ page }) => {
@@ -97,10 +108,11 @@ When('I swipe left a long distance across the screen', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 
+	const before = await readScrollBeforeSwipe(page);
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchmove');
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchend');
-	await waitForScrollSnap(page);
+	await waitForScrollSnap(page, before);
 });
 
 When('I swipe right a long distance across the screen', async ({ page }) => {
@@ -109,10 +121,11 @@ When('I swipe right a long distance across the screen', async ({ page }) => {
 	expect(box).toBeTruthy();
 	if (!box) return;
 
+	const before = await readScrollBeforeSwipe(page);
 	await dispatchTouch(page, box.x + box.width * 0.1, box.y + box.height * 0.5, 'touchstart');
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchmove');
 	await dispatchTouch(page, box.x + box.width * 0.9, box.y + box.height * 0.5, 'touchend');
-	await waitForScrollSnap(page);
+	await waitForScrollSnap(page, before);
 });
 
 When('I swipe left a short distance', async ({ page }) => {
@@ -293,13 +306,14 @@ When('I drag a finger left across the page in small steps', async ({ page }) => 
 	const startX = box.x + box.width * 0.8;
 	const step = 8;
 	const steps = Math.round((box.width * 0.5) / step);
+	const before = await readScrollBeforeSwipe(page);
 	await dispatchTouch(page, startX, y, 'touchstart');
 	await dispatchTouch(page, startX, y, 'touchmove');
 	for (let i = 1; i <= steps; i++) {
 		await dispatchTouch(page, startX - i * step, y, 'touchmove');
 	}
 	await dispatchTouch(page, startX - steps * step, y, 'touchend');
-	await waitForScrollSnap(page);
+	await waitForScrollSnap(page, before);
 });
 
 Then('the browser was never allowed to scroll the page natively', async ({ page }) => {
