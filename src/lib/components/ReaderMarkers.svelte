@@ -23,11 +23,13 @@
 		left: number;
 		top: number;
 		width: number;
+		/** Width of the page margin left of the text; the name chip starts inside it */
+		margin: number;
 	}
 
 	let lines: Line[] = $state([]);
 
-	/** A horizontal line over the text line where each marker's character sits */
+	/** A line in the gap above the text line where each marker's character sits */
 	function layout() {
 		if (!container || !root) return;
 		const box = container.getBoundingClientRect();
@@ -35,19 +37,23 @@
 		const style = getComputedStyle(root);
 		const padLeft = parseFloat(style.paddingLeft) || 0;
 		const padRight = parseFloat(style.paddingRight) || 0;
+		const lineHeight = parseFloat(style.lineHeight);
 
 		lines = markers.flatMap((m) => {
 			const rect = rectAtFraction(root!, m.fraction);
 			if (!rect) return [];
 			const page = Math.floor((rect.left - box.left + container!.scrollLeft) / pageWidth);
+			// The character's box is shorter than the line; the rest is the gap between lines
+			const gap = Number.isFinite(lineHeight) ? Math.max(0, lineHeight - rect.height) : 0;
 			return [
 				{
 					id: m.id,
 					label: m.label,
 					color: markerColor(m.hue),
 					left: page * pageWidth + padLeft,
-					top: rect.top - box.top,
-					width: pageWidth - padLeft - padRight
+					top: rect.top - box.top - gap / 2,
+					width: pageWidth - padLeft - padRight,
+					margin: padLeft
 				}
 			];
 		});
@@ -71,7 +77,7 @@
 	<aside
 		class="marker"
 		data-testid="reader-marker"
-		style="left: {line.left}px; top: {line.top}px; width: {line.width}px; --marker: {line.color}"
+		style="left: {line.left}px; top: {line.top}px; width: {line.width}px; --marker: {line.color}; --margin: {line.margin}px"
 	>
 		<hr />
 		<mark>{line.label}</mark>
@@ -79,31 +85,40 @@
 {/each}
 
 <style>
-	/* Sits just above the text line, never takes taps from the page */
+	/* Centred in the gap between two text lines, never takes taps from the page */
 	.marker {
 		position: absolute;
 		height: 2px;
-		margin-top: -3px;
+		margin-top: -1px;
 		pointer-events: none;
 		z-index: 1;
 	}
 
+	/* Strong at the name, fading out to the right so it reads as a bookmark, not an underline */
 	hr {
 		margin: 0;
 		border: none;
 		border-top: 2px solid var(--marker);
 		border-radius: 1px;
+		-webkit-mask-image: linear-gradient(to right, var(--marker) 20%, transparent);
+		mask-image: linear-gradient(to right, var(--marker) 20%, transparent);
 	}
 
+	/* A name chip sitting on the line, starting in the page margin */
 	mark {
 		position: absolute;
-		right: 0;
-		bottom: 3px;
+		top: 1px;
+		left: calc(4px - var(--margin));
+		transform: translateY(-50%);
+		padding: 2px 7px;
+		border: 1px solid var(--marker);
+		border-radius: 999px;
 		font-family: var(--font-family);
 		font-size: var(--font-size-xs);
+		font-weight: 600;
 		line-height: 1;
 		color: var(--marker);
-		background: none;
+		background: var(--color-readerBackground);
 		white-space: nowrap;
 	}
 </style>
